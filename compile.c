@@ -63,24 +63,21 @@ static bool is_identifier(uint8_t c) {
 }
 
 static noreturn void error_at(const char *pos, char *fmt, ...) {
-	int line = 0;
-	int col = 0;
-	for (const char *p = input_buf; p; p++) {
-		if (*p == '\n') {
-			line++;
-			col = 0;
-			continue;
+	int line = 1;
+	const char *begin, *end;
+	for (begin = input_buf; (end = strchr(begin, '\n')); line++) {
+		if (pos <= end) {
+			int col = pos - begin;
+			fprintf(stderr, "%s line %d column %d: ", sjis2utf(input_name), line, col);
+			va_list args;
+			va_start(args, fmt);
+			vfprintf(stderr, fmt, args);
+			fprintf(stderr, "\n");
+			fprintf(stderr, "%.*s\n", (int)(end - begin), begin);
+			fprintf(stderr, "%*s^\n", (int)(pos - begin), "");
+			break;
 		}
-		if (p != pos) {
-			col++;
-			continue;
-		}
-		fprintf(stderr, "%s line %d column %d: ", sjis2utf(input_name), line + 1, col + 1);
-		va_list args;
-		va_start(args, fmt);
-		vfprintf(stderr, fmt, args);
-		fprintf(stderr, "\n");
-		break;
+		begin = end + 1;
 	}
 	exit(1);
 }
@@ -568,7 +565,6 @@ static void number_array(void) {
 //  s: string (colon-terminated)
 //  v: variable
 static void arguments(const char *sig) {
-	const char *args_top = input;
 	if (*sig == 'n') {
 		emit(get_number());
 		if (*++sig)
@@ -610,11 +606,11 @@ static void arguments(const char *sig) {
 		}
 		if (*++sig) {
 			if (consume(':'))
-				error_at(args_top, "too few arguments");
+				error_at(input - 1, "too few arguments");
 			expect(',');
 		} else {
 			if (consume(','))
-				error_at(args_top, "too many arguments");
+				error_at(input - 1, "too many arguments");
 			expect(':');
 		}
 	}
