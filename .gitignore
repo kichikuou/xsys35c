@@ -1,0 +1,6 @@
+*.o
+*~
+xsys35c
+compile_test
+ald_test
+testdata/actual.ald
