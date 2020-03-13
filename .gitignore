@@ -1,6 +1,5 @@
 *.o
 *~
 xsys35c
-compile_test
-ald_test
+*_test
 testdata/actual.ald

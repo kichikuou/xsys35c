@@ -31,34 +31,6 @@ static void hexdump(const uint8_t* data, int len, int pos) {
 	}
 }
 
-static void header_test() {
-	const char expected[] =
-		"\x53\x33\x35\x31\x20\x00\x00\x00\x21\x00\x00\x00\x00\x00\x00\x00"
-		"\x08\x00\x54\x45\x53\x54\x2e\x41\x44\x56\x00\x00\x00\x00\x00\x00"
-		"\x41";
-	const int expected_len = sizeof(expected) - 1;
-
-	Compiler compiler;
-	Vector *src_names = new_vec();
-	vec_push(src_names, "TEST.ADV");
-	compiler_init(&compiler, src_names);
-	Sco *sco = compile(&compiler, "A", 0);
-
-	if (sco->len != expected_len ||
-		memcmp(sco->buf, expected, expected_len) != 0) {
-		int pos;
-		for (pos = 0; pos < expected_len && pos < sco->len; pos++) {
-			if (sco->buf[pos] != (uint8_t)expected[pos])
-				break;
-		}
-		printf("header_test failed. expected:");
-		hexdump((const uint8_t *)expected, expected_len, pos);
-		printf("\ngot:");
-		hexdump(sco->buf, sco->len, pos);
-		printf("\n");
-	}
-}
-
 static void test(const char *name, const char *source,
 		  const char *expected, int expected_len) {
 	if (strlen(name) > 14)
@@ -89,8 +61,6 @@ static void test(const char *name, const char *source,
 }
 
 int main() {
-	header_test();
-
 	TEST("A", "A", "A");
 	TEST("B1",
 		 "B1,1,450,20,172,240,1:",
