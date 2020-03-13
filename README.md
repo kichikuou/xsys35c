@@ -16,11 +16,17 @@ Run `make test` to run unit tests.
 ```
 ./xsys35c source_file... -o ald_file
 ```
+Or
+```
+./xsys35c -s comp.hed -o ald_file
+```
+where `comp.hed` is a text file that lists source files, one per line.
 
 For example, the following command will compile `examples/sample.adv` and generates `sample_sa.ald`:
 ```
 ./xsys35c examples/sample.adv -o sample_sa.ald
 ```
+The generated `.ald` file can be executed using [xsystem35](https://github.com/kichikuou/xsystem35-sdl2) or original `system35.exe`.
 
 Run `xsys35c --help` to see full options.
 
