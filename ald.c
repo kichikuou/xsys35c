@@ -45,18 +45,18 @@ static void pad(FILE *fp) {
 
 static int entry_header_size(AldEntry *e) {
 	int namelen = strlen(e->name) + 1;  // length including null terminator
-	return 16 + (namelen > 16 ? namelen : 16);
+	return (namelen + 31) & ~0xf;
 }
 
 static void write_entry(AldEntry *entry, FILE *fp) {
 	uint64_t wtime = entry->timestamp * 10000000LL + EPOCH_DIFF_100NS;
-	write_dword(entry_header_size(entry), fp);
+	int hdrlen = entry_header_size(entry);
+	write_dword(hdrlen, fp);
 	write_dword(entry->size, fp);
 	write_dword(wtime & 0xffffffff, fp);
 	write_dword(wtime >> 32, fp);
 	fputs(entry->name, fp);
-	fputc(0, fp);
-	for (int i = strlen(entry->name) + 1; i < 16; i++)
+	for (int i = 16 + strlen(entry->name); i < hdrlen; i++)
 		fputc(0, fp);
 	fwrite(entry->data, entry->size, 1, fp);
 }
