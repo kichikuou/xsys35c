@@ -105,6 +105,12 @@ static char *upcase(char *str) {
 	return str;
 }
 
+static char *trim_right(char *str) {
+	for (char *p = str + strlen(str) - 1; p >= str && isspace(*p); p--)
+		*p = '\0';
+	return str;
+}
+
 // Read a list of source files from `path`, in the "comp.hed" format of System3.x SDK.
 static Vector *read_source_list(const char *path) {
 	FILE *fp = fopen(path, "r");
@@ -114,14 +120,12 @@ static Vector *read_source_list(const char *path) {
 	Vector *files = new_vec();
 	char line[256];
 	while (fgets(line, sizeof(line), fp)) {
-		if (line[0] == '#')
+		if (line[0] == '#' || line[0] == '\x1a')
 			continue;
-		for (char *p = line; *p; p++) {
-			if (*p == '\r' || *p == '\n' || *p == '\x1a') {
-				*p = '\0';
-				break;
-			}
-		}
+		char *sc = strchr(line, ';');
+		if (sc)
+			*sc = '\0';
+		trim_right(line);
 		if (!line[0])
 			continue;
 		vec_push(files, path_join(dir, sjis2utf(line)));
