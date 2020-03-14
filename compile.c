@@ -564,6 +564,7 @@ static void number_array(void) {
 //  n: subcommand number (ascii digits), must be first argument
 //  s: string (colon-terminated)
 //  v: variable
+//  z: string (zero-terminated)
 static void arguments(const char *sig) {
 	if (*sig == 'n') {
 		emit(get_number());
@@ -588,14 +589,22 @@ static void arguments(const char *sig) {
 			}
 			break;
 		case 's':
+		case 'z':
 			while (isspace(*input))
 				input++;  // Do not consume full-width spaces here
-			while (*input != ':') {
-				if (!*input)
-					error_at(top, "unfinished string argument");
-				echo();
+			if (*input == '"') {
+				input++;
+				while (*input && *input != '"')
+					echo();
+				expect('"');
+			} else {
+				while (*input != ':') {
+					if (!*input)
+						error_at(top, "unfinished string argument");
+					echo();
+				}
 			}
-			emit(':');  // ':' in input will be consumed by expect() below
+			emit(*sig == 's' ? ':' : 0);
 			break;
 		case 'v':
 			variable(false);
