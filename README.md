@@ -3,7 +3,7 @@ xsys35c is a compiler for AliceSoft's System 3.x game engine.
 
 This is still a work-in-progress project, but this can compile the System3.5-ported games that comes with the System 3.5 SDK (Rance 1-3, Toushin Toshi, DALK, and Dr.STOP). Generated binaries match the output of the official SDK.
 
-Currently, xsys35c only supports System 3.5 features, but not System 3.6 / 3.8 / 3.9. This also means that game messages cannot include ASCII characters.
+Currently, xsys35c only supports System 3.5 / 3.6 features, but not System 3.8 / 3.9. This also means that game messages cannot include ASCII characters.
 
 ## Build
 To build `xsys35c`, run `make` command:

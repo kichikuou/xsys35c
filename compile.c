@@ -653,7 +653,9 @@ static void message(char terminator) {
 		uint8_t c2 = *input++;
 		if (!is_sjis_byte1(c1) || !is_sjis_byte2(c2))
 			error_at(input - 2, "invalid SJIS character: %02x %02x", c1, c2);
-		uint8_t hk = to_sjis_half_kana(c1, c2);
+		uint8_t hk = 0;
+		if (sys_ver == SYSTEM35)
+			hk = to_sjis_half_kana(c1, c2);
 		if (hk) {
 			emit(hk);
 		} else {

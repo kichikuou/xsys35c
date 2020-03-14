@@ -108,7 +108,14 @@ void sco_init(const char *src_name, int pageno) {
 	int hdrsize = (18 + namelen + 15) & ~0xf;
 
 	// SCO header
-	emit_string("S351");
+	switch (sys_ver) {
+	case SYSTEM35:
+		emit_string("S351");
+		break;
+	case SYSTEM36:
+		emit_string("S360");
+		break;
+	}
 	emit_dword(hdrsize);
 	emit_dword(0);  // File size (to be filled by sco_finalize)
 	emit_dword(pageno);
