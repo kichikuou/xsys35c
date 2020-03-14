@@ -19,6 +19,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+SysVer sys_ver = SYSTEM35;
+
 static Sco out;
 
 void emit(uint8_t b) {

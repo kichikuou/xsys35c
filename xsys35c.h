@@ -62,6 +62,12 @@ void *map_get(Map *m, char *key);
 
 // sco.c
 
+typedef enum {
+	SYSTEM35,
+	SYSTEM36,
+} SysVer;
+extern SysVer sys_ver;
+
 typedef struct {
 	uint8_t *buf;
 	int len;

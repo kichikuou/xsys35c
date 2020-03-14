@@ -18,7 +18,7 @@ Run `make test` to run unit tests.
 ```
 Or
 ```
-./xsys35c -s comp.hed -o ald_file
+./xsys35c -i comp.hed -o ald_file
 ```
 where `comp.hed` is a text file that lists source files, one per line.
 

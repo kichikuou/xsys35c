@@ -30,12 +30,13 @@ enum {
 	LOPT_TIMESTAMP,
 };
 
-static const char short_options[] = "ho:s:v";
+static const char short_options[] = "hi:o:s:v";
 static const struct option long_options[] = {
 	{ "help",        no_argument,       NULL, 'h' },
 	{ "output",      required_argument, NULL, 'o' },
 	{ "objdir",      required_argument, NULL, LOPT_OBJDIR },
-	{ "source-list", required_argument, NULL, 's' },
+	{ "source-list", required_argument, NULL, 'i' },
+	{ "sys-ver",     required_argument, NULL, 's' },
 	{ "timestamp",   required_argument, NULL, LOPT_TIMESTAMP },
 	{ "version",     no_argument,       NULL, 'v' },
 	{ 0, 0, 0, 0 }
@@ -49,7 +50,8 @@ static void usage(void) {
 	puts("    -h, --help                Display this message and exit");
 	puts("        --objdir <directory>  Write object (.sco) files into <directory>");
 	puts("    -o, --output <file>       Write output to <file> (default: adisk.ald)");
-	puts("    -s, --source-list <file>  Read list of source files from <file>");
+	puts("    -i, --source-list <file>  Read list of source files from <file>");
+	puts("    -s, --sys-ver <ver>       Target System version (3.5(default)|3.6)");
 	puts("        --timestamp <time>    Set timestamp of ALD entries, in UNIX timestamp");
 	puts("    -v, --version             Print version information and exit");
 }
@@ -219,11 +221,19 @@ int main(int argc, char *argv[]) {
 		case 'h':
 			usage();
 			return 0;
+		case 'i':
+			source_list = optarg;
+			break;
 		case 'o':
 			output = optarg;
 			break;
 		case 's':
-			source_list = optarg;
+			if (!strcmp(optarg, "3.5"))
+				sys_ver = SYSTEM35;
+			else if (!strcmp(optarg, "3.6"))
+				sys_ver = SYSTEM36;
+			else
+				error("Unknown system version '%s'. Possible values are '3.5' and '3.6'\n", optarg);
 			break;
 		case 'v':
 			version();
