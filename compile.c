@@ -73,7 +73,7 @@ static noreturn void error_at(const char *pos, char *fmt, ...) {
 			va_start(args, fmt);
 			vfprintf(stderr, fmt, args);
 			fprintf(stderr, "\n");
-			fprintf(stderr, "%.*s\n", (int)(end - begin), begin);
+			fprintf(stderr, "%s\n", sjis2utf(strndup(begin, end - begin)));
 			fprintf(stderr, "%*s^\n", (int)(pos - begin), "");
 			break;
 		}
