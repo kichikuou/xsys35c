@@ -162,7 +162,7 @@ static Vector *build_ald(Vector *src_paths, const char *objdir) {
 	Map *srcs = new_map();
 	for (int i = 0; i < src_paths->len; i++) {
 		char *path = src_paths->data[i];
-		map_put(srcs, upcase(utf2sjis(basename(path))), read_file(path));
+		map_put(srcs, utf2sjis(upcase(strdup(basename(path)))), read_file(path));
 	}
 
 	Compiler compiler;
