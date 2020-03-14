@@ -51,7 +51,7 @@ static void usage(void) {
 	puts("        --objdir <directory>  Write object (.sco) files into <directory>");
 	puts("    -o, --output <file>       Write output to <file> (default: adisk.ald)");
 	puts("    -i, --source-list <file>  Read list of source files from <file>");
-	puts("    -s, --sys-ver <ver>       Target System version (3.5(default)|3.6)");
+	puts("    -s, --sys-ver <ver>       Target System version (3.5(default)|3.6|3.8)");
 	puts("        --timestamp <time>    Set timestamp of ALD entries, in UNIX timestamp");
 	puts("    -v, --version             Print version information and exit");
 }
@@ -162,7 +162,10 @@ static Vector *build_ald(Vector *src_paths, const char *objdir) {
 	Map *srcs = new_map();
 	for (int i = 0; i < src_paths->len; i++) {
 		char *path = src_paths->data[i];
-		map_put(srcs, utf2sjis(upcase(strdup(basename(path)))), read_file(path));
+		const char *name = basename(path);
+		if (sys_ver <= SYSTEM36)
+			name = upcase(strdup(name));
+		map_put(srcs, utf2sjis(name), read_file(path));
 	}
 
 	Compiler compiler;
@@ -232,8 +235,10 @@ int main(int argc, char *argv[]) {
 				sys_ver = SYSTEM35;
 			else if (!strcmp(optarg, "3.6"))
 				sys_ver = SYSTEM36;
+			else if (!strcmp(optarg, "3.8"))
+				sys_ver = SYSTEM38;
 			else
-				error("Unknown system version '%s'. Possible values are '3.5' and '3.6'\n", optarg);
+				error("Unknown system version '%s'. Possible values are '3.5', '3.6' and '3.8'\n", optarg);
 			break;
 		case 'v':
 			version();

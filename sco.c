@@ -115,6 +115,9 @@ void sco_init(const char *src_name, int pageno) {
 	case SYSTEM36:
 		emit_string("S360");
 		break;
+	case SYSTEM38:
+		emit_string("S380");
+		break;
 	}
 	emit_dword(hdrsize);
 	emit_dword(0);  // File size (to be filled by sco_finalize)

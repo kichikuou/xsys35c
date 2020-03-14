@@ -65,6 +65,7 @@ void *map_get(Map *m, char *key);
 typedef enum {
 	SYSTEM35,
 	SYSTEM36,
+	SYSTEM38,
 } SysVer;
 extern SysVer sys_ver;
 
