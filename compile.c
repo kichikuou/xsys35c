@@ -953,6 +953,9 @@ static bool command(void) {
 	case CMD2('C', 'M'): arguments("eeeeeeeee"); break;
 	case CMD2('C', 'P'): arguments("eee"); break;
 	case CMD2('C', 'S'): arguments("eeeeeee"); break;
+	case CMD2('C', 'T'): arguments("vee"); break;
+	case CMD2('C', 'U'): arguments("eeeeee"); break;
+	case CMD2('C', 'V'): arguments("eeeeee"); break;
 	case CMD2('C', 'X'): arguments("eeeeeeee"); break;
 	case CMD2('D', 'C'): arguments("eee"); break;
 	case CMD2('D', 'F'): arguments("vee"); break;
@@ -997,6 +1000,13 @@ static bool command(void) {
 			goto unknown_command;
 		}
 		break;
+	case CMD2('K', 'I'): arguments("vee"); break;
+	case CMD2('K', 'K'): arguments("e"); break;
+	case CMD2('K', 'N'): arguments("v"); break;
+	case CMD2('K', 'P'): arguments("v"); break;
+	case CMD2('K', 'Q'): arguments("ve"); break;
+	case CMD2('K', 'R'): arguments("v"); break;
+	case CMD2('K', 'W'): arguments("ve"); break;
 	case CMD2('L', 'C'): arguments("ees"); break;
 	case CMD2('L', 'D'): arguments("e"); break;
 	case CMD2('L', 'E'): arguments("nfee"); break;
@@ -1005,6 +1015,14 @@ static bool command(void) {
 	case CMD3('L', 'H', 'M'): arguments("ne"); break;
 	case CMD3('L', 'H', 'S'): arguments("ne"); break;
 	case CMD3('L', 'H', 'W'): arguments("ne"); break;
+	case CMD3('L', 'X', 'C'): arguments("e"); break;
+	case CMD3('L', 'X', 'G'): arguments("ess"); break;
+	case CMD3('L', 'X', 'L'): arguments("eee"); break;
+	case CMD3('L', 'X', 'O'): arguments("eee"); break;
+	case CMD3('L', 'X', 'P'): arguments("eee"); break;
+	case CMD3('L', 'X', 'R'): arguments("eve"); break;
+	case CMD3('L', 'X', 'S'): arguments("evv"); break;
+	case CMD3('L', 'X', 'W'): arguments("eve"); break;
 	case CMD2('L', 'L'): arguments("neee"); break;
 	case CMD2('L', 'P'): arguments("eve"); break;
 	case CMD2('L', 'T'): arguments("ev"); break;
@@ -1016,8 +1034,10 @@ static bool command(void) {
 	case CMD2('M', 'G'): arguments("ne"); break;
 	case CMD2('M', 'H'): arguments("eee"); break;
 	case CMD2('M', 'I'): arguments("ees"); break;
+	case CMD2('M', 'J'): arguments("eeeee"); break;
 	case CMD2('M', 'L'): arguments("ve"); break;
 	case CMD2('M', 'M'): arguments("ee"); break;
+	case CMD2('M', 'N'): arguments("nev"); break;
 	case CMD2('M', 'P'): arguments("ee"); break;
 	case CMD2('M', 'S'): arguments("es"); break;
 	case CMD2('M', 'T'): arguments("s"); break;
@@ -1039,6 +1059,7 @@ static bool command(void) {
 	case CMD2('N', 'C'): arguments("ve"); break;
 	case CMD2('N', 'I'): arguments("veee"); break;
 	case CMD2('N', 'O'): arguments("nvve"); break;
+	case CMD2('N', 'P'): arguments("vvev"); break;
 	case CMD2('N', 'R'): arguments("ev"); break;
 	case CMD2('N', 'T'): arguments("s"); break;
 	case CMD3('N', 'D', '+'): arguments("eee"); break;
@@ -1052,7 +1073,7 @@ static bool command(void) {
 	case CMD3('N', 'D', 'M'): arguments("ee"); break;
 	case CMD2('P', 'C'): arguments("e"); break;
 	case CMD2('P', 'D'): arguments("e"); break;
-	case CMD2('P', 'F'):
+	case CMD2('P', 'F'): // fall through
 	case CMD2('P', 'W'):
 		switch (subcommand_num()) {
 		case 0:
@@ -1066,6 +1087,7 @@ static bool command(void) {
 		}
 		break;
 	case CMD2('P', 'G'): arguments("vee"); break;
+	case CMD2('P', 'N'): arguments("e"); break;
 	case CMD2('P', 'P'): arguments("vee"); break;
 	case CMD2('P', 'S'): arguments("eeee"); break;
 	case CMD2('P', 'T'):
@@ -1103,15 +1125,31 @@ static bool command(void) {
 			goto unknown_command;
 		}
 		break;
+	case CMD2('S', 'I'): arguments("nv"); break;
 	case CMD2('S', 'L'): arguments("e"); break;
 	case CMD2('S', 'M'): arguments("e"); break;
 	case CMD2('S', 'O'): arguments("v"); break;
 	case CMD2('S', 'P'): arguments("ee"); break;
 	case CMD2('S', 'Q'): arguments("eee"); break;
+	case CMD2('S', 'R'): arguments("nv"); break;
 	case CMD2('S', 'S'): arguments("e"); break;
 	case CMD2('S', 'T'): arguments("e"); break;
 	case CMD2('S', 'U'): arguments("vv"); break;
 	case CMD2('S', 'W'): arguments("veee"); break;
+	case CMD2('S', 'X'):
+		echo();  // device
+		switch (subcommand_num()) {
+		case 1:
+			arguments("eee"); break;
+		case 2:
+		case 4:
+			arguments("v"); break;
+		case 3:
+			break;
+		default:
+			goto unknown_command;
+		}
+		break;
 	case 'T': arguments("ee"); break;
 	case CMD2('U', 'C'): arguments("ne"); break;
 	case CMD2('U', 'D'): arguments("e"); break;
@@ -1139,6 +1177,7 @@ static bool command(void) {
 	case CMD2('V', 'H'): arguments("eeeeee"); break;
 	case CMD3('V', 'I', 'C'): arguments("eeee"); break;
 	case CMD3('V', 'I', 'P'): arguments("eeee"); break;
+	case CMD2('V', 'J'): arguments("eeee"); break;
 	case CMD2('V', 'P'): arguments("eeeeee"); break;
 	case CMD2('V', 'R'): arguments("eev"); break;
 	case CMD2('V', 'S'): arguments("eeeee"); break;
@@ -1161,8 +1200,10 @@ static bool command(void) {
 	case CMD2('Z', 'F'): arguments("e"); break;
 	case CMD2('Z', 'G'): arguments("v"); break;
 	case CMD2('Z', 'H'): arguments("e"); break;
+	case CMD2('Z', 'I'): arguments("ee"); break;
 	case CMD2('Z', 'L'): arguments("e"); break;
 	case CMD2('Z', 'M'): arguments("e"); break;
+	case CMD2('Z', 'R'): arguments("ev"); break;
 	case CMD2('Z', 'S'): arguments("e"); break;
 	case CMD2('Z', 'T'):
 		switch (subcommand_num()) {
