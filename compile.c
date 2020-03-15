@@ -680,27 +680,27 @@ static void conditional(void) {
 	emit('{');
 	expr();
 	expect(':');
-	int alt_hole = current_address();
+	int hole = current_address();
 	emit_dword(0);
 	commands();
 	expect('}');
-	if (consume_keyword("else")) {
+	if (sys_ver >= SYSTEM38) {
 		emit('@'); // Label jump
-		int end_hole = current_address();
 		emit_dword(0);
-		swap_dword(alt_hole, current_address());
-		if (consume_keyword("if")) {
-			expect('{');
-			conditional();
-		} else {
-			expect('{');
-			commands();
-			expect('}');
+		swap_dword(hole, current_address());
+		hole = current_address() - 4;
+		if (consume_keyword("else")) {
+			if (consume_keyword("if")) {
+				expect('{');
+				conditional();
+			} else {
+				expect('{');
+				commands();
+				expect('}');
+			}
 		}
-		swap_dword(end_hole, current_address());
-	} else {
-		swap_dword(alt_hole, current_address());
 	}
+	swap_dword(hole, current_address());
 }
 
 // while-loop ::= '<@' expr ':' commands '>'
