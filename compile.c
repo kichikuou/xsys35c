@@ -652,7 +652,7 @@ static void assign(void) {
 	expect('!');
 }
 
-static void message(char terminator) {
+static void string(char terminator) {
 	const char *top = input;
 	while (*input != terminator) {
 		if (!*input)
@@ -673,6 +673,16 @@ static void message(char terminator) {
 		}
 	}
 	expect(terminator);
+}
+
+static void message() {
+	emit('/');
+	emit('!');
+	// TODO: Support character escaping
+	while (*input && *input != '\'')
+		echo();
+	expect('\'');
+	emit(0);
 }
 
 // conditional ::= '{' expr ':' commands '}'
@@ -818,7 +828,10 @@ static bool command(void) {
 		break;
 
 	case '\'': // Message
-		message('\'');
+		if (sys_ver >= SYSTEM38)
+			message();
+		else
+			string('\'');
 		break;
 
 	case '!':  // Assign
@@ -891,7 +904,7 @@ static bool command(void) {
 		label();
 		expect('$');
 		if (is_sjis_byte1(*input) || is_sjis_half_kana(*input)) {
-			message('$');
+			string('$');
 			emit('$');
 		} else {
 			menu_item_start = command_top;
@@ -912,7 +925,7 @@ static bool command(void) {
 		break;
 
 	case '"':  // String data
-		message('"');
+		string('"');
 		emit(0);
 		break;
 
