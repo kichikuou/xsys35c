@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-SysVer sys_ver = SYSTEM35;
+SysVer sys_ver = SYSTEM38;
 
 static Sco out;
 

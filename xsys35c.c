@@ -51,7 +51,7 @@ static void usage(void) {
 	puts("        --objdir <directory>  Write object (.sco) files into <directory>");
 	puts("    -o, --output <file>       Write output to <file> (default: adisk.ald)");
 	puts("    -i, --source-list <file>  Read list of source files from <file>");
-	puts("    -s, --sys-ver <ver>       Target System version (3.5(default)|3.6|3.8)");
+	puts("    -s, --sys-ver <ver>       Target System version (3.5|3.6|3.8(default))");
 	puts("        --timestamp <time>    Set timestamp of ALD entries, in UNIX timestamp");
 	puts("    -v, --version             Print version information and exit");
 }
