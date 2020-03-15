@@ -561,10 +561,11 @@ static void number_array(void) {
 // Compile command arguments. Directives:
 //  e: expression
 //  f: file name
-//  n: subcommand number (ascii digits), must be first argument
+//  n: number (ascii digits)
 //  s: string (colon-terminated)
 //  v: variable
 //  z: string (zero-terminated)
+//  F: function name
 static void arguments(const char *sig) {
 	if (*sig == 'n') {
 		emit(get_number());
@@ -588,6 +589,9 @@ static void arguments(const char *sig) {
 				emit(':');
 			}
 			break;
+		case 'n':
+			emit(get_number());
+			break;
 		case 's':
 		case 'z':
 			while (isspace(*input))
@@ -609,6 +613,22 @@ static void arguments(const char *sig) {
 		case 'v':
 			variable(false);
 			emit(OP_END);
+			break;
+		case 'F':
+			{
+				char *name = get_identifier();
+				if (compiling) {
+					Function *func = map_get(compiler->functions, name);
+					if (!func)
+						error_at(top, "undefined function '%s'", name);
+					emit_word(func->page);
+					emit_dword(func->addr);
+					if (!func->resolved) {
+						func->page = input_page + 1;
+						func->addr = current_address() - 6;
+					}
+				}
+			}
 			break;
 		default:
 			error("BUG: invalid arguments() template : %c", *sig);
@@ -777,18 +797,226 @@ static int subcommand_num(void) {
 #define ISKEYWORD(s, len, kwd) ((len) == sizeof(kwd) - 1 && !memcmp((s), (kwd), (len)))
 #define CMD2(a, b) (a | b << 8)
 #define CMD3(a, b, c) (a | b << 8 | c << 16)
+#define CMD2F(b) CMD2(0x2f, b)
 
 enum {
+	COMMAND_wavLoad = CMD2F(0x0a),
+	COMMAND_wavPlay = CMD2F(0x0b),
+	COMMAND_wavStop = CMD2F(0x0c),
+	COMMAND_wavUnload = CMD2F(0x0d),
+	COMMAND_wavIsPlay = CMD2F(0x0e),
+	COMMAND_wavFade = CMD2F(0x0f),
+	COMMAND_wavIsFade = CMD2F(0x10),
+	COMMAND_wavStopFade = CMD2F(0x11),
+	COMMAND_trace = CMD2F(0x12),
+	COMMAND_wav3DSetPos = CMD2F(0x13),
+	COMMAND_wav3DCommit = CMD2F(0x14),
+	COMMAND_wav3DGetPos = CMD2F(0x15),
+	COMMAND_wav3DSetPosL = CMD2F(0x16),
+	COMMAND_wav3DGetPosL = CMD2F(0x17),
+	COMMAND_wav3DFadePos = CMD2F(0x18),
+	COMMAND_wav3DIsFadePos = CMD2F(0x19),
+	COMMAND_wav3DStopFadePos = CMD2F(0x1a),
+	COMMAND_wav3DFadePosL = CMD2F(0x1b),
+	COMMAND_wav3DIsFadePosL = CMD2F(0x1c),
+	COMMAND_wav3DStopFadePosL = CMD2F(0x1d),
+	COMMAND_sndPlay = CMD2F(0x1e),
+	COMMAND_sndStop = CMD2F(0x1f),
+	COMMAND_sndIsPlay = CMD2F(0x20),
+	COMMAND_msg = CMD2F(0x21),
+	COMMAND_newHH = CMD2F(0x22),
+	COMMAND_newLC = CMD2F(0x23),
+	COMMAND_newLE = CMD2F(0x24),
+	COMMAND_newLXG = CMD2F(0x25),
+	COMMAND_newMI = CMD2F(0x26),
+	COMMAND_newMS = CMD2F(0x27),
+	COMMAND_newMT = CMD2F(0x28),
+	COMMAND_newNT = CMD2F(0x29),
+	COMMAND_newQE = CMD2F(0x2a),
+	COMMAND_newUP = CMD2F(0x2b),
+	COMMAND_newF = CMD2F(0x2c),
+	COMMAND_wavWaitTime = CMD2F(0x2d),
+	COMMAND_wavGetPlayPos = CMD2F(0x2e),
+	COMMAND_wavWaitEnd = CMD2F(0x2f),
+	COMMAND_wavGetWaveTime = CMD2F(0x30),
+	COMMAND_menuSetCbkSelect = CMD2F(0x31),
+	COMMAND_menuSetCbkCancel = CMD2F(0x32),
+	COMMAND_menuClearCbkSelect = CMD2F(0x33),
+	COMMAND_menuClearCbkCancel = CMD2F(0x34),
+	COMMAND_wav3DSetMode = CMD2F(0x35),
+	COMMAND_grCopyStretch = CMD2F(0x36),
+	COMMAND_grFilterRect = CMD2F(0x37),
+	COMMAND_iptClearWheelCount = CMD2F(0x38),
+	COMMAND_iptGetWheelCount = CMD2F(0x39),
+	COMMAND_menuGetFontSize = CMD2F(0x3a),
+	COMMAND_msgGetFontSize = CMD2F(0x3b),
+	COMMAND_strGetCharType = CMD2F(0x3c),
+	COMMAND_strGetLengthASCII = CMD2F(0x3d),
+	COMMAND_sysWinMsgLock = CMD2F(0x3e),
+	COMMAND_sysWinMsgUnlock = CMD2F(0x3f),
+	COMMAND_aryCmpCount = CMD2F(0x40),
+	COMMAND_aryCmpTrans = CMD2F(0x41),
+	COMMAND_grBlendColorRect = CMD2F(0x42),
+	COMMAND_grDrawFillCircle = CMD2F(0x43),
+	COMMAND_MHH = CMD2F(0x44),
+	COMMAND_menuSetCbkInit = CMD2F(0x45),
+	COMMAND_menuClearCbkInit = CMD2F(0x46),
+	COMMAND_menu = CMD2F(0x47),
+	COMMAND_sysOpenShell = CMD2F(0x48),
+	COMMAND_sysAddWebMenu = CMD2F(0x49),
+	COMMAND_iptSetMoveCursorTime = CMD2F(0x4a),
+	COMMAND_iptGetMoveCursorTime = CMD2F(0x4b),
+	COMMAND_grBlt = CMD2F(0x4c),
+	COMMAND_LXWT = CMD2F(0x4d),
+	COMMAND_LXWS = CMD2F(0x4e),
+	COMMAND_LXWE = CMD2F(0x4f),
+	COMMAND_LXWH = CMD2F(0x50),
+	COMMAND_LXWHH = CMD2F(0x51),
+	COMMAND_sysGetOSName = CMD2F(0x52),
+	COMMAND_patchEC = CMD2F(0x53),
+	COMMAND_mathSetClipWindow = CMD2F(0x54),
+	COMMAND_mathClip = CMD2F(0x55),
+	COMMAND_LXF = CMD2F(0x56),
+	COMMAND_strInputDlg = CMD2F(0x57),
+	COMMAND_strCheckASCII = CMD2F(0x58),
+	COMMAND_strCheckSJIS = CMD2F(0x59),
+	COMMAND_strMessageBox = CMD2F(0x5a),
+	COMMAND_strMessageBoxStr = CMD2F(0x5b),
+	COMMAND_grCopyUseAMapUseA = CMD2F(0x5c),
+	COMMAND_grSetCEParam = CMD2F(0x5d),
+	COMMAND_grEffectMoveView = CMD2F(0x5e),
+	COMMAND_cgSetCacheSize = CMD2F(0x5f),
+	COMMAND_gaijiSet = CMD2F(0x61),
+	COMMAND_gaijiClearAll = CMD2F(0x62),
+	COMMAND_menuGetLatestSelect = CMD2F(0x63),
+	COMMAND_lnkIsLink = CMD2F(0x64),
+	COMMAND_lnkIsData = CMD2F(0x65),
+	COMMAND_fncSetTable = CMD2F(0x66),
+	COMMAND_fncSetTableFromStr = CMD2F(0x67),
+	COMMAND_fncClearTable = CMD2F(0x68),
+	COMMAND_fncCall = CMD2F(0x69),
+	COMMAND_fncSetReturnCode = CMD2F(0x6a),
+	COMMAND_fncGetReturnCode = CMD2F(0x6b),
+	COMMAND_msgSetOutputFlag = CMD2F(0x6c),
+	COMMAND_saveDeleteFile = CMD2F(0x6d),
+	COMMAND_wav3DSetUseFlag = CMD2F(0x6e),
+	COMMAND_wavFadeVolume = CMD2F(0x6f),
+	COMMAND_patchEMEN = CMD2F(0x70),
+	COMMAND_wmenuEnableMsgSkip = CMD2F(0x71),
+	COMMAND_winGetFlipFlag = CMD2F(0x72),
+	COMMAND_cdGetMaxTrack = CMD2F(0x73),
+	COMMAND_dlgErrorOkCancel = CMD2F(0x74),
+	COMMAND_menuReduce = CMD2F(0x75),
+	COMMAND_menuGetNumof = CMD2F(0x76),
+	COMMAND_menuGetText = CMD2F(0x77),
+	COMMAND_menuGoto = CMD2F(0x78),
+	COMMAND_menuReturnGoto = CMD2F(0x79),
+	COMMAND_menuFreeShelterDIB = CMD2F(0x7a),
+	COMMAND_msgFreeShelterDIB = CMD2F(0x7b),
+	// Pseudo commands
 	COMMAND_IF = 0x80,
-	COMMAND_newMS = CMD2('/', '\''),
-	COMMAND_newMT = CMD2('/', '('),
-	COMMAND_sysAddWebMenu = CMD2('/', 'I'),
+	COMMAND_LXW = 0x81,
 };
 
 static int lower_case_command(const char *s, int len) {
-	if (ISKEYWORD(s, len, "sysAddWebMenu"))
-		return COMMAND_sysAddWebMenu;
+#define LCCMD(cmd) if (ISKEYWORD(s, len, #cmd)) return COMMAND_ ## cmd
+	LCCMD(wavLoad);
+	LCCMD(wavPlay);
+	LCCMD(wavStop);
+	LCCMD(wavUnload);
+	LCCMD(wavIsPlay);
+	LCCMD(wavFade);
+	LCCMD(wavIsFade);
+	LCCMD(wavStopFade);
+	LCCMD(trace);
+	LCCMD(wav3DSetPos);
+	LCCMD(wav3DCommit);
+	LCCMD(wav3DGetPos);
+	LCCMD(wav3DSetPosL);
+	LCCMD(wav3DGetPosL);
+	LCCMD(wav3DFadePos);
+	LCCMD(wav3DIsFadePos);
+	LCCMD(wav3DStopFadePos);
+	LCCMD(wav3DFadePosL);
+	LCCMD(wav3DIsFadePosL);
+	LCCMD(wav3DStopFadePosL);
+	LCCMD(sndPlay);
+	LCCMD(sndStop);
+	LCCMD(sndIsPlay);
+	LCCMD(msg);
+	LCCMD(wavWaitTime);
+	LCCMD(wavGetPlayPos);
+	LCCMD(wavWaitEnd);
+	LCCMD(wavGetWaveTime);
+	LCCMD(menuSetCbkSelect);
+	LCCMD(menuSetCbkCancel);
+	LCCMD(menuClearCbkSelect);
+	LCCMD(menuClearCbkCancel);
+	LCCMD(wav3DSetMode);
+	LCCMD(grCopyStretch);
+	LCCMD(grFilterRect);
+	LCCMD(iptClearWheelCount);
+	LCCMD(iptGetWheelCount);
+	LCCMD(menuGetFontSize);
+	LCCMD(msgGetFontSize);
+	LCCMD(strGetCharType);
+	LCCMD(strGetLengthASCII);
+	LCCMD(sysWinMsgLock);
+	LCCMD(sysWinMsgUnlock);
+	LCCMD(aryCmpCount);
+	LCCMD(aryCmpTrans);
+	LCCMD(grBlendColorRect);
+	LCCMD(grDrawFillCircle);
+	LCCMD(menuSetCbkInit);
+	LCCMD(menuClearCbkInit);
+	LCCMD(menu);
+	LCCMD(sysOpenShell);
+	LCCMD(sysAddWebMenu);
+	LCCMD(iptSetMoveCursorTime);
+	LCCMD(iptGetMoveCursorTime);
+	LCCMD(grBlt);
+	LCCMD(sysGetOSName);
+	LCCMD(patchEC);
+	LCCMD(mathSetClipWindow);
+	LCCMD(mathClip);
+	LCCMD(strInputDlg);
+	LCCMD(strCheckASCII);
+	LCCMD(strCheckSJIS);
+	LCCMD(strMessageBox);
+	LCCMD(strMessageBoxStr);
+	LCCMD(grCopyUseAMapUseA);
+	LCCMD(grSetCEParam);
+	LCCMD(grEffectMoveView);
+	LCCMD(cgSetCacheSize);
+	LCCMD(gaijiSet);
+	LCCMD(gaijiClearAll);
+	LCCMD(menuGetLatestSelect);
+	LCCMD(lnkIsLink);
+	LCCMD(lnkIsData);
+	LCCMD(fncSetTable);
+	LCCMD(fncSetTableFromStr);
+	LCCMD(fncClearTable);
+	LCCMD(fncCall);
+	LCCMD(fncSetReturnCode);
+	LCCMD(fncGetReturnCode);
+	LCCMD(msgSetOutputFlag);
+	LCCMD(saveDeleteFile);
+	LCCMD(wav3DSetUseFlag);
+	LCCMD(wavFadeVolume);
+	LCCMD(patchEMEN);
+	LCCMD(wmenuEnableMsgSkip);
+	LCCMD(winGetFlipFlag);
+	LCCMD(cdGetMaxTrack);
+	LCCMD(dlgErrorOkCancel);
+	LCCMD(menuReduce);
+	LCCMD(menuGetNumof);
+	LCCMD(menuGetText);
+	LCCMD(menuGoto);
+	LCCMD(menuReturnGoto);
+	LCCMD(menuFreeShelterDIB);
+	LCCMD(msgFreeShelterDIB);
 	return 0;
+#undef LCCMD
 }
 
 static int replace_command(int cmd) {
@@ -796,8 +1024,24 @@ static int replace_command(int cmd) {
 		return cmd;
 
 	switch (cmd) {
+	case CMD2('H', 'H'): return COMMAND_newHH;
+	case CMD2('L', 'C'): return COMMAND_newLC;
+	case CMD2('L', 'E'): return COMMAND_newLE;
+	case CMD3('L', 'X', 'G'): return COMMAND_newLXG;
+	case CMD2('M', 'I'): return COMMAND_newMI;
 	case CMD2('M', 'S'): return COMMAND_newMS;
 	case CMD2('M', 'T'): return COMMAND_newMT;
+	case CMD2('N', 'T'): return COMMAND_newNT;
+	case CMD2('Q', 'E'): return COMMAND_newQE;
+	case CMD2('U', 'P'): return COMMAND_newUP;
+	case 'F': return COMMAND_newF;
+	case CMD3('M', 'H', 'H'): return COMMAND_MHH;
+	case CMD2(COMMAND_LXW, 'T'): return COMMAND_LXWT;
+	case CMD2(COMMAND_LXW, 'S'): return COMMAND_LXWS;
+	case CMD2(COMMAND_LXW, 'E'): return COMMAND_LXWE;
+	case CMD2(COMMAND_LXW, 'H'): return COMMAND_LXWH;
+	case CMD3(COMMAND_LXW, 'H', 'H'): return COMMAND_LXWHH;
+	case CMD3('L', 'X', 'F'): return COMMAND_LXF;
 	default: return cmd;
 	}
 }
@@ -815,6 +1059,15 @@ static int get_command(void) {
 			cmd |= *input++ << 8;
 		if (isupper(*input))
 			cmd |= *input++ << 16;
+
+		if (cmd == CMD3('L', 'X', 'W')) {
+			cmd = COMMAND_LXW;
+			if (isupper(*input))
+				cmd |= *input++ << 8;
+			if (isupper(*input))
+				cmd |= *input++ << 16;
+		}
+
 		if (isupper(*input))
 			error_at(command_top, "Unknown command %.4s", command_top);
 
@@ -1213,7 +1466,7 @@ static bool command(void) {
 	case CMD2('U', 'C'): arguments("ne"); break;
 	case CMD2('U', 'D'): arguments("e"); break;
 	case CMD2('U', 'G'): arguments("ee"); break;
-	case CMD2('U', 'P'): arguments("ee"); break;
+	case CMD2('U', 'P'):
 		switch (subcommand_num()) {
 		case 0:
 			arguments("ee"); break;
@@ -1287,15 +1540,135 @@ static bool command(void) {
 	case CMD2('Z', 'W'): arguments("e"); break;
 	case CMD2('Z', 'Z'): arguments("ne"); break;
 
-	case COMMAND_newMS: arguments("ez"); break;
-	case COMMAND_newMT: arguments("z"); break;
-
 	case COMMAND_IF:
 		expect('{');
 		conditional();
 		break;
 
+	case COMMAND_wavLoad: arguments("ee"); break;
+	case COMMAND_wavPlay: arguments("ee"); break;
+	case COMMAND_wavStop: arguments("e"); break;
+	case COMMAND_wavUnload: arguments("e"); break;
+	case COMMAND_wavIsPlay: arguments("ev"); break;
+	case COMMAND_wavFade: arguments("eeee"); break;
+	case COMMAND_wavIsFade: arguments("ev"); break;
+	case COMMAND_wavStopFade: arguments("e"); break;
+	case COMMAND_trace: arguments("z"); break;
+	case COMMAND_wav3DSetPos: arguments("eeee"); break;
+	case COMMAND_wav3DCommit: expect(':'); break;
+	case COMMAND_wav3DGetPos: arguments("evvv"); break;
+	case COMMAND_wav3DSetPosL: arguments("eee"); break;
+	case COMMAND_wav3DGetPosL: arguments("vvv"); break;
+	case COMMAND_wav3DFadePos: arguments("eeeee"); break;
+	case COMMAND_wav3DIsFadePos: arguments("ev"); break;
+	case COMMAND_wav3DStopFadePos: arguments("e"); break;
+	case COMMAND_wav3DFadePosL: arguments("eeee"); break;
+	case COMMAND_wav3DIsFadePosL: arguments("v"); break;
+	case COMMAND_wav3DStopFadePosL: expect(':'); break;
+	case COMMAND_sndPlay: arguments("ee"); break;
+	case COMMAND_sndStop: expect(':'); break;
+	case COMMAND_sndIsPlay: arguments("v"); break;
+	case COMMAND_msg: arguments("z"); break;
+	case COMMAND_newHH: arguments("ee"); break;
+	case COMMAND_newLC: arguments("eez"); break;
+	case COMMAND_newLE: arguments("nzee"); break;
+	case COMMAND_newLXG: arguments("ezz"); break;
+	case COMMAND_newMI: arguments("eez"); break;
+	case COMMAND_newMS: arguments("ez"); break;
+	case COMMAND_newMT: arguments("z"); break;
+	case COMMAND_newNT: arguments("z"); break;
+	case COMMAND_newQE: arguments("nzee"); break;
+	case COMMAND_newUP:
+		switch (subcommand_num()) {
+		case 0:
+			arguments("ee"); break;
+		case 1:
+			arguments("ze"); break;
+		case 2:
+		case 3:
+			arguments("zz"); break;
+		default:
+			goto unknown_command;
+		}
+		break;
+	case COMMAND_newF: arguments("nee"); break;
+	case COMMAND_wavWaitTime: arguments("ee"); break;
+	case COMMAND_wavGetPlayPos: arguments("ev"); break;
+	case COMMAND_wavWaitEnd: arguments("e"); break;
+	case COMMAND_wavGetWaveTime: arguments("ev"); break;
+	case COMMAND_menuSetCbkSelect: arguments("F"); break;
+	case COMMAND_menuSetCbkCancel: arguments("F"); break;
+	case COMMAND_menuClearCbkSelect: expect(':'); break;
+	case COMMAND_menuClearCbkCancel: expect(':'); break;
+	case COMMAND_wav3DSetMode: arguments("ee"); break;
+	case COMMAND_grCopyStretch: arguments("eeeeeeeee"); break;
+	case COMMAND_grFilterRect: arguments("eeeee"); break;
+	case COMMAND_iptClearWheelCount: expect(':'); break;
+	case COMMAND_iptGetWheelCount: arguments("vv"); break;
+	case COMMAND_menuGetFontSize: arguments("v"); break;
+	case COMMAND_msgGetFontSize: arguments("v"); break;
+	case COMMAND_strGetCharType: arguments("eev"); break;
+	case COMMAND_strGetLengthASCII: arguments("ev"); break;
+	case COMMAND_sysWinMsgLock: expect(':'); break;
+	case COMMAND_sysWinMsgUnlock: expect(':'); break;
+	case COMMAND_aryCmpCount: arguments("veev"); break;
+	case COMMAND_aryCmpTrans: arguments("veeeev"); break;
+	case COMMAND_grBlendColorRect: arguments("eeeeeeeee"); break;
+	case COMMAND_grDrawFillCircle: arguments("eeee"); break;
+	case COMMAND_MHH: arguments("eee"); break;
+	case COMMAND_menuSetCbkInit: arguments("F"); break;
+	case COMMAND_menuClearCbkInit: expect(':'); break;
+	case COMMAND_sysOpenShell: arguments("z"); break;
 	case COMMAND_sysAddWebMenu: arguments("zz"); break;
+	case COMMAND_iptSetMoveCursorTime: arguments("e"); break;
+	case COMMAND_iptGetMoveCursorTime: arguments("v"); break;
+	case COMMAND_grBlt: arguments("eeeeee"); break;
+	case COMMAND_LXWT: arguments("ez"); break;
+	case COMMAND_LXWS: arguments("ee"); break;
+	case COMMAND_LXWE: arguments("ee"); break;
+	case COMMAND_LXWH: arguments("ene"); break;
+	case COMMAND_LXWHH: arguments("ene"); break;
+	case COMMAND_sysGetOSName: arguments("e"); break;
+	case COMMAND_patchEC: arguments("e"); break;
+	case COMMAND_mathSetClipWindow: arguments("eeee"); break;
+	case COMMAND_mathClip: arguments("vvvvvv"); break;
+	case COMMAND_LXF: arguments("ezz"); break;
+	case COMMAND_strInputDlg: arguments("zeev"); break;
+	case COMMAND_strCheckASCII: arguments("ev"); break;
+	case COMMAND_strCheckSJIS: arguments("ev"); break;
+	case COMMAND_strMessageBox: arguments("z"); break;
+	case COMMAND_strMessageBoxStr: arguments("e"); break;
+	case COMMAND_grCopyUseAMapUseA: arguments("eeeeeee"); break;
+	case COMMAND_grSetCEParam: arguments("ee"); break;
+	case COMMAND_grEffectMoveView: arguments("eeee"); break;
+	case COMMAND_cgSetCacheSize: arguments("e"); break;
+	case COMMAND_gaijiSet: arguments("ee"); break;
+	case COMMAND_gaijiClearAll: expect(':'); break;
+	case COMMAND_menuGetLatestSelect: arguments("v"); break;
+	case COMMAND_lnkIsLink: arguments("eev"); break;
+	case COMMAND_lnkIsData: arguments("eev"); break;
+	case COMMAND_fncSetTable: arguments("eF"); break;
+	case COMMAND_fncSetTableFromStr: arguments("eev"); break;
+	case COMMAND_fncClearTable: arguments("e"); break;
+	case COMMAND_fncCall: arguments("e"); break;
+	case COMMAND_fncSetReturnCode: arguments("e"); break;
+	case COMMAND_fncGetReturnCode: arguments("v"); break;
+	case COMMAND_msgSetOutputFlag: arguments("e"); break;
+	case COMMAND_saveDeleteFile: arguments("ev"); break;
+	case COMMAND_wav3DSetUseFlag: arguments("e"); break;
+	case COMMAND_wavFadeVolume: arguments("eeee"); break;
+	case COMMAND_patchEMEN: arguments("e"); break;
+	case COMMAND_wmenuEnableMsgSkip: arguments("e"); break;
+	case COMMAND_winGetFlipFlag: arguments("v"); break;
+	case COMMAND_cdGetMaxTrack: arguments("v"); break;
+	case COMMAND_dlgErrorOkCancel: arguments("zv"); break;
+	case COMMAND_menuReduce: arguments("e"); break;
+	case COMMAND_menuGetNumof: arguments("v"); break;
+	case COMMAND_menuGetText: arguments("ee"); break;
+	case COMMAND_menuGoto: arguments("ee"); break;
+	case COMMAND_menuReturnGoto: arguments("ee"); break;
+	case COMMAND_menuFreeShelterDIB: expect(':'); break;
+	case COMMAND_msgFreeShelterDIB: expect(':'); break;
 
 	default:
 		goto unknown_command;
