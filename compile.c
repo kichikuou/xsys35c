@@ -804,6 +804,8 @@ static int subcommand_num(void) {
 #define CMD2F(b) CMD2(0x2f, b)
 
 enum {
+	COMMAND_inc = CMD2F(0x06),
+	COMMAND_dec = CMD2F(0x07),
 	COMMAND_wavLoad = CMD2F(0x0a),
 	COMMAND_wavPlay = CMD2F(0x0b),
 	COMMAND_wavStop = CMD2F(0x0c),
@@ -924,6 +926,8 @@ enum {
 
 static int lower_case_command(const char *s, int len) {
 #define LCCMD(cmd) if (ISKEYWORD(s, len, #cmd)) return COMMAND_ ## cmd
+	LCCMD(inc);
+	LCCMD(dec);
 	LCCMD(wavLoad);
 	LCCMD(wavPlay);
 	LCCMD(wavStop);
@@ -1549,6 +1553,8 @@ static bool command(void) {
 		conditional();
 		break;
 
+	case COMMAND_inc: arguments("v"); break;
+	case COMMAND_dec: arguments("v"); break;
 	case COMMAND_wavLoad: arguments("ee"); break;
 	case COMMAND_wavPlay: arguments("ee"); break;
 	case COMMAND_wavStop: arguments("e"); break;

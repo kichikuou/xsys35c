@@ -3,6 +3,8 @@
 **func:
 !v:0!
 
+inc v:
+dec v:
 wavLoad 0,0:
 wavPlay 0,0:
 wavStop 0:
