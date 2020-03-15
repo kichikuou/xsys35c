@@ -892,6 +892,10 @@ static bool command(void) {
 		return false;
 
 	case ']':  // Menu
+		if (sys_ver >= SYSTEM38) {
+			emit('/');
+			emit('G');
+		}
 		emit(cmd);
 		break;
 
