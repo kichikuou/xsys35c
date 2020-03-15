@@ -60,9 +60,16 @@ void skip_whitespaces(void) {
 	while (*input) {
 		if (isspace(*input)) {
 			input++;
-		} else if (*input == ';') {
-			while (*input && *input != '\n')
-				input++;
+		} else if (*input == ';' || (*input == '/' && *(input+1) == '/')) {
+			input = strchr(input, '\n');
+		} else if (*input == '/' && *(input+1) == '*') {
+			const char* top = input;
+			do {
+				input = strchr(input + 2, '*');
+				if (!input)
+					error_at(top, "unfinished comment");
+			} while (*++input != '/');
+			input++;
 		} else if (input[0] == (char)0x81 && input[1] == (char)0x40) {  // SJIS full-width space
 			input += 2;
 		} else {

@@ -84,6 +84,16 @@ int main() {
 		 "G3,1:",
 		 "\x47\x01\x43\x7f\x41\x7f");
 
+	TEST("comment",
+		 "R;AAA\nR",
+		 "RR");
+	TEST("comment2",
+		 "R//AAA\nR",
+		 "RR");
+	TEST("block-comment",
+		 "R/*A*A\nA*/R",
+		 "RR");
+
 	TEST("data array",
 		 "[1, 0b100000000, 0xffff]",
 		 "\x01\x00\x00\x01\xff\xff");
