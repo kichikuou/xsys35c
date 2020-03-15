@@ -11,10 +11,11 @@ compile_test: compile_test.o compile.o sco.o util.o
 ald_test: ald_test.o ald.o util.o
 sco_test: sco_test.o sco.o util.o
 
-test: compile_test ald_test sco_test
+test: compile_test ald_test sco_test xsys35c regression_test.sh
 	./sco_test
 	./compile_test
 	./ald_test && cmp testdata/expected.ald testdata/actual.ald && rm testdata/actual.ald
+	./regression_test.sh
 
 clean:
 	rm -rf *.o xsys35c compile_test ald_test sco_test

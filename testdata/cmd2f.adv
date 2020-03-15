@@ -1,0 +1,119 @@
+; Tests compilation of 0x2f commands
+
+**func:
+!v:0!
+
+wavLoad 0,0:
+wavPlay 0,0:
+wavStop 0:
+wavUnload 0:
+wavIsPlay 0,v:
+wavFade 0,0,0,0:
+wavIsFade 0,v:
+wavStopFade 0:
+trace "a":
+wav3DSetPos 0,0,0,0:
+wav3DCommit:
+wav3DGetPos 0,v,v,v:
+wav3DSetPosL 0,0,0:
+wav3DGetPosL v,v,v:
+wav3DFadePos 0,0,0,0,0:
+wav3DIsFadePos 0,v:
+wav3DStopFadePos 0:
+wav3DFadePosL 0,0,0,0:
+wav3DIsFadePosL v:
+wav3DStopFadePosL:
+sndPlay 0,0:
+sndStop:
+sndIsPlay v:
+msg "a":
+HH 0,0:
+LC 0,0,"a":
+LE 0,"a",0,0:
+LXG 0,"a","a":
+MI 0,0,"a":
+MS 0,"a":
+MT "a":
+NT "a":
+QE 0,"a",0,0:
+UP 2,"a","a":
+F1,0,0:
+wavWaitTime 0,0:
+wavGetPlayPos 0,v:
+wavWaitEnd 0:
+wavGetWaveTime 0,v:
+menuSetCbkSelect func:
+menuSetCbkCancel func:
+menuClearCbkSelect:
+menuClearCbkCancel:
+wav3DSetMode 0,0:
+grCopyStretch 0,0,0,0,0,0,0,0,0:
+grFilterRect 0,0,0,0,0:
+iptClearWheelCount:
+iptGetWheelCount v,v:
+menuGetFontSize v:
+msgGetFontSize v:
+strGetCharType 0,0,v:
+strGetLengthASCII 0,v:
+sysWinMsgLock:
+sysWinMsgUnlock:
+aryCmpCount v,0,0,v:
+aryCmpTrans v,0,0,0,0,v:
+grBlendColorRect 0,0,0,0,0,0,0,0,0:
+grDrawFillCircle 0,0,0,0:
+MHH 0,0,0:
+menuSetCbkInit func:
+menuClearCbkInit:
+]
+sysOpenShell "a":
+sysAddWebMenu "a","a":
+iptSetMoveCursorTime 0:
+iptGetMoveCursorTime v:
+grBlt 0,0,0,0,0,0:
+LXWT 0,"a":
+LXWS 0,0:
+LXWE 0,0:
+LXWH 0,0,0:
+LXWHH 0,0,0:
+sysGetOSName 0:
+patchEC 0:
+mathSetClipWindow 0,0,0,0:
+mathClip v,v,v,v,v,v:
+LXF 0,"a","a":
+strInputDlg "a",0,0,v:
+strCheckASCII 0,v:
+strCheckSJIS 0,v:
+strMessageBox "a":
+strMessageBoxStr 0:
+grCopyUseAMapUseA 0,0,0,0,0,0,0:
+grSetCEParam 0,0:
+grEffectMoveView 0,0,0,0:
+cgSetCacheSize 0:
+; 0x2f 0x60: DLL call
+gaijiSet 0,0:
+gaijiClearAll:
+menuGetLatestSelect v:
+lnkIsLink 0,0,v:
+lnkIsData 0,0,v:
+fncSetTable 0,func:
+fncSetTableFromStr 0,0,v:
+fncClearTable 0:
+fncCall 0:
+fncSetReturnCode 0:
+fncGetReturnCode v:
+msgSetOutputFlag 0:
+saveDeleteFile 0,v:
+wav3DSetUseFlag 0:
+wavFadeVolume 0,0,0,0:
+patchEMEN 0:
+wmenuEnableMsgSkip 0:
+winGetFlipFlag v:
+cdGetMaxTrack v:
+dlgErrorOkCancel "a",v:
+menuReduce 0:
+menuGetNumof v:
+menuGetText 0,0:
+menuGoto 0,0:
+menuReturnGoto 0,0:
+menuFreeShelterDIB:
+msgFreeShelterDIB:

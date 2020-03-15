@@ -1569,7 +1569,7 @@ static bool command(void) {
 	case COMMAND_sndStop: expect(':'); break;
 	case COMMAND_sndIsPlay: arguments("v"); break;
 	case COMMAND_msg: arguments("z"); break;
-	case COMMAND_newHH: arguments("ee"); break;
+	case COMMAND_newHH: arguments("ne"); break;
 	case COMMAND_newLC: arguments("eez"); break;
 	case COMMAND_newLE: arguments("nzee"); break;
 	case COMMAND_newLXG: arguments("ezz"); break;
