@@ -197,6 +197,12 @@ int main() {
 	TEST("msg-ascii",
 		 "'Hello'",
 		 "/!Hello\0");
+	TEST("msg-escape",
+		 "'That\\'s it'",
+		 "/!That's it\0");
+	TEST("msg-nonescape",
+		 "'\x95\x5C'",    // '表' in SJIS, where the second byte is '\'
+		 "/!\x95\x5C\0");
 
 	TEST("if-keyword",
 		 "if{0:}",

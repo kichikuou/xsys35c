@@ -193,9 +193,14 @@ void compile_string(char terminator) {
 }
 
 void compile_message(void) {
-	// TODO: Support character escaping
-	while (*input && *input != '\'')
+	// TODO: Support data embedding ("<0x...>")
+	while (*input && *input != '\'') {
+		if (*input == '\\')
+			input++;
+		if (is_sjis_byte1(*input) && is_sjis_byte2(*(input+1)))
+			echo();
 		echo();
+	}
 	expect('\'');
 	emit(0);
 }
