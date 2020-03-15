@@ -97,6 +97,41 @@ uint32_t swap_dword(uint32_t addr, uint32_t val) {
 	return oldval;
 }
 
+void emit_var(int var_id) {
+	if (var_id <= 0x3f) {
+		emit(var_id + 0x80);
+	} else if (var_id <= 0xff) {
+		emit(0xc0);
+		emit(var_id);
+	} else if (var_id <= 0x3fff) {
+		emit_word_be(var_id + 0xc000);
+	} else {
+		error("emit_var(%d): not implemented", var_id);
+	}
+}
+
+void emit_number(int n) {
+	int addop = 0;
+	while (n > 0x3fff) {
+		emit(0x3f);
+		emit(0xff);
+		n -= 0x3fff;
+		addop++;
+	}
+	if (n <= 0x33) {
+		emit(n + 0x40);
+	} else {
+		emit_word_be(n);
+	}
+	for (int i = 0; i < addop; i++)
+		emit(OP_ADD);
+}
+
+void emit_command(int cmd) {
+	for (; cmd; cmd >>= 8)
+		emit(cmd & 0xff);
+}
+
 void sco_init(const char *src_name, int pageno) {
 	out.buf = calloc(1, 4096);
 	out.cap = 4096;

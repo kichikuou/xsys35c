@@ -18,35 +18,10 @@
 #include "xsys35c.h"
 #include <assert.h>
 #include <ctype.h>
-#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 
-enum {
-	OP_AND = 0x74,
-	OP_OR,
-	OP_XOR,
-	OP_MUL,
-	OP_DIV,
-	OP_ADD,
-	OP_SUB,
-	OP_EQ,
-	OP_LT,
-	OP_GT,
-	OP_NE,
-	OP_END, // End of expression
-};
-enum {
-	OP_C0_MOD = 2,
-	OP_C0_LE,
-	OP_C0_GE,
-};
-
 static Compiler *compiler;
-static const char *input_name;
-static int input_page;
-static const char *input_buf;
-static const char *input;
 static const char *menu_item_start;
 static bool compiling;
 
@@ -58,113 +33,6 @@ typedef struct {
 
 Map *labels;
 
-static bool is_identifier(uint8_t c) {
-	return isalnum(c) || c == '_' || is_sjis_byte1(c) || is_sjis_half_kana(c);
-}
-
-static noreturn void error_at(const char *pos, char *fmt, ...) {
-	int line = 1;
-	for (const char *begin = input_buf;; line++) {
-		const char *end = strchr(begin, '\n');
-		if (!end)  // last line
-			end = strchr(begin, '\0');
-		if (pos <= end) {
-			int col = pos - begin;
-			fprintf(stderr, "%s line %d column %d: ", sjis2utf(input_name), line, col);
-			va_list args;
-			va_start(args, fmt);
-			vfprintf(stderr, fmt, args);
-			fprintf(stderr, "\n");
-			fprintf(stderr, "%s\n", sjis2utf(strndup(begin, end - begin)));
-			fprintf(stderr, "%*s^\n", (int)(pos - begin), "");
-			break;
-		}
-		if (!*end)
-			error("BUG: cannot find error location");
-		begin = end + 1;
-	}
-	exit(1);
-}
-
-static void skip_whitespaces(void) {
-	while (*input) {
-		if (isspace(*input)) {
-			input++;
-		} else if (*input == ';') {
-			while (*input && *input != '\n')
-				input++;
-		} else if (input[0] == (char)0x81 && input[1] == (char)0x40) {  // SJIS full-width space
-			input += 2;
-		} else {
-			break;
-		}
-	}
-	return;
-}
-
-static char next_char(void) {
-	skip_whitespaces();
-	return *input;
-}
-
-static bool consume(char c) {
-	if (next_char() != c)
-		return false;
-	input++;
-	return true;
-}
-
-static void expect(char c) {
-	if (next_char() != c)
-		error_at(input, "'%c' expected", c);
-	input++;
-}
-
-static bool consume_keyword(const char *keyword) {
-	skip_whitespaces();
-	if (*input != *keyword)
-		return false;
-	int len = strlen(keyword);
-	if (!strncmp(input, keyword, len) && !isalnum(input[len]) && input[len] != '_') {
-		input += len;
-		return true;
-	}
-	return false;
-}
-
-static uint8_t echo(void) {
-	uint8_t c = *input++;
-	emit(c);
-	return c;
-}
-
-static char *get_identifier(void) {
-	skip_whitespaces();
-	const char *top = input;
-	if (!is_identifier(*top) || isdigit(*top))
-		error_at(top, "identifier expected");
-	while (is_identifier(*input)) {
-		if (is_sjis_byte1(input[0]) && is_sjis_byte2(input[1]))
-			input++;
-		input++;
-	}
-	return strndup(top, input - top);
-}
-
-static char *get_label() {
-	skip_whitespaces();
-	const char *top = input;
-	while (isalnum(*input) || *input == '_' || *input == '-' ||
-		   is_sjis_byte1(*input) || is_sjis_half_kana(*input)) {
-		if (is_sjis_byte1(input[0]) && is_sjis_byte2(input[1]))
-			input++;
-		input++;
-	}
-	if (input == top)
-		error_at(top, "label expected");
-	return strndup(top, input - top);
-}
-
 static int lookup_var(char *var, bool create) {
 	for (int i = 0; i < compiler->variables->len; i++) {
 		if (!strcmp(var, compiler->variables->data[i]))
@@ -175,19 +43,6 @@ static int lookup_var(char *var, bool create) {
 		return compiler->variables->len - 1;
 	}
 	return -1;
-}
-
-static void emit_var(int var_id) {
-	if (var_id <= 0x3f) {
-		emit(var_id + 0x80);
-	} else if (var_id <= 0xff) {
-		emit(0xc0);
-		emit(var_id);
-	} else if (var_id <= 0x3fff) {
-		emit_word_be(var_id + 0xc000);
-	} else {
-		error("emit_var(%d): not implemented", var_id);
-	}
 }
 
 static void expr(void);
@@ -205,54 +60,6 @@ static void variable(bool create) {
 	} else {
 		emit_var(var);
 	}
-}
-
-static void emit_number(int n) {
-	int addop = 0;
-	while (n > 0x3fff) {
-		emit(0x3f);
-		emit(0xff);
-		n -= 0x3fff;
-		addop++;
-	}
-	if (n <= 0x33) {
-		emit(n + 0x40);
-	} else {
-		emit_word_be(n);
-	}
-	for (int i = 0; i < addop; i++)
-		emit(OP_ADD);
-}
-
-static char *get_filename(void) {
-	const char *top = input;
-	while (isalnum(*input) || *input == '.' || *input == '_' || is_sjis_byte1(*input) || is_sjis_half_kana(*input)) {
-		if (is_sjis_byte1(input[0]) && is_sjis_byte2(input[1]))
-			input++;
-		input++;
-	}
-	if (input == top)
-		error_at(top, "file name expected");
-
-	return strndup(top, input - top);
-}
-
-// number ::= [0-9]+ | '0' [xX] [0-9a-fA-F]+ | '0' [bB] [01]+
-static int get_number(void) {
-	if (!isdigit(next_char()))
-		error_at(input, "number expected");
-	int base = 10;
-	if (input[0] == '0' && tolower(input[1]) == 'x') {
-		base = 16;
-		input += 2;
-	} else if (input[0] == '0' && tolower(input[1]) == 'b') {
-		base = 2;
-		input += 2;
-	}
-	char *p;
-	long n = strtol(input, &p, base);
-	input = p;
-	return n;
 }
 
 static void number(void) {
@@ -276,10 +83,8 @@ static void expr_prim(void) {
 			}
 		}
 		error_at(top, "reference to unknown source file: '%s'", fname);
-	} else if (is_identifier(*input)) {
-		variable(false);
 	} else {
-		error_at(input, "invalid expression");
+		variable(false);
 	}
 }
 
@@ -676,39 +481,6 @@ static void assign(void) {
 	expect('!');
 }
 
-static void string(char terminator) {
-	const char *top = input;
-	while (*input != terminator) {
-		if (!*input)
-			error_at(top, "unfinished message");
-		// Currently only SJIS full-width characters are allowed.
-		uint8_t c1 = *input++;
-		uint8_t c2 = *input++;
-		if (!is_sjis_byte1(c1) || !is_sjis_byte2(c2))
-			error_at(input - 2, "invalid SJIS character: %02x %02x", c1, c2);
-		uint8_t hk = 0;
-		if (sys_ver == SYSTEM35)
-			hk = to_sjis_half_kana(c1, c2);
-		if (hk) {
-			emit(hk);
-		} else {
-			emit(c1);
-			emit(c2);
-		}
-	}
-	expect(terminator);
-}
-
-static void message() {
-	emit('/');
-	emit('!');
-	// TODO: Support character escaping
-	while (*input && *input != '\'')
-		echo();
-	expect('\'');
-	emit(0);
-}
-
 // conditional ::= '{' expr ':' commands '}'
 static void conditional(void) {
 	emit('{');
@@ -798,315 +570,6 @@ static int subcommand_num(void) {
 	return n;
 }
 
-#define ISKEYWORD(s, len, kwd) ((len) == sizeof(kwd) - 1 && !memcmp((s), (kwd), (len)))
-#define CMD2(a, b) (a | b << 8)
-#define CMD3(a, b, c) (a | b << 8 | c << 16)
-#define CMD2F(b) CMD2(0x2f, b)
-
-enum {
-	COMMAND_inc = CMD2F(0x06),
-	COMMAND_dec = CMD2F(0x07),
-	COMMAND_wavLoad = CMD2F(0x0a),
-	COMMAND_wavPlay = CMD2F(0x0b),
-	COMMAND_wavStop = CMD2F(0x0c),
-	COMMAND_wavUnload = CMD2F(0x0d),
-	COMMAND_wavIsPlay = CMD2F(0x0e),
-	COMMAND_wavFade = CMD2F(0x0f),
-	COMMAND_wavIsFade = CMD2F(0x10),
-	COMMAND_wavStopFade = CMD2F(0x11),
-	COMMAND_trace = CMD2F(0x12),
-	COMMAND_wav3DSetPos = CMD2F(0x13),
-	COMMAND_wav3DCommit = CMD2F(0x14),
-	COMMAND_wav3DGetPos = CMD2F(0x15),
-	COMMAND_wav3DSetPosL = CMD2F(0x16),
-	COMMAND_wav3DGetPosL = CMD2F(0x17),
-	COMMAND_wav3DFadePos = CMD2F(0x18),
-	COMMAND_wav3DIsFadePos = CMD2F(0x19),
-	COMMAND_wav3DStopFadePos = CMD2F(0x1a),
-	COMMAND_wav3DFadePosL = CMD2F(0x1b),
-	COMMAND_wav3DIsFadePosL = CMD2F(0x1c),
-	COMMAND_wav3DStopFadePosL = CMD2F(0x1d),
-	COMMAND_sndPlay = CMD2F(0x1e),
-	COMMAND_sndStop = CMD2F(0x1f),
-	COMMAND_sndIsPlay = CMD2F(0x20),
-	COMMAND_msg = CMD2F(0x21),
-	COMMAND_newHH = CMD2F(0x22),
-	COMMAND_newLC = CMD2F(0x23),
-	COMMAND_newLE = CMD2F(0x24),
-	COMMAND_newLXG = CMD2F(0x25),
-	COMMAND_newMI = CMD2F(0x26),
-	COMMAND_newMS = CMD2F(0x27),
-	COMMAND_newMT = CMD2F(0x28),
-	COMMAND_newNT = CMD2F(0x29),
-	COMMAND_newQE = CMD2F(0x2a),
-	COMMAND_newUP = CMD2F(0x2b),
-	COMMAND_newF = CMD2F(0x2c),
-	COMMAND_wavWaitTime = CMD2F(0x2d),
-	COMMAND_wavGetPlayPos = CMD2F(0x2e),
-	COMMAND_wavWaitEnd = CMD2F(0x2f),
-	COMMAND_wavGetWaveTime = CMD2F(0x30),
-	COMMAND_menuSetCbkSelect = CMD2F(0x31),
-	COMMAND_menuSetCbkCancel = CMD2F(0x32),
-	COMMAND_menuClearCbkSelect = CMD2F(0x33),
-	COMMAND_menuClearCbkCancel = CMD2F(0x34),
-	COMMAND_wav3DSetMode = CMD2F(0x35),
-	COMMAND_grCopyStretch = CMD2F(0x36),
-	COMMAND_grFilterRect = CMD2F(0x37),
-	COMMAND_iptClearWheelCount = CMD2F(0x38),
-	COMMAND_iptGetWheelCount = CMD2F(0x39),
-	COMMAND_menuGetFontSize = CMD2F(0x3a),
-	COMMAND_msgGetFontSize = CMD2F(0x3b),
-	COMMAND_strGetCharType = CMD2F(0x3c),
-	COMMAND_strGetLengthASCII = CMD2F(0x3d),
-	COMMAND_sysWinMsgLock = CMD2F(0x3e),
-	COMMAND_sysWinMsgUnlock = CMD2F(0x3f),
-	COMMAND_aryCmpCount = CMD2F(0x40),
-	COMMAND_aryCmpTrans = CMD2F(0x41),
-	COMMAND_grBlendColorRect = CMD2F(0x42),
-	COMMAND_grDrawFillCircle = CMD2F(0x43),
-	COMMAND_MHH = CMD2F(0x44),
-	COMMAND_menuSetCbkInit = CMD2F(0x45),
-	COMMAND_menuClearCbkInit = CMD2F(0x46),
-	COMMAND_menu = CMD2F(0x47),
-	COMMAND_sysOpenShell = CMD2F(0x48),
-	COMMAND_sysAddWebMenu = CMD2F(0x49),
-	COMMAND_iptSetMoveCursorTime = CMD2F(0x4a),
-	COMMAND_iptGetMoveCursorTime = CMD2F(0x4b),
-	COMMAND_grBlt = CMD2F(0x4c),
-	COMMAND_LXWT = CMD2F(0x4d),
-	COMMAND_LXWS = CMD2F(0x4e),
-	COMMAND_LXWE = CMD2F(0x4f),
-	COMMAND_LXWH = CMD2F(0x50),
-	COMMAND_LXWHH = CMD2F(0x51),
-	COMMAND_sysGetOSName = CMD2F(0x52),
-	COMMAND_patchEC = CMD2F(0x53),
-	COMMAND_mathSetClipWindow = CMD2F(0x54),
-	COMMAND_mathClip = CMD2F(0x55),
-	COMMAND_LXF = CMD2F(0x56),
-	COMMAND_strInputDlg = CMD2F(0x57),
-	COMMAND_strCheckASCII = CMD2F(0x58),
-	COMMAND_strCheckSJIS = CMD2F(0x59),
-	COMMAND_strMessageBox = CMD2F(0x5a),
-	COMMAND_strMessageBoxStr = CMD2F(0x5b),
-	COMMAND_grCopyUseAMapUseA = CMD2F(0x5c),
-	COMMAND_grSetCEParam = CMD2F(0x5d),
-	COMMAND_grEffectMoveView = CMD2F(0x5e),
-	COMMAND_cgSetCacheSize = CMD2F(0x5f),
-	COMMAND_gaijiSet = CMD2F(0x61),
-	COMMAND_gaijiClearAll = CMD2F(0x62),
-	COMMAND_menuGetLatestSelect = CMD2F(0x63),
-	COMMAND_lnkIsLink = CMD2F(0x64),
-	COMMAND_lnkIsData = CMD2F(0x65),
-	COMMAND_fncSetTable = CMD2F(0x66),
-	COMMAND_fncSetTableFromStr = CMD2F(0x67),
-	COMMAND_fncClearTable = CMD2F(0x68),
-	COMMAND_fncCall = CMD2F(0x69),
-	COMMAND_fncSetReturnCode = CMD2F(0x6a),
-	COMMAND_fncGetReturnCode = CMD2F(0x6b),
-	COMMAND_msgSetOutputFlag = CMD2F(0x6c),
-	COMMAND_saveDeleteFile = CMD2F(0x6d),
-	COMMAND_wav3DSetUseFlag = CMD2F(0x6e),
-	COMMAND_wavFadeVolume = CMD2F(0x6f),
-	COMMAND_patchEMEN = CMD2F(0x70),
-	COMMAND_wmenuEnableMsgSkip = CMD2F(0x71),
-	COMMAND_winGetFlipFlag = CMD2F(0x72),
-	COMMAND_cdGetMaxTrack = CMD2F(0x73),
-	COMMAND_dlgErrorOkCancel = CMD2F(0x74),
-	COMMAND_menuReduce = CMD2F(0x75),
-	COMMAND_menuGetNumof = CMD2F(0x76),
-	COMMAND_menuGetText = CMD2F(0x77),
-	COMMAND_menuGoto = CMD2F(0x78),
-	COMMAND_menuReturnGoto = CMD2F(0x79),
-	COMMAND_menuFreeShelterDIB = CMD2F(0x7a),
-	COMMAND_msgFreeShelterDIB = CMD2F(0x7b),
-	// Pseudo commands
-	COMMAND_IF = 0x80,
-	COMMAND_LXW = 0x81,
-};
-
-static int lower_case_command(const char *s, int len) {
-#define LCCMD(cmd) if (ISKEYWORD(s, len, #cmd)) return COMMAND_ ## cmd
-	LCCMD(inc);
-	LCCMD(dec);
-	LCCMD(wavLoad);
-	LCCMD(wavPlay);
-	LCCMD(wavStop);
-	LCCMD(wavUnload);
-	LCCMD(wavIsPlay);
-	LCCMD(wavFade);
-	LCCMD(wavIsFade);
-	LCCMD(wavStopFade);
-	LCCMD(trace);
-	LCCMD(wav3DSetPos);
-	LCCMD(wav3DCommit);
-	LCCMD(wav3DGetPos);
-	LCCMD(wav3DSetPosL);
-	LCCMD(wav3DGetPosL);
-	LCCMD(wav3DFadePos);
-	LCCMD(wav3DIsFadePos);
-	LCCMD(wav3DStopFadePos);
-	LCCMD(wav3DFadePosL);
-	LCCMD(wav3DIsFadePosL);
-	LCCMD(wav3DStopFadePosL);
-	LCCMD(sndPlay);
-	LCCMD(sndStop);
-	LCCMD(sndIsPlay);
-	LCCMD(msg);
-	LCCMD(wavWaitTime);
-	LCCMD(wavGetPlayPos);
-	LCCMD(wavWaitEnd);
-	LCCMD(wavGetWaveTime);
-	LCCMD(menuSetCbkSelect);
-	LCCMD(menuSetCbkCancel);
-	LCCMD(menuClearCbkSelect);
-	LCCMD(menuClearCbkCancel);
-	LCCMD(wav3DSetMode);
-	LCCMD(grCopyStretch);
-	LCCMD(grFilterRect);
-	LCCMD(iptClearWheelCount);
-	LCCMD(iptGetWheelCount);
-	LCCMD(menuGetFontSize);
-	LCCMD(msgGetFontSize);
-	LCCMD(strGetCharType);
-	LCCMD(strGetLengthASCII);
-	LCCMD(sysWinMsgLock);
-	LCCMD(sysWinMsgUnlock);
-	LCCMD(aryCmpCount);
-	LCCMD(aryCmpTrans);
-	LCCMD(grBlendColorRect);
-	LCCMD(grDrawFillCircle);
-	LCCMD(menuSetCbkInit);
-	LCCMD(menuClearCbkInit);
-	LCCMD(menu);
-	LCCMD(sysOpenShell);
-	LCCMD(sysAddWebMenu);
-	LCCMD(iptSetMoveCursorTime);
-	LCCMD(iptGetMoveCursorTime);
-	LCCMD(grBlt);
-	LCCMD(sysGetOSName);
-	LCCMD(patchEC);
-	LCCMD(mathSetClipWindow);
-	LCCMD(mathClip);
-	LCCMD(strInputDlg);
-	LCCMD(strCheckASCII);
-	LCCMD(strCheckSJIS);
-	LCCMD(strMessageBox);
-	LCCMD(strMessageBoxStr);
-	LCCMD(grCopyUseAMapUseA);
-	LCCMD(grSetCEParam);
-	LCCMD(grEffectMoveView);
-	LCCMD(cgSetCacheSize);
-	LCCMD(gaijiSet);
-	LCCMD(gaijiClearAll);
-	LCCMD(menuGetLatestSelect);
-	LCCMD(lnkIsLink);
-	LCCMD(lnkIsData);
-	LCCMD(fncSetTable);
-	LCCMD(fncSetTableFromStr);
-	LCCMD(fncClearTable);
-	LCCMD(fncCall);
-	LCCMD(fncSetReturnCode);
-	LCCMD(fncGetReturnCode);
-	LCCMD(msgSetOutputFlag);
-	LCCMD(saveDeleteFile);
-	LCCMD(wav3DSetUseFlag);
-	LCCMD(wavFadeVolume);
-	LCCMD(patchEMEN);
-	LCCMD(wmenuEnableMsgSkip);
-	LCCMD(winGetFlipFlag);
-	LCCMD(cdGetMaxTrack);
-	LCCMD(dlgErrorOkCancel);
-	LCCMD(menuReduce);
-	LCCMD(menuGetNumof);
-	LCCMD(menuGetText);
-	LCCMD(menuGoto);
-	LCCMD(menuReturnGoto);
-	LCCMD(menuFreeShelterDIB);
-	LCCMD(msgFreeShelterDIB);
-	return 0;
-#undef LCCMD
-}
-
-static int replace_command(int cmd) {
-	if (sys_ver < SYSTEM38)
-		return cmd;
-
-	switch (cmd) {
-	case CMD2('H', 'H'): return COMMAND_newHH;
-	case CMD2('L', 'C'): return COMMAND_newLC;
-	case CMD2('L', 'E'): return COMMAND_newLE;
-	case CMD3('L', 'X', 'G'): return COMMAND_newLXG;
-	case CMD2('M', 'I'): return COMMAND_newMI;
-	case CMD2('M', 'S'): return COMMAND_newMS;
-	case CMD2('M', 'T'): return COMMAND_newMT;
-	case CMD2('N', 'T'): return COMMAND_newNT;
-	case CMD2('Q', 'E'): return COMMAND_newQE;
-	case CMD2('U', 'P'): return COMMAND_newUP;
-	case 'F': return COMMAND_newF;
-	case CMD3('M', 'H', 'H'): return COMMAND_MHH;
-	case CMD2(COMMAND_LXW, 'T'): return COMMAND_LXWT;
-	case CMD2(COMMAND_LXW, 'S'): return COMMAND_LXWS;
-	case CMD2(COMMAND_LXW, 'E'): return COMMAND_LXWE;
-	case CMD2(COMMAND_LXW, 'H'): return COMMAND_LXWH;
-	case CMD3(COMMAND_LXW, 'H', 'H'): return COMMAND_LXWHH;
-	case CMD3('L', 'X', 'F'): return COMMAND_LXF;
-	default: return cmd;
-	}
-}
-
-static int get_command(void) {
-	const char *command_top = input;
-
-	if (!*input || *input == '}' || *input == '>')
-		return *input;
-	if (*input == 'A' || *input == 'R')
-		return echo();
-	if (isupper(*input)) {
-		int cmd = *input++;
-		if (isupper(*input))
-			cmd |= *input++ << 8;
-		if (isupper(*input))
-			cmd |= *input++ << 16;
-
-		if (cmd == CMD3('L', 'X', 'W')) {
-			cmd = COMMAND_LXW;
-			if (isupper(*input))
-				cmd |= *input++ << 8;
-			if (isupper(*input))
-				cmd |= *input++ << 16;
-		}
-
-		if (isupper(*input))
-			error_at(command_top, "Unknown command %.4s", command_top);
-
-		if (cmd == 'N' && strchr("+-*/><=\\&|^~", *input))
-			cmd |= *input++ << 8;
-		if (cmd == CMD2('N', 'D') && strchr("+-*/", *input))
-			cmd |= *input++ << 16;
-
-		cmd = replace_command(cmd);
-
-		for (int n = cmd; n; n >>= 8)
-			emit(n & 0xff);
-		return cmd;
-	}
-	if (sys_ver >= SYSTEM38 && islower(*input)) {
-		while (isalnum(*++input))
-			;
-		int len = input - command_top;
-		if (ISKEYWORD(command_top, len, "if"))
-			return COMMAND_IF;
-		int cmd = lower_case_command(command_top, len);
-		if (cmd) {
-			for (int n = cmd; n; n >>= 8)
-				emit(n & 0xff);
-			return cmd;
-		}
-		error_at(command_top, "Unknown command %.*s", len, command_top);
-	}
-	return *input++;
-}
-
 static bool command(void) {
 	skip_whitespaces();
 	const char *command_top = input;
@@ -1120,10 +583,12 @@ static bool command(void) {
 		break;
 
 	case '\'': // Message
-		if (sys_ver >= SYSTEM38)
-			message();
-		else
-			string('\'');
+		if (sys_ver >= SYSTEM38) {
+			emit_command(COMMAND_msg);
+			compile_message();
+		} else {
+			compile_string('\'');
+		}
 		break;
 
 	case '!':  // Assign
@@ -1184,10 +649,8 @@ static bool command(void) {
 		return false;
 
 	case ']':  // Menu
-		if (sys_ver >= SYSTEM38) {
-			emit('/');
-			emit('G');
-		}
+		if (sys_ver >= SYSTEM38)
+			emit_command(COMMAND_menu);
 		emit(cmd);
 		break;
 
@@ -1200,7 +663,7 @@ static bool command(void) {
 		label();
 		expect('$');
 		if (is_sjis_byte1(*input) || is_sjis_half_kana(*input)) {
-			string('$');
+			compile_string('$');
 			emit('$');
 		} else {
 			menu_item_start = command_top;
@@ -1221,7 +684,7 @@ static bool command(void) {
 		break;
 
 	case '"':  // String data
-		string('"');
+		compile_string('"');
 		emit(0);
 		break;
 
@@ -1703,9 +1166,7 @@ void compiler_init(Compiler *comp, Vector *src_names) {
 
 static void prepare(Compiler *comp, const char *source, int pageno) {
 	compiler = comp;
-	input_buf = input = source;
-	input_name = comp->src_names->data[pageno];
-	input_page = pageno;
+	lexer_init(source, comp->src_names->data[pageno], pageno);
 	menu_item_start = NULL;
 }
 

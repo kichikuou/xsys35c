@@ -1,13 +1,13 @@
-CFLAGS = -std=c11 -Wall -g
+CFLAGS = -std=c11 -Wall -O2
 LDFLAGS = -liconv
 SRCS=$(wildcard *.c)
 OBJS=$(SRCS:.c=.o)
 
-xsys35c: xsys35c.o compile.o sco.o ald.o util.o
+xsys35c: xsys35c.o compile.o lexer.o sco.o ald.o util.o
 
 $(OBJS): xsys35c.h
 
-compile_test: compile_test.o compile.o sco.o util.o
+compile_test: compile_test.o compile.o lexer.o sco.o util.o
 ald_test: ald_test.o ald.o util.o
 sco_test: sco_test.o sco.o util.o
 
