@@ -64,8 +64,10 @@ static bool is_identifier(uint8_t c) {
 
 static noreturn void error_at(const char *pos, char *fmt, ...) {
 	int line = 1;
-	const char *begin, *end;
-	for (begin = input_buf; (end = strchr(begin, '\n')); line++) {
+	for (const char *begin = input_buf;; line++) {
+		const char *end = strchr(begin, '\n');
+		if (!end)  // last line
+			end = strchr(begin, '\0');
 		if (pos <= end) {
 			int col = pos - begin;
 			fprintf(stderr, "%s line %d column %d: ", sjis2utf(input_name), line, col);
@@ -77,6 +79,8 @@ static noreturn void error_at(const char *pos, char *fmt, ...) {
 			fprintf(stderr, "%*s^\n", (int)(pos - begin), "");
 			break;
 		}
+		if (!*end)
+			error("BUG: cannot find error location");
 		begin = end + 1;
 	}
 	exit(1);
