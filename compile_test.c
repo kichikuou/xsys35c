@@ -208,4 +208,11 @@ int main() {
 		 "{0:A} else if {1:A} else {A}",
 		 "\x7b\x40\x7f\x2d\x00\x00\x00\x41\x40\x3b\x00\x00\x00\x7b\x41\x7f"
 		 "\x3a\x00\x00\x00\x41\x40\x3b\x00\x00\x00\x41");
+
+	TEST("newMT",
+		 "MT \"Title\":",
+		 "/(Title\0");
+	TEST("lccmd",
+		 "sysAddWebMenu \"Home page\", \"https://kichikuou.github.io/\":",
+		 "/IHome page\0https://kichikuou.github.io/\0");
 }

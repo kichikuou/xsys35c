@@ -774,13 +774,33 @@ static int subcommand_num(void) {
 	return n;
 }
 
-enum {
-	COMMAND_IF = 0x80,
-};
-
 #define ISKEYWORD(s, len, kwd) ((len) == sizeof(kwd) - 1 && !memcmp((s), (kwd), (len)))
 #define CMD2(a, b) (a | b << 8)
 #define CMD3(a, b, c) (a | b << 8 | c << 16)
+
+enum {
+	COMMAND_IF = 0x80,
+	COMMAND_newMS = CMD2('/', '\''),
+	COMMAND_newMT = CMD2('/', '('),
+	COMMAND_sysAddWebMenu = CMD2('/', 'I'),
+};
+
+static int lower_case_command(const char *s, int len) {
+	if (ISKEYWORD(s, len, "sysAddWebMenu"))
+		return COMMAND_sysAddWebMenu;
+	return 0;
+}
+
+static int replace_command(int cmd) {
+	if (sys_ver < SYSTEM38)
+		return cmd;
+
+	switch (cmd) {
+	case CMD2('M', 'S'): return COMMAND_newMS;
+	case CMD2('M', 'T'): return COMMAND_newMT;
+	default: return cmd;
+	}
+}
 
 static int get_command(void) {
 	const char *command_top = input;
@@ -790,26 +810,37 @@ static int get_command(void) {
 	if (*input == 'A' || *input == 'R')
 		return echo();
 	if (isupper(*input)) {
-		int cmd = echo();
+		int cmd = *input++;
 		if (isupper(*input))
-			cmd |= echo() << 8;
+			cmd |= *input++ << 8;
 		if (isupper(*input))
-			cmd |= echo() << 16;
+			cmd |= *input++ << 16;
 		if (isupper(*input))
 			error_at(command_top, "Unknown command %.4s", command_top);
 
 		if (cmd == 'N' && strchr("+-*/><=\\&|^~", *input))
-			cmd |= echo() << 8;
+			cmd |= *input++ << 8;
 		if (cmd == CMD2('N', 'D') && strchr("+-*/", *input))
-			cmd |= echo() << 16;
+			cmd |= *input++ << 16;
+
+		cmd = replace_command(cmd);
+
+		for (int n = cmd; n; n >>= 8)
+			emit(n & 0xff);
 		return cmd;
 	}
-	if (islower(*input)) {
+	if (sys_ver >= SYSTEM38 && islower(*input)) {
 		while (isalnum(*++input))
 			;
 		int len = input - command_top;
 		if (ISKEYWORD(command_top, len, "if"))
 			return COMMAND_IF;
+		int cmd = lower_case_command(command_top, len);
+		if (cmd) {
+			for (int n = cmd; n; n >>= 8)
+				emit(n & 0xff);
+			return cmd;
+		}
 		error_at(command_top, "Unknown command %.*s", len, command_top);
 	}
 	return *input++;
@@ -1256,10 +1287,15 @@ static bool command(void) {
 	case CMD2('Z', 'W'): arguments("e"); break;
 	case CMD2('Z', 'Z'): arguments("ne"); break;
 
+	case COMMAND_newMS: arguments("ez"); break;
+	case COMMAND_newMT: arguments("z"); break;
+
 	case COMMAND_IF:
 		expect('{');
 		conditional();
 		break;
+
+	case COMMAND_sysAddWebMenu: arguments("zz"); break;
 
 	default:
 		goto unknown_command;
