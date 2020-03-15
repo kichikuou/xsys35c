@@ -204,6 +204,8 @@ int main() {
 
 	sys_ver = SYSTEM38;
 
+	TEST("TOC", "TOC:", "\x2f\x00");
+
 	TEST("msg-ascii",
 		 "'Hello'",
 		 "/!Hello\0");

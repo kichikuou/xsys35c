@@ -3,8 +3,16 @@
 **func:
 !v:0!
 
+TOC:
+TOS:
+TPC 0:
+TPS 0:
+TOP:
+TPP:
 inc v:
 dec v:
+TAA 0:
+TAB v:
 wavLoad 0,0:
 wavPlay 0,0:
 wavStop 0:

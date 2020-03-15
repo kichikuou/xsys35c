@@ -322,6 +322,14 @@ static int replace_command(int cmd) {
 		return cmd;
 
 	switch (cmd) {
+	case CMD3('T', 'O', 'C'): return COMMAND_TOC;
+	case CMD3('T', 'O', 'S'): return COMMAND_TOS;
+	case CMD3('T', 'P', 'C'): return COMMAND_TPC;
+	case CMD3('T', 'P', 'S'): return COMMAND_TPS;
+	case CMD3('T', 'O', 'P'): return COMMAND_TOP;
+	case CMD3('T', 'P', 'P'): return COMMAND_TPP;
+	case CMD3('T', 'A', 'A'): return COMMAND_TAA;
+	case CMD3('T', 'A', 'B'): return COMMAND_TAB;
 	case CMD2('H', 'H'): return COMMAND_newHH;
 	case CMD2('L', 'C'): return COMMAND_newLC;
 	case CMD2('L', 'E'): return COMMAND_newLE;

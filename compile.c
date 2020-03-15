@@ -740,12 +740,17 @@ static bool command(void) {
 	case CMD2('C', 'U'): arguments("eeeeee"); break;
 	case CMD2('C', 'V'): arguments("eeeeee"); break;
 	case CMD2('C', 'X'): arguments("eeeeeeee"); break;
+	case CMD2('C', 'Y'): arguments("eeeee"); break;
+	case CMD2('C', 'Z'): arguments("eeeeeee"); break;
 	case CMD2('D', 'C'): arguments("eee"); break;
 	case CMD2('D', 'F'): arguments("vee"); break;
 	case CMD2('D', 'I'): arguments("evv"); break;
 	case CMD2('D', 'R'): arguments("v"); break;
 	case CMD2('D', 'S'): arguments("vvee"); break;
 	case CMD2('E', 'C'): arguments("e"); break;
+	case CMD2('E', 'G'): arguments("evvvv"); break;
+	case CMD2('E', 'M'): arguments("evee"); break;
+	case CMD2('E', 'N'): arguments("veeee"); break;
 	case CMD2('E', 'S'): arguments("eeeeee"); break;
 	case 'F': arguments("nee"); break;
 	case 'G':
@@ -1016,8 +1021,16 @@ static bool command(void) {
 		conditional();
 		break;
 
+	case COMMAND_TOC: expect(':'); break;
+	case COMMAND_TOS: expect(':'); break;
+	case COMMAND_TPC: arguments("e"); break;
+	case COMMAND_TPS: arguments("e"); break;
+	case COMMAND_TOP: expect(':'); break;
+	case COMMAND_TPP: expect(':'); break;
 	case COMMAND_inc: arguments("v"); break;
 	case COMMAND_dec: arguments("v"); break;
+	case COMMAND_TAA: arguments("e"); break;
+	case COMMAND_TAB: arguments("v"); break;
 	case COMMAND_wavLoad: arguments("ee"); break;
 	case COMMAND_wavPlay: arguments("ee"); break;
 	case COMMAND_wavStop: arguments("e"); break;

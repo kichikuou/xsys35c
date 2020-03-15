@@ -128,8 +128,10 @@ void emit_number(int n) {
 }
 
 void emit_command(int cmd) {
-	for (; cmd; cmd >>= 8)
-		emit(cmd & 0xff);
+	for (int n = cmd; n; n >>= 8)
+		emit(n & 0xff);
+	if (cmd == COMMAND_TOC)  // Only this command has '\0'
+		emit(0);
 }
 
 void sco_init(const char *src_name, int pageno) {
