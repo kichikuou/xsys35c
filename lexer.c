@@ -118,7 +118,8 @@ uint8_t echo(void) {
 }
 
 static bool is_identifier(uint8_t c) {
-	return isalnum(c) || c == '_' || is_sjis_byte1(c) || is_sjis_half_kana(c);
+	return isalnum(c) || is_sjis_byte1(c) || is_sjis_half_kana(c)
+		|| c == '_' || c == '.';
 }
 
 char *get_identifier(void) {
