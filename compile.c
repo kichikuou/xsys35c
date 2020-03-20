@@ -925,7 +925,7 @@ static bool command(void) {
 	case CMD2('S', 'U'): arguments("vv"); break;
 	case CMD2('S', 'W'): arguments("veee"); break;
 	case CMD2('S', 'X'):
-		echo();  // device
+		subcommand_num();  // device
 		switch (subcommand_num()) {
 		case 1:
 			arguments("eee"); break;
