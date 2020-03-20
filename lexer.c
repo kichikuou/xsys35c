@@ -38,9 +38,11 @@ noreturn void error_at(const char *pos, char *fmt, ...) {
 			va_list args;
 			va_start(args, fmt);
 			vfprintf(stderr, fmt, args);
-			fprintf(stderr, "\n");
+			fputc('\n', stderr);
 			fprintf(stderr, "%s\n", sjis2utf(strndup(begin, end - begin)));
-			fprintf(stderr, "%*s^\n", (int)(pos - begin), "");
+			for (const char *p = begin; p < pos; p++)
+				fputc(*p == '\t' ? '\t' : ' ', stderr);
+			fprintf(stderr, "^\n");
 			break;
 		}
 		if (!*end)
