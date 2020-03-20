@@ -1170,9 +1170,9 @@ static void commands(void) {
 		;
 }
 
-void compiler_init(Compiler *comp, Vector *src_names) {
+void compiler_init(Compiler *comp, Vector *src_names, Vector *variables) {
 	comp->src_names = src_names;
-	comp->variables = new_vec();
+	comp->variables = variables ? variables : new_vec();
 	comp->functions = new_map();
 	comp->scos = calloc(src_names->len, sizeof(Sco*));
 }

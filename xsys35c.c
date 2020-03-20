@@ -30,7 +30,7 @@ enum {
 	LOPT_TIMESTAMP,
 };
 
-static const char short_options[] = "hi:o:s:v";
+static const char short_options[] = "hi:o:s:V:v";
 static const struct option long_options[] = {
 	{ "help",        no_argument,       NULL, 'h' },
 	{ "output",      required_argument, NULL, 'o' },
@@ -38,6 +38,7 @@ static const struct option long_options[] = {
 	{ "source-list", required_argument, NULL, 'i' },
 	{ "sys-ver",     required_argument, NULL, 's' },
 	{ "timestamp",   required_argument, NULL, LOPT_TIMESTAMP },
+	{ "variables",   required_argument, NULL, 'V' },
 	{ "version",     no_argument,       NULL, 'v' },
 	{ 0, 0, 0, 0 }
 };
@@ -53,6 +54,7 @@ static void usage(void) {
 	puts("    -i, --source-list <file>  Read list of source files from <file>");
 	puts("    -s, --sys-ver <ver>       Target System version (3.5|3.6|3.8(default))");
 	puts("        --timestamp <time>    Set timestamp of ALD entries, in UNIX timestamp");
+	puts("    -V, --variables <file>    Read list of variables from <file>");
 	puts("    -v, --version             Print version information and exit");
 }
 
@@ -113,6 +115,18 @@ static char *trim_right(char *str) {
 	return str;
 }
 
+static Vector *read_var_list(const char *path) {
+	FILE *fp = fopen(path, "r");
+	if (!fp)
+		error("%s: %s", path, strerror(errno));
+	Vector *vars = new_vec();
+	char line[256];
+	while (fgets(line, sizeof(line), fp))
+		vec_push(vars, strdup(trim_right(line)));
+	fclose(fp);
+	return vars;
+}
+
 // Read a list of source files from `path`, in the "comp.hed" format of System3.x SDK.
 static Vector *read_source_list(const char *path) {
 	FILE *fp = fopen(path, "r");
@@ -158,7 +172,7 @@ static char *sconame(const char *advname) {
 	return s;
 }
 
-static Vector *build_ald(Vector *src_paths, const char *objdir) {
+static Vector *build_ald(Vector *src_paths, Vector *variables, const char *objdir) {
 	Map *srcs = new_map();
 	for (int i = 0; i < src_paths->len; i++) {
 		char *path = src_paths->data[i];
@@ -169,7 +183,7 @@ static Vector *build_ald(Vector *src_paths, const char *objdir) {
 	}
 
 	Compiler compiler;
-	compiler_init(&compiler, srcs->keys);
+	compiler_init(&compiler, srcs->keys, variables);
 
 	for (int i = 0; i < srcs->keys->len; i++) {
 		const char *source = srcs->vals->data[i];
@@ -217,6 +231,7 @@ int main(int argc, char *argv[]) {
 	const char *objdir = NULL;
 	const char *output = "adisk.ald";
 	const char *source_list = NULL;
+	const char *var_list = NULL;
 
 	int opt;
 	while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
@@ -239,6 +254,9 @@ int main(int argc, char *argv[]) {
 				sys_ver = SYSTEM38;
 			else
 				error("Unknown system version '%s'. Possible values are '3.5', '3.6' and '3.8'\n", optarg);
+			break;
+		case 'V':
+			var_list = optarg;
 			break;
 		case 'v':
 			version();
@@ -266,7 +284,9 @@ int main(int argc, char *argv[]) {
 	for (int i = 0; i < argc; i++)
 		vec_push(srcs, argv[i]);
 
-	Vector *ald = build_ald(srcs, objdir);
+	Vector *vars = var_list ? read_var_list(var_list) : NULL;
+
+	Vector *ald = build_ald(srcs, vars, objdir);
 
 	FILE *fp = fopen(output, "wb");
 	if (!fp)

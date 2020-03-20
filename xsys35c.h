@@ -129,7 +129,7 @@ typedef struct {
 	Sco **scos;
 } Compiler;
 
-void compiler_init(Compiler *compiler, Vector *src_names);
+void compiler_init(Compiler *compiler, Vector *src_names, Vector *variables);
 void preprocess(Compiler *comp, const char *source, int pageno);
 Sco *compile(Compiler *comp, const char *source, int pageno);
 
