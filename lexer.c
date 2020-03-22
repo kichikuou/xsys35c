@@ -202,24 +202,17 @@ void compile_string(Buffer *b, char terminator) {
 	expect(terminator);
 }
 
-void compile_message(Buffer *b, bool to_ain) {
+void compile_message(Buffer *b) {
 	// TODO: Support data embedding ("<0x...>")
 	while (*input && *input != '\'') {
 		if (*input == '\\')
 			input++;
-		int n = is_sjis_byte1(*input) && is_sjis_byte2(*(input+1)) ? 2 : 1;
-		while (n--) {
-			if (to_ain)
-				ain_msg_emit(*input++);
-			else
-				emit(b, *input++);
-		}
+		if (is_sjis_byte1(*input) && is_sjis_byte2(*(input+1)))
+			emit(b, *input++);
+		emit(b, *input++);
 	}
 	expect('\'');
-	if (to_ain)
-		ain_msg_emit(0);
-	else
-		emit(b, 0);
+	emit(b, 0);
 }
 
 #define ISKEYWORD(s, len, kwd) ((len) == sizeof(kwd) - 1 && !memcmp((s), (kwd), (len)))

@@ -588,12 +588,12 @@ static bool command(void) {
 		switch (sys_ver) {
 		case SYSTEM39:
 			emit_command(out, COMMAND_ainMsg);
-			compile_message(out, true);
-			emit_dword(out, ain_msg_num());
+			compile_message(compiler->msg_buf);
+			emit_dword(out, compiler->msg_count++);
 			break;
 		case SYSTEM38:
 			emit_command(out, COMMAND_msg);
-			compile_message(out, false);
+			compile_message(out);
 			break;
 		default:
 			compile_string(out, '\'');
@@ -1169,13 +1169,13 @@ static bool command(void) {
 	case COMMAND_msgFreeShelterDIB: expect(':'); break;
 	case COMMAND_ainH: // fall through
 	case COMMAND_ainHH:
-		ain_msg_emit(0);  // FIXME: combine with next msg command
-		emit_dword(out, ain_msg_num());
+		emit(compiler->msg_buf, 0);  // FIXME: combine with next msg command
+		emit_dword(out, compiler->msg_count++);
 		arguments("ne");
 		break;
 	case COMMAND_ainX:
-		ain_msg_emit(0);  // FIXME: combine with next msg command
-		emit_dword(out, ain_msg_num());
+		emit(compiler->msg_buf, 0);  // FIXME: combine with next msg command
+		emit_dword(out, compiler->msg_count++);
 		arguments("e");
 		break;
 
@@ -1194,6 +1194,7 @@ static void commands(void) {
 }
 
 void compiler_init(Compiler *comp, Vector *src_names, Vector *variables) {
+	memset(comp, 0, sizeof(Compiler));
 	comp->src_names = src_names;
 	comp->variables = variables ? variables : new_vec();
 	comp->functions = new_map();
@@ -1222,6 +1223,12 @@ void preprocess(Compiler *comp, const char *source, int pageno) {
 		commands();
 	if (menu_item_start)
 		error_at(menu_item_start, "unfinished menu item");
+}
+
+void preprocess_done(Compiler *comp) {
+	if (sys_ver == SYSTEM39)
+		compiler->msg_buf = new_buf();
+	comp->msg_count = 0;
 }
 
 Buffer *compile(Compiler *comp, const char *source, int pageno) {

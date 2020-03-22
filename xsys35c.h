@@ -112,21 +112,11 @@ char *get_label(void);
 char *get_filename(void);
 int get_number(void);
 void compile_string(Buffer *b, char terminator);
-void compile_message(Buffer *b, bool to_ain);
+void compile_message(Buffer *b);
 int get_command(Buffer *b);
 
 // ain.c
 
-typedef struct {
-	uint8_t *msg_buf;
-	int msg_len;
-	int msg_cap;
-	int msg_count;
-} Ain;
-
-void ain_init(void);
-void ain_msg_emit(uint8_t b);
-int ain_msg_num(void);
 
 // compile.c
 
@@ -141,11 +131,14 @@ typedef struct {
 	Vector *src_names;
 	Vector *variables;
 	Map *functions;
+	Buffer *msg_buf;
+	int msg_count;
 	Buffer **scos;
 } Compiler;
 
 void compiler_init(Compiler *compiler, Vector *src_names, Vector *variables);
 void preprocess(Compiler *comp, const char *source, int pageno);
+void preprocess_done(Compiler *comp);
 Buffer *compile(Compiler *comp, const char *source, int pageno);
 
 // ald.c

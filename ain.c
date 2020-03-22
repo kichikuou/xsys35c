@@ -19,26 +19,3 @@
 #include <stdlib.h>
 #include <string.h>
 
-static Ain ain;
-
-void ain_init(void) {
-	memset(&ain, 0, sizeof(ain));
-	ain.msg_buf = calloc(1, 4096);
-	ain.msg_cap = 4096;
-}
-
-void ain_msg_emit(uint8_t b) {
-	if (!ain.msg_buf)
-		return;
-	if (ain.msg_len == ain.msg_cap) {
-		ain.msg_cap *= 2;
-		ain.msg_buf = realloc(ain.msg_buf, ain.msg_cap);
-	}
-	ain.msg_buf[ain.msg_len++] = b;
-	if (b == '\0')
-		ain.msg_count++;
-}
-
-int ain_msg_num(void) {
-	return ain.msg_count - 1;
-}

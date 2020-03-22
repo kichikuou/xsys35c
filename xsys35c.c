@@ -200,7 +200,7 @@ static Vector *build_ald(Vector *src_paths, Vector *variables, const char *objdi
 		fclose(fp);
 	}
 
-	ain_init();
+	preprocess_done(&compiler);
 
 	Vector *ald = new_vec();
 	for (int i = 0; i < srcs->keys->len; i++) {
