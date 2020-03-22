@@ -115,9 +115,6 @@ void compile_string(Buffer *b, char terminator);
 void compile_message(Buffer *b);
 int get_command(Buffer *b);
 
-// ain.c
-
-
 // compile.c
 
 typedef struct {
@@ -140,6 +137,10 @@ void compiler_init(Compiler *compiler, Vector *src_names, Vector *variables);
 void preprocess(Compiler *comp, const char *source, int pageno);
 void preprocess_done(Compiler *comp);
 Buffer *compile(Compiler *comp, const char *source, int pageno);
+
+// ain.c
+
+void ain_write(Compiler *compiler, FILE *fp);
 
 // ald.c
 

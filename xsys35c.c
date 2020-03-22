@@ -226,6 +226,14 @@ static Vector *build_ald(Vector *src_paths, Vector *variables, const char *objdi
 		}
 	}
 
+	if (sys_ver == SYSTEM39) {
+		FILE *fp = fopen("System39.ain", "wb");
+		if (!fp)
+			error("System39.ain: %s", strerror(errno));
+		ain_write(&compiler, fp);
+		fclose(fp);
+	}
+
 	return ald;
 }
 

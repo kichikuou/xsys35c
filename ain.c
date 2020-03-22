@@ -16,6 +16,68 @@
  *
 */
 #include "xsys35c.h"
-#include <stdlib.h>
-#include <string.h>
 
+static void ain_emit_HEL0(Buffer *out) {
+	emit(out, 'H');
+	emit(out, 'E');
+	emit(out, 'L');
+	emit(out, '0');
+	emit_dword(out, 0);  // reserved
+	emit_dword(out, 0);  // number of DLLs
+}
+
+static void ain_emit_FUNC(Buffer *out, Map *functions) {
+	emit(out, 'F');
+	emit(out, 'U');
+	emit(out, 'N');
+	emit(out, 'C');
+	emit_dword(out, 0);  // reserved
+	emit_dword(out, functions->keys->len);
+	for (int i = 0; i < functions->keys->len; i++) {
+		emit_string(out, functions->keys->data[i]);
+		emit(out, 0);
+		Function *f = functions->vals->data[i];
+		emit_word(out, f->page);
+		emit_dword(out, f->addr);
+	}
+}
+
+static void ain_emit_VARI(Buffer *out, Vector *variables) {
+	emit(out, 'V');
+	emit(out, 'A');
+	emit(out, 'R');
+	emit(out, 'I');
+	emit_dword(out, 0);  // reserved
+	emit_dword(out, variables->len);
+	for (int i = 0; i < variables->len; i++) {
+		emit_string(out, variables->data[i]);
+		emit(out, 0);
+	}
+}
+
+static void ain_emit_MSGI_head(Buffer *out, int msg_count) {
+	emit(out, 'M');
+	emit(out, 'S');
+	emit(out, 'G');
+	emit(out, 'I');
+	emit_dword(out, 0);  // reserved
+	emit_dword(out, msg_count);
+}
+
+static void ain_write_buf(Buffer *buf, FILE *fp) {
+	uint8_t *end = buf->buf + buf->len;
+	for (uint8_t *p = buf->buf; p < end; p++)
+		fputc(*p >> 2 | *p << 6, fp);
+}
+
+void ain_write(Compiler *compiler, FILE *fp) {
+	fputs("AINI", fp);
+	Buffer *out = new_buf();
+	emit_dword(out, 4);  // number of sections
+	ain_emit_HEL0(out);
+	ain_emit_FUNC(out, compiler->functions);
+	ain_emit_VARI(out, compiler->variables);
+	ain_emit_MSGI_head(out, compiler->msg_count);
+	ain_write_buf(out, fp);
+	ain_write_buf(compiler->msg_buf, fp);
+}
