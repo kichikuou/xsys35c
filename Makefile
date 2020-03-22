@@ -3,11 +3,11 @@ LDFLAGS = -liconv
 SRCS=$(wildcard *.c)
 OBJS=$(SRCS:.c=.o)
 
-xsys35c: xsys35c.o compile.o lexer.o sco.o ald.o util.o
+xsys35c: xsys35c.o compile.o lexer.o sco.o ain.o ald.o util.o
 
 $(OBJS): xsys35c.h
 
-compile_test: compile_test.o compile.o lexer.o sco.o util.o
+compile_test: compile_test.o compile.o lexer.o sco.o ain.o util.o
 ald_test: ald_test.o ald.o util.o
 sco_test: sco_test.o sco.o util.o
 

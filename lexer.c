@@ -202,17 +202,24 @@ void compile_string(char terminator) {
 	expect(terminator);
 }
 
-void compile_message(void) {
+void compile_message(bool to_ain) {
 	// TODO: Support data embedding ("<0x...>")
 	while (*input && *input != '\'') {
 		if (*input == '\\')
 			input++;
-		if (is_sjis_byte1(*input) && is_sjis_byte2(*(input+1)))
-			echo();
-		echo();
+		int n = is_sjis_byte1(*input) && is_sjis_byte2(*(input+1)) ? 2 : 1;
+		while (n--) {
+			if (to_ain)
+				ain_msg_emit(*input++);
+			else
+				emit(*input++);
+		}
 	}
 	expect('\'');
-	emit(0);
+	if (to_ain)
+		ain_msg_emit(0);
+	else
+		emit(0);
 }
 
 #define ISKEYWORD(s, len, kwd) ((len) == sizeof(kwd) - 1 && !memcmp((s), (kwd), (len)))
@@ -333,7 +340,7 @@ static int replace_command(int cmd) {
 	case CMD3('T', 'P', 'P'): return COMMAND_TPP;
 	case CMD3('T', 'A', 'A'): return COMMAND_TAA;
 	case CMD3('T', 'A', 'B'): return COMMAND_TAB;
-	case CMD2('H', 'H'): return COMMAND_newHH;
+	case CMD2('H', 'H'): return sys_ver == SYSTEM39 ? COMMAND_ainHH : COMMAND_newHH;
 	case CMD2('L', 'C'): return COMMAND_newLC;
 	case CMD2('L', 'E'): return COMMAND_newLE;
 	case CMD3('L', 'X', 'G'): return COMMAND_newLXG;
@@ -344,6 +351,7 @@ static int replace_command(int cmd) {
 	case CMD2('Q', 'E'): return COMMAND_newQE;
 	case CMD2('U', 'P'): return COMMAND_newUP;
 	case 'F': return COMMAND_newF;
+	case 'H': return sys_ver == SYSTEM39 ? COMMAND_ainH : cmd;
 	case CMD3('M', 'H', 'H'): return COMMAND_MHH;
 	case CMD2(COMMAND_LXW, 'T'): return COMMAND_LXWT;
 	case CMD2(COMMAND_LXW, 'S'): return COMMAND_LXWS;
@@ -351,6 +359,7 @@ static int replace_command(int cmd) {
 	case CMD2(COMMAND_LXW, 'H'): return COMMAND_LXWH;
 	case CMD3(COMMAND_LXW, 'H', 'H'): return COMMAND_LXWHH;
 	case CMD3('L', 'X', 'F'): return COMMAND_LXF;
+	case 'X': return sys_ver == SYSTEM39 ? COMMAND_ainX : cmd;
 	default: return cmd;
 	}
 }

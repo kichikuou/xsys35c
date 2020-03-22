@@ -80,7 +80,7 @@ char *get_label(void);
 char *get_filename(void);
 int get_number(void);
 void compile_string(char terminator);
-void compile_message(void);
+void compile_message(bool to_ain);
 int get_command(void);
 
 // sco.c
@@ -89,6 +89,7 @@ typedef enum {
 	SYSTEM35,
 	SYSTEM36,
 	SYSTEM38,
+	SYSTEM39,
 } SysVer;
 extern SysVer sys_ver;
 
@@ -112,6 +113,19 @@ void emit_var(int var_id);
 void emit_number(int n);
 void emit_command(int cmd);
 int current_address(void);
+
+// ain.c
+
+typedef struct {
+	uint8_t *msg_buf;
+	int msg_len;
+	int msg_cap;
+	int msg_count;
+} Ain;
+
+void ain_init(void);
+void ain_msg_emit(uint8_t b);
+int ain_msg_num(void);
 
 // compile.c
 
@@ -294,6 +308,10 @@ enum {
 	COMMAND_menuReturnGoto = CMD2F(0x79),
 	COMMAND_menuFreeShelterDIB = CMD2F(0x7a),
 	COMMAND_msgFreeShelterDIB = CMD2F(0x7b),
+	COMMAND_ainMsg = CMD2F(0x7c),
+	COMMAND_ainH = CMD2F(0x7d),
+	COMMAND_ainHH = CMD2F(0x7e),
+	COMMAND_ainX = CMD2F(0x7f),
 	// Pseudo commands
 	COMMAND_IF = 0x80,
 	COMMAND_LXW = 0x81,

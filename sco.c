@@ -153,6 +153,7 @@ void sco_init(const char *src_name, int pageno) {
 		emit_string("S360");
 		break;
 	case SYSTEM38:
+	case SYSTEM39:
 		emit_string("S380");
 		break;
 	}

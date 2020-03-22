@@ -583,11 +583,19 @@ static bool command(void) {
 		break;
 
 	case '\'': // Message
-		if (sys_ver >= SYSTEM38) {
+		switch (sys_ver) {
+		case SYSTEM39:
+			emit_command(COMMAND_ainMsg);
+			compile_message(true);
+			emit_dword(ain_msg_num());
+			break;
+		case SYSTEM38:
 			emit_command(COMMAND_msg);
-			compile_message();
-		} else {
+			compile_message(false);
+			break;
+		default:
 			compile_string('\'');
+			break;
 		}
 		break;
 
@@ -1157,6 +1165,17 @@ static bool command(void) {
 	case COMMAND_menuReturnGoto: arguments("ee"); break;
 	case COMMAND_menuFreeShelterDIB: expect(':'); break;
 	case COMMAND_msgFreeShelterDIB: expect(':'); break;
+	case COMMAND_ainH: // fall through
+	case COMMAND_ainHH:
+		ain_msg_emit(0);  // FIXME: combine with next msg command
+		emit_dword(ain_msg_num());
+		arguments("ne");
+		break;
+	case COMMAND_ainX:
+		ain_msg_emit(0);  // FIXME: combine with next msg command
+		emit_dword(ain_msg_num());
+		arguments("e");
+		break;
 
 	default:
 		goto unknown_command;
