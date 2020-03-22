@@ -111,9 +111,9 @@ bool consume_keyword(const char *keyword) {
 	return false;
 }
 
-uint8_t echo(void) {
+uint8_t echo(Buffer *b) {
 	uint8_t c = *input++;
-	emit(c);
+	emit(b, c);
 	return c;
 }
 
@@ -180,7 +180,7 @@ int get_number(void) {
 	return n;
 }
 
-void compile_string(char terminator) {
+void compile_string(Buffer *b, char terminator) {
 	const char *top = input;
 	while (*input != terminator) {
 		if (!*input)
@@ -193,16 +193,16 @@ void compile_string(char terminator) {
 		if (sys_ver == SYSTEM35)
 			hk = to_sjis_half_kana(c1, c2);
 		if (hk) {
-			emit(hk);
+			emit(b, hk);
 		} else {
-			emit(c1);
-			emit(c2);
+			emit(b, c1);
+			emit(b, c2);
 		}
 	}
 	expect(terminator);
 }
 
-void compile_message(bool to_ain) {
+void compile_message(Buffer *b, bool to_ain) {
 	// TODO: Support data embedding ("<0x...>")
 	while (*input && *input != '\'') {
 		if (*input == '\\')
@@ -212,14 +212,14 @@ void compile_message(bool to_ain) {
 			if (to_ain)
 				ain_msg_emit(*input++);
 			else
-				emit(*input++);
+				emit(b, *input++);
 		}
 	}
 	expect('\'');
 	if (to_ain)
 		ain_msg_emit(0);
 	else
-		emit(0);
+		emit(b, 0);
 }
 
 #define ISKEYWORD(s, len, kwd) ((len) == sizeof(kwd) - 1 && !memcmp((s), (kwd), (len)))
@@ -364,13 +364,13 @@ static int replace_command(int cmd) {
 	}
 }
 
-int get_command(void) {
+int get_command(Buffer *b) {
 	const char *command_top = input;
 
 	if (!*input || *input == '}' || *input == '>')
 		return *input;
 	if (*input == 'A' || *input == 'R')
-		return echo();
+		return echo(b);
 	if (isupper(*input)) {
 		int cmd = *input++;
 		if (isupper(*input))
@@ -395,7 +395,7 @@ int get_command(void) {
 			cmd |= *input++ << 16;
 
 		cmd = replace_command(cmd);
-		emit_command(cmd);
+		emit_command(b, cmd);
 		return cmd;
 	}
 	if (sys_ver >= SYSTEM38 && islower(*input)) {
@@ -406,7 +406,7 @@ int get_command(void) {
 			return COMMAND_IF;
 		int cmd = lower_case_command(command_top, len);
 		if (cmd) {
-			emit_command(cmd);
+			emit_command(b, cmd);
 			return cmd;
 		}
 		error_at(command_top, "Unknown command %.*s", len, command_top);

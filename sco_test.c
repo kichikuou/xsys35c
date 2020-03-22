@@ -39,11 +39,12 @@ int main() {
 		"\x41\x42\x43";
 	const int expected_len = sizeof(expected) - 1;
 
-	sco_init("TEST.ADV", 42);
-	assert(current_address() == 32);
-	emit_string("ABC");
-	assert(current_address() == 35);
-	Sco *sco = sco_finalize();
+	Buffer *sco = new_buf();
+	sco_init(sco, "TEST.ADV", 42);
+	assert(current_address(sco) == 32);
+	emit_string(sco, "ABC");
+	assert(current_address(sco) == 35);
+	sco_finalize(sco);
 
 	if (sco->len != expected_len ||
 		memcmp(sco->buf, expected, expected_len) != 0) {

@@ -21,124 +21,118 @@
 
 SysVer sys_ver = SYSTEM38;
 
-static Sco out;
+Buffer *new_buf(void) {
+	Buffer *b = malloc(sizeof(Buffer));
+	b->buf = calloc(1, 4096);
+	b->cap = 4096;
+	b->len = 0;
+	return b;
+}
 
-void emit(uint8_t b) {
-	if (!out.buf)
+void emit(Buffer *b, uint8_t c) {
+	if (!b)
 		return;
-	if (out.len == out.cap) {
-		out.cap *= 2;
-		out.buf = realloc(out.buf, out.cap);
+	if (b->len == b->cap) {
+		b->cap *= 2;
+		b->buf = realloc(b->buf, b->cap);
 	}
-	out.buf[out.len++] = b;
+	b->buf[b->len++] = c;
 }
 
-void emit_word(uint16_t v) {
-	if (!out.buf)
-		return;
-	emit(v & 0xff);
-	emit(v >> 8 & 0xff);
+void emit_word(Buffer *b, uint16_t v) {
+	emit(b, v & 0xff);
+	emit(b, v >> 8 & 0xff);
 }
 
-void emit_word_be(uint16_t v) {
-	if (!out.buf)
-		return;
-	emit(v >> 8 & 0xff);
-	emit(v & 0xff);
+void emit_word_be(Buffer *b, uint16_t v) {
+	emit(b, v >> 8 & 0xff);
+	emit(b, v & 0xff);
 }
 
-void emit_dword(uint32_t v) {
-	if (!out.buf)
-		return;
-	emit(v & 0xff);
-	emit(v >> 8 & 0xff);
-	emit(v >> 16 & 0xff);
-	emit(v >> 24 & 0xff);
+void emit_dword(Buffer *b, uint32_t v) {
+	emit(b, v & 0xff);
+	emit(b, v >> 8 & 0xff);
+	emit(b, v >> 16 & 0xff);
+	emit(b, v >> 24 & 0xff);
 }
 
-void emit_string(const char *s) {
-	if (!out.buf)
-		return;
+void emit_string(Buffer *b, const char *s) {
 	while (*s)
-		emit(*s++);
+		emit(b, *s++);
 }
 
-int current_address(void) {
-	if (!out.buf)
+int current_address(Buffer *b) {
+	if (!b)
 		return 0;
-	return out.len;
+	return b->len;
 }
 
-void set_byte(uint32_t addr, uint8_t val) {
-	if (!out.buf)
+void set_byte(Buffer *b, uint32_t addr, uint8_t val) {
+	if (!b)
 		return;
-	out.buf[addr] = val;
+	b->buf[addr] = val;
 }
 
-uint16_t swap_word(uint32_t addr, uint16_t val) {
-	if (!out.buf)
+uint16_t swap_word(Buffer *b, uint32_t addr, uint16_t val) {
+	if (!b)
 		return 0;
-	uint8_t *b = &out.buf[addr];
-	uint16_t oldval = b[0] | (b[1] << 8);
-	b[0] = val & 0xff;
-	b[1] = val >> 8 & 0xff;
+	uint8_t *p = &b->buf[addr];
+	uint16_t oldval = p[0] | (p[1] << 8);
+	p[0] = val & 0xff;
+	p[1] = val >> 8 & 0xff;
 	return oldval;
 }
 
-uint32_t swap_dword(uint32_t addr, uint32_t val) {
-	if (!out.buf)
+uint32_t swap_dword(Buffer *b, uint32_t addr, uint32_t val) {
+	if (!b)
 		return 0;
-	uint8_t *b = &out.buf[addr];
-	uint32_t oldval = b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24);
-	b[0] = val & 0xff;
-	b[1] = val >> 8 & 0xff;
-	b[2] = val >> 16 & 0xff;
-	b[3] = val >> 24 & 0xff;
+	uint8_t *p = &b->buf[addr];
+	uint32_t oldval = p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);
+	p[0] = val & 0xff;
+	p[1] = val >> 8 & 0xff;
+	p[2] = val >> 16 & 0xff;
+	p[3] = val >> 24 & 0xff;
 	return oldval;
 }
 
-void emit_var(int var_id) {
+void emit_var(Buffer *b, int var_id) {
 	if (var_id <= 0x3f) {
-		emit(var_id + 0x80);
+		emit(b, var_id + 0x80);
 	} else if (var_id <= 0xff) {
-		emit(0xc0);
-		emit(var_id);
+		emit(b, 0xc0);
+		emit(b, var_id);
 	} else if (var_id <= 0x3fff) {
-		emit_word_be(var_id + 0xc000);
+		emit_word_be(b, var_id + 0xc000);
 	} else {
 		error("emit_var(%d): not implemented", var_id);
 	}
 }
 
-void emit_number(int n) {
+void emit_number(Buffer *b, int n) {
 	int addop = 0;
 	while (n > 0x3fff) {
-		emit(0x3f);
-		emit(0xff);
+		emit(b, 0x3f);
+		emit(b, 0xff);
 		n -= 0x3fff;
 		addop++;
 	}
 	if (n <= 0x33) {
-		emit(n + 0x40);
+		emit(b, n + 0x40);
 	} else {
-		emit_word_be(n);
+		emit_word_be(b, n);
 	}
 	for (int i = 0; i < addop; i++)
-		emit(OP_ADD);
+		emit(b, OP_ADD);
 }
 
-void emit_command(int cmd) {
+void emit_command(Buffer *b, int cmd) {
 	for (int n = cmd; n; n >>= 8)
-		emit(n & 0xff);
+		emit(b, n & 0xff);
 	if (cmd == COMMAND_TOC)  // Only this command has '\0'
-		emit(0);
+		emit(b, 0);
 }
 
-void sco_init(const char *src_name, int pageno) {
-	out.buf = calloc(1, 4096);
-	out.cap = 4096;
-	out.len = 0;
-
+void sco_init(Buffer *b, const char *src_name, int pageno) {
 	int namelen = strlen(src_name);
 	if (namelen >= 1024)
 		error("file name too long: %s", src_name);
@@ -147,29 +141,25 @@ void sco_init(const char *src_name, int pageno) {
 	// SCO header
 	switch (sys_ver) {
 	case SYSTEM35:
-		emit_string("S351");
+		emit_string(b, "S351");
 		break;
 	case SYSTEM36:
-		emit_string("S360");
+		emit_string(b, "S360");
 		break;
 	case SYSTEM38:
 	case SYSTEM39:
-		emit_string("S380");
+		emit_string(b, "S380");
 		break;
 	}
-	emit_dword(hdrsize);
-	emit_dword(0);  // File size (to be filled by sco_finalize)
-	emit_dword(pageno);
-	emit_word(namelen);
-	emit_string(src_name);
-	while (out.len < hdrsize)
-		emit(0);
+	emit_dword(b, hdrsize);
+	emit_dword(b, 0);  // File size (to be filled by sco_finalize)
+	emit_dword(b, pageno);
+	emit_word(b, namelen);
+	emit_string(b, src_name);
+	while (b->len < hdrsize)
+		emit(b, 0);
 }
 
-Sco *sco_finalize(void) {
-	swap_dword(8, out.len);
-	Sco *sco = calloc(1, sizeof(Sco));
-	*sco = out;
-	memset(&out, 0, sizeof(Sco));
-	return sco;
+void sco_finalize(Buffer *b) {
+	swap_dword(b, 8, b->len);
 }

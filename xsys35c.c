@@ -205,7 +205,7 @@ static Vector *build_ald(Vector *src_paths, Vector *variables, const char *objdi
 	Vector *ald = new_vec();
 	for (int i = 0; i < srcs->keys->len; i++) {
 		const char *source = srcs->vals->data[i];
-		Sco *sco = compile(&compiler, source, i);
+		Buffer *sco = compile(&compiler, source, i);
 		AldEntry *e = calloc(1, sizeof(AldEntry));
 		e->name = sconame(srcs->keys->data[i]);
 		e->timestamp = (timestamp == (time_t)-1) ? time(NULL) : timestamp;

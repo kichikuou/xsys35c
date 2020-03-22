@@ -60,29 +60,6 @@ Map *new_map(void);
 void map_put(Map *m, char *key, void *val);
 void *map_get(Map *m, char *key);
 
-// lexer.c
-
-extern const char *input_name;
-extern int input_page;
-extern const char *input_buf;
-extern const char *input;
-
-noreturn void error_at(const char *pos, char *fmt, ...);
-void lexer_init(const char *source, const char *name, int pageno);
-void skip_whitespaces(void);
-char next_char(void);
-bool consume(char c);
-void expect(char c);
-bool consume_keyword(const char *keyword);
-uint8_t echo(void);
-char *get_identifier(void);
-char *get_label(void);
-char *get_filename(void);
-int get_number(void);
-void compile_string(char terminator);
-void compile_message(bool to_ain);
-int get_command(void);
-
 // sco.c
 
 typedef enum {
@@ -97,22 +74,46 @@ typedef struct {
 	uint8_t *buf;
 	int len;
 	int cap;
-} Sco;
+} Buffer;
 
-void sco_init(const char *src_name, int pageno);
-Sco *sco_finalize(void);
-void emit(uint8_t b);
-void emit_word(uint16_t v);
-void emit_word_be(uint16_t v);
-void emit_dword(uint32_t v);
-void emit_string(const char *s);
-void set_byte(uint32_t addr, uint8_t val);
-uint16_t swap_word(uint32_t addr, uint16_t val);
-uint32_t swap_dword(uint32_t addr, uint32_t val);
-void emit_var(int var_id);
-void emit_number(int n);
-void emit_command(int cmd);
-int current_address(void);
+Buffer *new_buf(void);
+void emit(Buffer *b, uint8_t c);
+void emit_word(Buffer *b, uint16_t v);
+void emit_word_be(Buffer *b, uint16_t v);
+void emit_dword(Buffer *b, uint32_t v);
+void emit_string(Buffer *b, const char *s);
+void set_byte(Buffer *b, uint32_t addr, uint8_t val);
+uint16_t swap_word(Buffer *b, uint32_t addr, uint16_t val);
+uint32_t swap_dword(Buffer *b, uint32_t addr, uint32_t val);
+void emit_var(Buffer *b, int var_id);
+void emit_number(Buffer *b, int n);
+void emit_command(Buffer *b, int cmd);
+int current_address(Buffer *b);
+void sco_init(Buffer *b, const char *src_name, int pageno);
+void sco_finalize(Buffer *b);
+
+// lexer.c
+
+extern const char *input_name;
+extern int input_page;
+extern const char *input_buf;
+extern const char *input;
+
+noreturn void error_at(const char *pos, char *fmt, ...);
+void lexer_init(const char *source, const char *name, int pageno);
+void skip_whitespaces(void);
+char next_char(void);
+bool consume(char c);
+void expect(char c);
+bool consume_keyword(const char *keyword);
+uint8_t echo(Buffer *b);
+char *get_identifier(void);
+char *get_label(void);
+char *get_filename(void);
+int get_number(void);
+void compile_string(Buffer *b, char terminator);
+void compile_message(Buffer *b, bool to_ain);
+int get_command(Buffer *b);
 
 // ain.c
 
@@ -140,12 +141,12 @@ typedef struct {
 	Vector *src_names;
 	Vector *variables;
 	Map *functions;
-	Sco **scos;
+	Buffer **scos;
 } Compiler;
 
 void compiler_init(Compiler *compiler, Vector *src_names, Vector *variables);
 void preprocess(Compiler *comp, const char *source, int pageno);
-Sco *compile(Compiler *comp, const char *source, int pageno);
+Buffer *compile(Compiler *comp, const char *source, int pageno);
 
 // ald.c
 

@@ -31,7 +31,9 @@ typedef struct {
 	const char *source_loc;
 } Label;
 
-Map *labels;
+static Map *labels;
+
+static Buffer *out;
 
 static int lookup_var(char *var, bool create) {
 	for (int i = 0; i < compiler->variables->len; i++) {
@@ -52,18 +54,18 @@ static void commands(void);
 static void variable(bool create) {
 	int var = lookup_var(get_identifier(), create);
 	if (consume('[')) {
-		emit(0xc0);
-		emit(1);
-		emit_word_be(var);
+		emit(out, 0xc0);
+		emit(out, 1);
+		emit_word_be(out, var);
 		expr();
 		expect(']');
 	} else {
-		emit_var(var);
+		emit_var(out, var);
 	}
 }
 
 static void number(void) {
-	emit_number(get_number());
+	emit_number(out, get_number());
 }
 
 // prim ::= '(' equal ')' | number | '#' filename | var
@@ -78,7 +80,7 @@ static void expr_prim(void) {
 		char *fname = get_filename();
 		for (int i = 0; i < compiler->src_names->len; i++) {
 			if (!strcasecmp(fname, compiler->src_names->data[i])) {
-				emit_number(i);
+				emit_number(out, i);
 				return;
 			}
 		}
@@ -94,14 +96,14 @@ static void expr_mul(void) {
 	for (;;) {
 		if (consume('*')) {
 			expr_prim();
-			emit(OP_MUL);
+			emit(out, OP_MUL);
 		} else if (consume('/')) {
 			expr_prim();
-			emit(OP_DIV);
+			emit(out, OP_DIV);
 		} else if (consume('%')) {
 			expr_prim();
-			emit(0xc0);
-			emit(OP_C0_MOD);
+			emit(out, 0xc0);
+			emit(out, OP_C0_MOD);
 		} else {
 			break;
 		}
@@ -114,10 +116,10 @@ static void expr_add(void) {
 	for (;;) {
 		if (consume('+')) {
 			expr_mul();
-			emit(OP_ADD);
+			emit(out, OP_ADD);
 		} else if (consume('-')) {
 			expr_mul();
-			emit(OP_SUB);
+			emit(out, OP_SUB);
 		} else {
 			break;
 		}
@@ -130,13 +132,13 @@ static void expr_bit(void) {
 	for (;;) {
 		if (consume('&')) {
 			expr_add();
-			emit(OP_AND);
+			emit(out, OP_AND);
 		} else if (consume('|')) {
 			expr_add();
-			emit(OP_OR);
+			emit(out, OP_OR);
 		} else if (consume('^')) {
 			expr_add();
-			emit(OP_XOR);
+			emit(out, OP_XOR);
 		} else {
 			break;
 		}
@@ -161,8 +163,8 @@ static void expr_compare(void) {
 			break;
 		expr_bit();
 		if (op == OP_C0_LE || op == OP_C0_GE)
-			emit(0xc0);
-		emit(op);
+			emit(out, 0xc0);
+		emit(out, op);
 	}
 }
 
@@ -172,10 +174,10 @@ static void expr_equal(void) {
 	for (;;) {
 		if (consume('=')) {
 			expr_compare();
-			emit(OP_EQ);
+			emit(out, OP_EQ);
 		} else if (consume('\\')) {
 			expr_compare();
-			emit(OP_NE);
+			emit(out, OP_NE);
 		} else {
 			break;
 		}
@@ -185,7 +187,7 @@ static void expr_equal(void) {
 // expr ::= equal
 static void expr(void) {
 	expr_equal();
-	emit(OP_END);
+	emit(out, OP_END);
 }
 
 static Label *lookup_label(char *id) {
@@ -205,10 +207,10 @@ static void add_label(void) {
 	Label *l = lookup_label(id);
 	if (l->addr)
 		error_at(input - strlen(id), "label '%s' redefined", id);
-	l->addr = current_address();
+	l->addr = current_address(out);
 
 	while (l->hole_addr)
-		l->hole_addr = swap_dword(l->hole_addr, l->addr);
+		l->hole_addr = swap_dword(out, l->hole_addr, l->addr);
 }
 
 static void label(void) {
@@ -217,11 +219,11 @@ static void label(void) {
 		return;
 	Label *l = lookup_label(id);
 	if (!l->addr) {
-		emit_dword(l->hole_addr);
-		l->hole_addr = current_address() - 4;
+		emit_dword(out, l->hole_addr);
+		l->hole_addr = current_address(out) - 4;
 	} else {
 		assert(!l->hole_addr);
-		emit_dword(l->addr);
+		emit_dword(out, l->addr);
 	}
 }
 
@@ -256,13 +258,13 @@ static void defun(void) {
 	assert(!func->resolved);
 
 	const int page = input_page + 1;
-	const uint32_t addr = current_address();
+	const uint32_t addr = current_address(out);
 	while (func->addr) {
 		if (func->page == page) {
-			func->page = swap_word(func->addr, page);
-			func->addr = swap_dword(func->addr + 2, addr);
+			func->page = swap_word(out, func->addr, page);
+			func->addr = swap_dword(out, func->addr + 2, addr);
 		} else {
-			Sco *sco = compiler->scos[func->page - 1];
+			Buffer *sco = compiler->scos[func->page - 1];
 			assert(sco);
 			uint8_t *p = sco->buf + func->addr;
 			func->page = p[0] | p[1] << 8;
@@ -295,16 +297,16 @@ static void defun(void) {
 // get-retval ::= '~~' ',' var ':'
 static void funcall(void) {
 	if (consume('~')) {
-		emit('~');
-		emit_word(0xffff);
+		emit(out, '~');
+		emit_word(out, 0xffff);
 		variable(false);
-		emit(OP_END);
+		emit(out, OP_END);
 		expect(':');
 		return;
 	}
 	if (consume('0')) {
-		emit('~');
-		emit_word(0);
+		emit(out, '~');
+		emit_word(out, 0);
 		expect(',');
 		expr();
 		expect(':');
@@ -331,9 +333,9 @@ static void funcall(void) {
 	if (!func)
 		error_at(top, "undefined function '%s'", name);
 	for (int i = 0; i < func->params->len; i++) {
-		emit('!');
+		emit(out, '!');
 		int var = lookup_var(func->params->data[i], false);
-		emit_var(var);
+		emit_var(out, var);
 		if (i == 0)
 			consume(',');
 		else
@@ -342,12 +344,12 @@ static void funcall(void) {
 	}
 	expect(':');
 
-	emit('~');
-	emit_word(func->page);
-	emit_dword(func->addr);
+	emit(out, '~');
+	emit_word(out, func->page);
+	emit_dword(out, func->addr);
 	if (!func->resolved) {
 		func->page = input_page + 1;
-		func->addr = current_address() - 6;
+		func->addr = current_address(out) - 6;
 	}
 }
 
@@ -363,7 +365,7 @@ static void number_array(void) {
 		int n = get_number();
 		if (n > 0xffff)
 			error_at(top, "number constant out of range: %d", n);
-		emit_word(n);
+		emit_word(out, n);
 	}
 }
 
@@ -377,7 +379,7 @@ static void number_array(void) {
 //  F: function name
 static void arguments(const char *sig) {
 	if (*sig == 'n') {
-		emit(get_number());
+		emit(out, get_number());
 		if (*++sig)
 			consume(',');  // comma between subcommand num and next argument is optional
 		else
@@ -394,12 +396,12 @@ static void arguments(const char *sig) {
 			{
 				skip_whitespaces();
 				char *filename = get_filename();
-				emit_string(filename);
-				emit(':');
+				emit_string(out, filename);
+				emit(out, ':');
 			}
 			break;
 		case 'n':
-			emit(get_number());
+			emit(out, get_number());
 			break;
 		case 's':
 		case 'z':
@@ -408,20 +410,20 @@ static void arguments(const char *sig) {
 			if (*input == '"') {
 				input++;
 				while (*input && *input != '"')
-					echo();
+					echo(out);
 				expect('"');
 			} else {
 				while (*input != ':') {
 					if (!*input)
 						error_at(top, "unfinished string argument");
-					echo();
+					echo(out);
 				}
 			}
-			emit(*sig == 's' ? ':' : 0);
+			emit(out, *sig == 's' ? ':' : 0);
 			break;
 		case 'v':
 			variable(false);
-			emit(OP_END);
+			emit(out, OP_END);
 			break;
 		case 'F':
 			{
@@ -430,11 +432,11 @@ static void arguments(const char *sig) {
 					Function *func = map_get(compiler->functions, name);
 					if (!func)
 						error_at(top, "undefined function '%s'", name);
-					emit_word(func->page);
-					emit_dword(func->addr);
+					emit_word(out, func->page);
+					emit_dword(out, func->addr);
 					if (!func->resolved) {
 						func->page = input_page + 1;
-						func->addr = current_address() - 6;
+						func->addr = current_address(out) - 6;
 					}
 				}
 			}
@@ -456,25 +458,25 @@ static void arguments(const char *sig) {
 
 // assign ::= '!' var [+-*/%&|^]? ':' expr '!'
 static void assign(void) {
-	int op = current_address();
-	emit('!');
+	int op = current_address(out);
+	emit(out, '!');
 	variable(true);
 	if (consume('+')) {
-		set_byte(op, 0x10);
+		set_byte(out, op, 0x10);
 	} else if (consume('-')) {
-		set_byte(op, 0x11);
+		set_byte(out, op, 0x11);
 	} else if (consume('*')) {
-		set_byte(op, 0x12);
+		set_byte(out, op, 0x12);
 	} else if (consume('/')) {
-		set_byte(op, 0x13);
+		set_byte(out, op, 0x13);
 	} else if (consume('%')) {
-		set_byte(op, 0x14);
+		set_byte(out, op, 0x14);
 	} else if (consume('&')) {
-		set_byte(op, 0x15);
+		set_byte(out, op, 0x15);
 	} else if (consume('|')) {
-		set_byte(op, 0x16);
+		set_byte(out, op, 0x16);
 	} else if (consume('^')) {
-		set_byte(op, 0x17);
+		set_byte(out, op, 0x17);
 	}
 	expect(':');
 	expr();
@@ -483,18 +485,18 @@ static void assign(void) {
 
 // conditional ::= '{' expr ':' commands '}'
 static void conditional(void) {
-	emit('{');
+	emit(out, '{');
 	expr();
 	expect(':');
-	int hole = current_address();
-	emit_dword(0);
+	int hole = current_address(out);
+	emit_dword(out, 0);
 	commands();
 	expect('}');
 	if (sys_ver >= SYSTEM38) {
-		emit('@'); // Label jump
-		emit_dword(0);
-		swap_dword(hole, current_address());
-		hole = current_address() - 4;
+		emit(out, '@'); // Label jump
+		emit_dword(out, 0);
+		swap_dword(out, hole, current_address(out));
+		hole = current_address(out) - 4;
 		if (consume_keyword("else")) {
 			if (consume_keyword("if")) {
 				expect('{');
@@ -506,25 +508,25 @@ static void conditional(void) {
 			}
 		}
 	}
-	swap_dword(hole, current_address());
+	swap_dword(out, hole, current_address(out));
 }
 
 // while-loop ::= '<@' expr ':' commands '>'
 static void while_loop(void) {
-	int loop_addr = current_address();
-	emit('{');
+	int loop_addr = current_address(out);
+	emit(out, '{');
 	expr();
 	expect(':');
-	int end_hole = current_address();
-	emit_dword(0);
+	int end_hole = current_address(out);
+	emit_dword(out, 0);
 
 	commands();
 
 	expect('>');
-	emit('>');
-	emit_dword(loop_addr);
+	emit(out, '>');
+	emit_dword(out, loop_addr);
 
-	swap_dword(end_hole, current_address());
+	swap_dword(out, end_hole, current_address(out));
 }
 
 // for-loop ::= '<' var ',' expr ',' expr ',' expr ',' expr ':' commands '>'
@@ -532,21 +534,21 @@ static void for_loop(void) {
 	int var_id = lookup_var(get_identifier(), false);
 	expect(',');
 
-	emit('!');
-	emit_var(var_id);
+	emit(out, '!');
+	emit_var(out, var_id);
 	expr();  // start
 	expect(',');
 
-	emit('<');
-	emit(0x00);
-	int loop_addr = current_address();
-	emit('<');
-	emit(0x01);
+	emit(out, '<');
+	emit(out, 0x00);
+	int loop_addr = current_address(out);
+	emit(out, '<');
+	emit(out, 0x01);
 
-	int end_hole = current_address();
-	emit_dword(0);
-	emit_var(var_id);
-	emit(OP_END);
+	int end_hole = current_address(out);
+	emit_dword(out, 0);
+	emit_var(out, var_id);
+	emit(out, OP_END);
 	expr();  // end
 	expect(',');
 	expr();  // sign
@@ -557,15 +559,15 @@ static void for_loop(void) {
 	commands();
 
 	expect('>');
-	emit('>');
-	emit_dword(loop_addr);
+	emit(out, '>');
+	emit_dword(out, loop_addr);
 
-	swap_dword(end_hole, current_address());
+	swap_dword(out, end_hole, current_address(out));
 }
 
 static int subcommand_num(void) {
 	int n = get_number();
-	emit(n);
+	emit(out, n);
 	consume(',');
 	return n;
 }
@@ -573,7 +575,7 @@ static int subcommand_num(void) {
 static bool command(void) {
 	skip_whitespaces();
 	const char *command_top = input;
-	int cmd = get_command();
+	int cmd = get_command(out);
 
 	switch (cmd) {
 	case '\0':
@@ -585,16 +587,16 @@ static bool command(void) {
 	case '\'': // Message
 		switch (sys_ver) {
 		case SYSTEM39:
-			emit_command(COMMAND_ainMsg);
-			compile_message(true);
-			emit_dword(ain_msg_num());
+			emit_command(out, COMMAND_ainMsg);
+			compile_message(out, true);
+			emit_dword(out, ain_msg_num());
 			break;
 		case SYSTEM38:
-			emit_command(COMMAND_msg);
-			compile_message(false);
+			emit_command(out, COMMAND_msg);
+			compile_message(out, false);
 			break;
 		default:
-			compile_string('\'');
+			compile_string(out, '\'');
 			break;
 		}
 		break;
@@ -620,28 +622,28 @@ static bool command(void) {
 		break;
 
 	case '@':  // Label jump
-		emit(cmd);
+		emit(out, cmd);
 		label();
 		expect(':');
 		break;
 
 	case '\\': // Label call
-		emit(cmd);
+		emit(out, cmd);
 		if (consume('0'))
-			emit_dword(0);  // Return
+			emit_dword(out, 0);  // Return
 		else
 			label();
 		expect(':');
 		break;
 
 	case '&':  // Page jump
-		emit(cmd);
+		emit(out, cmd);
 		expr();
 		expect(':');
 		break;
 
 	case '%':  // Page call / return
-		emit(cmd);
+		emit(out, cmd);
 		expr();
 		expect(':');
 		break;
@@ -658,12 +660,12 @@ static bool command(void) {
 
 	case ']':  // Menu
 		if (sys_ver >= SYSTEM38)
-			emit_command(COMMAND_menu);
-		emit(cmd);
+			emit_command(out, COMMAND_menu);
+		emit(out, cmd);
 		break;
 
 	case '$':  // Menu item
-		emit(cmd);
+		emit(out, cmd);
 		if (menu_item_start) {
 			menu_item_start = NULL;
 			break;
@@ -671,15 +673,15 @@ static bool command(void) {
 		label();
 		expect('$');
 		if (is_sjis_byte1(*input) || is_sjis_half_kana(*input)) {
-			compile_string('$');
-			emit('$');
+			compile_string(out, '$');
+			emit(out, '$');
 		} else {
 			menu_item_start = command_top;
 		}
 		break;
 
 	case '#':  // Data table address
-		emit(cmd);
+		emit(out, cmd);
 		label();
 		expect(',');
 		expr();
@@ -692,8 +694,8 @@ static bool command(void) {
 		break;
 
 	case '"':  // String data
-		compile_string('"');
-		emit(0);
+		compile_string(out, '"');
+		emit(out, 0);
 		break;
 
 	case '[':  // Data
@@ -763,11 +765,11 @@ static bool command(void) {
 	case 'F': arguments("nee"); break;
 	case 'G':
 		{
-			int op = current_address();
-			emit(0);
+			int op = current_address(out);
+			emit(out, 0);
 			expr();
 			if (consume(',')) {
-				set_byte(op, 1);
+				set_byte(out, op, 1);
 				expr();
 			}
 			consume(':');
@@ -1168,12 +1170,12 @@ static bool command(void) {
 	case COMMAND_ainH: // fall through
 	case COMMAND_ainHH:
 		ain_msg_emit(0);  // FIXME: combine with next msg command
-		emit_dword(ain_msg_num());
+		emit_dword(out, ain_msg_num());
 		arguments("ne");
 		break;
 	case COMMAND_ainX:
 		ain_msg_emit(0);  // FIXME: combine with next msg command
-		emit_dword(ain_msg_num());
+		emit_dword(out, ain_msg_num());
 		arguments("e");
 		break;
 
@@ -1195,7 +1197,7 @@ void compiler_init(Compiler *comp, Vector *src_names, Vector *variables) {
 	comp->src_names = src_names;
 	comp->variables = variables ? variables : new_vec();
 	comp->functions = new_map();
-	comp->scos = calloc(src_names->len, sizeof(Sco*));
+	comp->scos = calloc(src_names->len, sizeof(Buffer*));
 }
 
 static void prepare(Compiler *comp, const char *source, int pageno) {
@@ -1222,11 +1224,13 @@ void preprocess(Compiler *comp, const char *source, int pageno) {
 		error_at(menu_item_start, "unfinished menu item");
 }
 
-Sco *compile(Compiler *comp, const char *source, int pageno) {
+Buffer *compile(Compiler *comp, const char *source, int pageno) {
 	prepare(comp, source, pageno);
 	compiling = true;
 	labels = new_map();
-	sco_init(comp->src_names->data[pageno], pageno);
+
+	out = new_buf();
+	sco_init(out, comp->src_names->data[pageno], pageno);
 
 	while (next_char())
 		commands();
@@ -1234,7 +1238,9 @@ Sco *compile(Compiler *comp, const char *source, int pageno) {
 	if (menu_item_start)
 		error_at(menu_item_start, "unfinished menu item");
 	check_undefined_labels();
-	Sco *sco = sco_finalize();
-	comp->scos[pageno] = sco;
-	return sco;
+
+	sco_finalize(out);
+	comp->scos[pageno] = out;
+	out = NULL;
+	return comp->scos[pageno];
 }
