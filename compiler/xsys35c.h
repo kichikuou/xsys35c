@@ -15,50 +15,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
 */
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdnoreturn.h>
-#include <time.h>
+#include "common.h"
 
 #define VERSION "0.1.0"
-
-// util.c
-
-noreturn void error(char *fmt, ...);
-char *sjis2utf(const char *str);
-char *utf2sjis(const char *str);
-uint8_t to_sjis_half_kana(uint8_t c1, uint8_t c2);
-
-static inline bool is_sjis_half_kana(uint8_t c) {
-	return 0xa1 <= c && c <= 0xdf;
-}
-
-static inline bool is_sjis_byte1(uint8_t c) {
-	return (0x81 <= c && c <= 0x9f) || (0xe0 <= c && c <= 0xef);
-}
-
-static inline bool is_sjis_byte2(uint8_t c) {
-	return 0x40 <= c && c <= 0xfc && c != 0x7f;
-}
-
-typedef struct {
-	void **data;
-	int len;
-	int cap;
-} Vector;
-
-Vector *new_vec(void);
-void vec_push(Vector *v, void *e);
-
-typedef struct {
-	Vector *keys;
-	Vector *vals;
-} Map;
-
-Map *new_map(void);
-void map_put(Map *m, char *key, void *val);
-void *map_get(Map *m, char *key);
 
 // sco.c
 
@@ -141,17 +100,6 @@ Buffer *compile(Compiler *comp, const char *source, int pageno);
 // ain.c
 
 void ain_write(Compiler *compiler, FILE *fp);
-
-// ald.c
-
-typedef struct {
-	const char *name;
-	time_t timestamp;
-	const void *data;
-	int size;
-} AldEntry;
-
-void ald_write(Vector *entries, FILE *fp);
 
 // opcodes
 

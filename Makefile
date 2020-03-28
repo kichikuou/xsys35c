@@ -1,23 +1,36 @@
-CFLAGS = -std=c11 -Wall -O2
+CFLAGS = -std=c11 -Wall -O2 -Icommon
 LDFLAGS = -liconv
-SRCS=$(wildcard *.c)
-OBJS=$(SRCS:.c=.o)
 
-xsys35c: xsys35c.o compile.o lexer.o sco.o ain.o ald.o util.o
+COMMON_SRCS := \
+	common/ald.c \
+	common/util.c
 
-$(OBJS): xsys35c.h
+COMMON_OBJS=$(COMMON_SRCS:.c=.o)
 
-compile_test: compile_test.o compile.o lexer.o sco.o ain.o util.o
-ald_test: ald_test.o ald.o util.o
-sco_test: sco_test.o sco.o util.o
+COMPILER_SRCS= \
+	compiler/ain.c \
+	compiler/compile.c \
+	compiler/lexer.c \
+	compiler/sco.c
 
-test: compile_test ald_test sco_test xsys35c regression_test.sh
-	./sco_test
-	./compile_test
-	./ald_test && cmp testdata/expected.ald testdata/actual.ald && rm testdata/actual.ald
+COMPILER_OBJS=$(COMPILER_SRCS:.c=.o)
+
+compiler/xsys35c: compiler/xsys35c.o $(COMPILER_OBJS) $(COMMON_OBJS)
+
+$(COMMON_OBJS): common/common.h
+$(COMPILER_OBJS): compiler/xsys35c.h common/common.h
+
+common/ald_test: common/ald_test.o $(COMMON_OBJS)
+compiler/compile_test: compiler/compile_test.o $(COMPILER_OBJS) $(COMMON_OBJS)
+compiler/sco_test: compiler/sco_test.o $(COMPILER_OBJS) $(COMMON_OBJS)
+
+test: common/ald_test compiler/compile_test compiler/sco_test compiler/xsys35c regression_test.sh
+	compiler/sco_test
+	compiler/compile_test
+	common/ald_test && cmp testdata/expected.ald testdata/actual.ald && rm testdata/actual.ald
 	./regression_test.sh
 
 clean:
-	rm -rf *.o xsys35c compile_test ald_test sco_test
+	rm -rf *.o common/*.o compiler/*.o compiler/xsys35c common/ald_test compiler/compile_test compiler/sco_test
 
-.PHONY: test
+.PHONY: clean test

@@ -16,7 +16,7 @@
  *
 */
 
-#include "xsys35c.h"
+#include "common.h"
 #include <string.h>
 
 // 1970-01-01 - 1601-01-01 in 100ns
