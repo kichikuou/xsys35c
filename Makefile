@@ -15,10 +15,13 @@ COMPILER_SRCS= \
 
 COMPILER_OBJS=$(COMPILER_SRCS:.c=.o)
 
-compiler/xsys35c: compiler/xsys35c.o $(COMPILER_OBJS) $(COMMON_OBJS)
+all: compiler/xsys35c decompiler/xsys35dc
 
 $(COMMON_OBJS): common/common.h
 $(COMPILER_OBJS): compiler/xsys35c.h common/common.h
+
+compiler/xsys35c: compiler/xsys35c.o $(COMPILER_OBJS) $(COMMON_OBJS)
+decompiler/xsys35dc: decompiler/xsys35dc.o $(DECOMPILER_OBJS) $(COMMON_OBJS)
 
 common/ald_test: common/ald_test.o $(COMMON_OBJS)
 compiler/compile_test: compiler/compile_test.o $(COMPILER_OBJS) $(COMMON_OBJS)
