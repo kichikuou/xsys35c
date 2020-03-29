@@ -103,10 +103,6 @@ static inline uint8_t *ald_sector(uint8_t *ald, int index) {
 	return ald + (p[0] << 8 | p[1] << 16 | p[2] << 24);
 }
 
-static inline uint32_t le32(uint8_t *p) {
-	return p[0] | p[1] << 8 | p[2] << 16 | p[3] << 24;
-}
-
 static time_t to_unix_time(uint32_t wtime_l, uint32_t wtime_h) {
 	uint64_t wtime = (uint64_t)wtime_h << 32 | wtime_l;
 	return (wtime - EPOCH_DIFF_100NS) / 10000000LL;

@@ -15,6 +15,11 @@ COMPILER_SRCS= \
 
 COMPILER_OBJS=$(COMPILER_SRCS:.c=.o)
 
+DECOMPILER_SRCS= \
+	decompiler/decompile.c
+
+DECOMPILER_OBJS=$(DECOMPILER_SRCS:.c=.o)
+
 all: compiler/xsys35c decompiler/xsys35dc
 
 $(COMMON_OBJS): common/common.h

@@ -16,33 +16,19 @@
  *
 */
 #include "xsys35dc.h"
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h>
 
-Sco *sco_new(const uint8_t *data, int len) {
-	Sco *sco = calloc(1, sizeof(Sco));
-	sco->data = data;
-	memcpy(sco->sig, data, 4);
-	sco->hdrsize = le32(data + 4);
-	sco->filesize = le32(data + 8);
-	sco->page = le32(data + 12);
-	int namelen = data[16] | data[17] << 8;
-	sco->src_name = strndup((char *)data + 18, namelen);
-	return sco;
-}
-
-int main(int argc, char *argv[]) {
-	if (argc == 1) {
-		printf("usage: xsys35dc aldfile\n");
-		return 1;
-	}
-	Vector *scos = ald_read(argv[1]);
+static void write_hed(const char *path, Vector *scos) {
+	FILE *fp = fopen(path, "w");
+	fprintf(fp, "#SYSTEM35\n");
 	for (int i = 0; i < scos->len; i++) {
-		AldEntry *e = scos->data[i];
-		scos->data[i] = sco_new(e->data, e->size);
+		Sco *sco = scos->data[i];
+		fprintf(fp, "%s\n", sco->src_name);
 	}
-
-	decompile(scos);
-
-	return 0;
+	fclose(fp);
 }
+
+void decompile(Vector *scos) {
+	write_hed("xsys35dc.hed", scos);
+}
+

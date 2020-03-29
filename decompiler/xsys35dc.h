@@ -16,3 +16,14 @@
  *
 */
 #include "common.h"
+
+typedef struct {
+	const uint8_t *data;
+	char sig[4];
+	uint32_t hdrsize;
+	uint32_t filesize;
+	uint32_t page;
+	char *src_name;
+} Sco;
+
+void decompile(Vector *scos);

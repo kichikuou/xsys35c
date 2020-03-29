@@ -21,6 +21,10 @@
 #include <stdnoreturn.h>
 #include <time.h>
 
+static inline uint32_t le32(const uint8_t *p) {
+	return p[0] | p[1] << 8 | p[2] << 16 | p[3] << 24;
+}
+
 // util.c
 
 noreturn void error(char *fmt, ...);
