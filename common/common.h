@@ -25,6 +25,14 @@ static inline uint32_t le32(const uint8_t *p) {
 	return p[0] | p[1] << 8 | p[2] << 16 | p[3] << 24;
 }
 
+typedef enum {
+	SCO_S350,
+	SCO_153S,
+	SCO_S351,
+	SCO_S360,
+	SCO_S380
+} ScoVer;
+
 // util.c
 
 noreturn void error(char *fmt, ...);
