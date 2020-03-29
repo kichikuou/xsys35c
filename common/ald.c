@@ -17,7 +17,13 @@
 */
 
 #include "common.h"
+#include <errno.h>
+#include <fcntl.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 // 1970-01-01 - 1601-01-01 in 100ns
 #define EPOCH_DIFF_100NS 116444736000000000LL
@@ -90,4 +96,56 @@ void ald_write(Vector *entries, FILE *fp) {
 	write_dword(0x10, fp);
 	write_dword(entries->len << 8 | diskid, fp);
 	write_dword(0, fp);
+}
+
+static inline uint8_t *ald_sector(uint8_t *ald, int index) {
+	uint8_t *p = ald + index * 3;
+	return ald + (p[0] << 8 | p[1] << 16 | p[2] << 24);
+}
+
+static inline uint32_t le32(uint8_t *p) {
+	return p[0] | p[1] << 8 | p[2] << 16 | p[3] << 24;
+}
+
+static time_t to_unix_time(uint32_t wtime_l, uint32_t wtime_h) {
+	uint64_t wtime = (uint64_t)wtime_h << 32 | wtime_l;
+	return (wtime - EPOCH_DIFF_100NS) / 10000000LL;
+}
+
+static Vector *ald_read_mem(uint8_t *data, int len) {
+	uint8_t *link_sector = ald_sector(data, 0);
+	uint8_t *link_sector_end = ald_sector(data, 1);
+
+	Vector *entries = new_vec();
+	for (uint8_t *link = link_sector; link < link_sector_end; link += 3) {
+		uint8_t file_nr = link[0];
+		uint16_t ptr_nr = link[1] | link[2] << 8;
+		if (file_nr != 1)
+			break;
+		uint8_t *entry_ptr = ald_sector(data, ptr_nr);
+		AldEntry *e = calloc(1, sizeof(AldEntry));
+		e->name = (char *)entry_ptr + 16;
+		e->timestamp = to_unix_time(le32(entry_ptr + 8), le32(entry_ptr + 12));
+		e->data = entry_ptr + le32(entry_ptr);
+		e->size = le32(entry_ptr + 4);
+		vec_push(entries, e);
+	}
+	return entries;
+}
+
+Vector *ald_read(const char *path) {
+	int fd = open(path, O_RDONLY);
+	if (fd == -1)
+		error("%s: %s", path, strerror(errno));
+
+	struct stat sbuf;
+	if (fstat(fd, &sbuf) < 0)
+		error("%s: %s", path, strerror(errno));
+
+	void *p = mmap(NULL, sbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
+	close(fd);
+	if (p == MAP_FAILED)
+		error("%s: %s", path, strerror(errno));
+
+	return ald_read_mem(p, sbuf.st_size);
 }

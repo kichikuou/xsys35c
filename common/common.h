@@ -68,3 +68,4 @@ typedef struct {
 } AldEntry;
 
 void ald_write(Vector *entries, FILE *fp);
+Vector *ald_read(const char *path);

@@ -16,19 +16,40 @@
  *
 */
 #include "common.h"
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
+#undef NDEBUG
 
-int main() {
+#define TIMESTAMP 850953600  // 1996-12-19 00:00:00 UTC
+
+static void test_read(void) {
+	Vector *es = ald_read("testdata/expected.ald");
+	assert(es->len == 2);
+	AldEntry *e1 = es->data[0];
+	AldEntry *e2 = es->data[1];
+
+	assert(!strcmp(e1->name, "a.txt"));
+	assert(e1->timestamp == TIMESTAMP);
+	assert(e1->size == 7);
+	assert(!memcmp(e1->data, "content", 7));
+
+	assert(!strcmp(e2->name, "very_long_file_name.txt"));
+	assert(e2->timestamp == TIMESTAMP);
+	assert(e2->size == 2);
+	assert(!memcmp(e2->data, "ok", 2));
+}
+
+static void test_write(void) {
 	AldEntry e1 = {
 		.name = "a.txt",
-		.timestamp = 850953600,  // 1996-12-19 00:00:00 UTC
+		.timestamp = TIMESTAMP,
 		.data = "content",
 		.size = 7,
 	};
 	AldEntry e2 = {
 		.name = "very_long_file_name.txt",
-		.timestamp = 850953600,  // 1996-12-19 00:00:00 UTC
+		.timestamp = TIMESTAMP,
 		.data = "ok",
 		.size = 2,
 	};
@@ -41,5 +62,10 @@ int main() {
 		error("%s: %s", outfile, strerror(errno));
 	ald_write(es, fp);
 	fclose(fp);
+}
+
+int main() {
+	test_read();
+	test_write();
 	return 0;
 }
