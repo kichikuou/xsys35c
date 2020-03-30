@@ -26,4 +26,10 @@ typedef struct {
 	char *src_name;
 } Sco;
 
+// cali.c
+
+int cali(uint8_t *p, Vector *variables, FILE *out);
+
+// decompile.c
+
 void decompile(Vector *scos);

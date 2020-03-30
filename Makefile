@@ -16,6 +16,7 @@ COMPILER_SRCS= \
 COMPILER_OBJS=$(COMPILER_SRCS:.c=.o)
 
 DECOMPILER_SRCS= \
+	decompiler/cali.c \
 	decompiler/decompile.c
 
 DECOMPILER_OBJS=$(DECOMPILER_SRCS:.c=.o)
@@ -24,6 +25,7 @@ all: compiler/xsys35c decompiler/xsys35dc
 
 $(COMMON_OBJS): common/common.h
 $(COMPILER_OBJS): compiler/xsys35c.h common/common.h
+$(DECOMPILER_OBJS): decompiler/xsys35dc.h common/common.h
 
 compiler/xsys35c: compiler/xsys35c.o $(COMPILER_OBJS) $(COMMON_OBJS)
 decompiler/xsys35dc: decompiler/xsys35dc.o $(DECOMPILER_OBJS) $(COMMON_OBJS)

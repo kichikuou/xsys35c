@@ -108,26 +108,6 @@ void ain_write(Compiler *compiler, FILE *fp);
 #define CMD2F(b) CMD2(0x2f, b)
 
 enum {
-	OP_AND = 0x74,
-	OP_OR,
-	OP_XOR,
-	OP_MUL,
-	OP_DIV,
-	OP_ADD,
-	OP_SUB,
-	OP_EQ,
-	OP_LT,
-	OP_GT,
-	OP_NE,
-	OP_END, // End of expression
-};
-enum {
-	OP_C0_MOD = 2,
-	OP_C0_LE,
-	OP_C0_GE,
-};
-
-enum {
 	COMMAND_TOC = CMD2F(0x00),
 	COMMAND_TOS = CMD2F(0x01),
 	COMMAND_TPC = CMD2F(0x02),

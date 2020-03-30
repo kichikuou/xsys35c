@@ -81,3 +81,26 @@ typedef struct {
 
 void ald_write(Vector *entries, FILE *fp);
 Vector *ald_read(const char *path);
+
+// opcodes
+
+enum {
+	OP_AND = 0x74,
+	OP_OR,
+	OP_XOR,
+	OP_MUL,
+	OP_DIV,
+	OP_ADD,
+	OP_SUB,
+	OP_EQ,
+	OP_LT,
+	OP_GT,
+	OP_NE,
+	OP_END, // End of expression
+};
+enum {
+	OP_C0_INDEX = 1,
+	OP_C0_MOD,
+	OP_C0_LE,
+	OP_C0_GE,
+};

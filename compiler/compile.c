@@ -55,7 +55,7 @@ static void variable(bool create) {
 	int var = lookup_var(get_identifier(), create);
 	if (consume('[')) {
 		emit(out, 0xc0);
-		emit(out, 1);
+		emit(out, OP_C0_INDEX);
 		emit_word_be(out, var);
 		expr();
 		expect(']');
