@@ -77,6 +77,26 @@ static void label(void) {
 	}
 }
 
+static void funcall(void) {
+	uint16_t page = dc.p[0] | dc.p[1] << 8;
+	dc.p += 2;
+	switch (page) {
+	case 0:  // return
+		dc_puts("0,");
+		dc.p += cali(dc.p, false, NULL, dc.out);
+		break;
+	case 0xffff:
+		dc_putc('~');
+		dc.p += cali(dc.p, false, NULL, dc.out);
+		break;
+	default:
+		dc_printf("F_%d_%05x", page, le32(dc.p));
+		dc.p += 4;
+		break;
+	}
+	dc_putc(':');
+}
+
 static void arguments(const char *sig) {
 	const char *sep = " ";
 	for (; *sig; sig++) {
@@ -122,6 +142,7 @@ static void message(void) {
 static int get_command(void) {
 	switch (*dc.p) {
 	case 'L':
+	case 'M':
 	case 'W':
 	case 'Z':
 		dc_putc(*dc.p++);
@@ -139,6 +160,7 @@ static void decompile_page(int page) {
 	dc.p = sco->data + sco->hdrsize;
 
 	while (dc.p < sco->data + sco->filesize) {
+		int topaddr = dc.p - sco->data;
 		if (sco->mark[dc.p - sco->data] & LABEL)
 			dc_printf("*L_%05x:\n", dc.p - sco->data);
 		dc_putc('\t');
@@ -179,7 +201,11 @@ static void decompile_page(int page) {
 				if (*dc.p++ == '$')
 					break;
 			}
-			error("%s:%x: Complex $ not implemented", sjis2utf(sco->sco_name), dc_addr());
+			error("%s:%x: Complex $ not implemented", sjis2utf(sco->sco_name), topaddr);
+
+		case '~':  // Function call
+			funcall();
+			break;
 
 		case 'A': break;
 		case 'B':
@@ -212,6 +238,23 @@ static void decompile_page(int page) {
 			}
 			break;
 		case CMD2('L', 'C'): arguments("ees"); break;
+		case CMD2('M', 'A'): arguments("ee"); break;
+		case CMD2('M', 'C'): arguments("ee"); break;
+		case CMD2('M', 'D'): arguments("eee"); break;
+		case CMD2('M', 'E'): arguments("eeeee"); break;
+		case CMD2('M', 'F'): arguments("veee"); break;
+		case CMD2('M', 'G'): arguments("ne"); break;
+		case CMD2('M', 'H'): arguments("eee"); break;
+		case CMD2('M', 'I'): arguments("ees"); break;
+		case CMD2('M', 'J'): arguments("eeeee"); break;
+		case CMD2('M', 'L'): arguments("ve"); break;
+		case CMD2('M', 'M'): arguments("ee"); break;
+		case CMD2('M', 'N'): arguments("nev"); break;
+		case CMD2('M', 'P'): arguments("ee"); break;
+		case CMD2('M', 'S'): arguments("es"); break;
+		case CMD2('M', 'T'): arguments("s"); break;
+		case CMD2('M', 'V'): arguments("e"); break;
+		case CMD2('M', 'Z'): arguments("neee"); break;
 		case 'R': break;
 		case CMD2('W', 'W'): arguments("eee"); break;
 		case CMD2('W', 'V'): arguments("eeee"); break;
@@ -253,7 +296,7 @@ static void decompile_page(int page) {
 		case CMD2('Z', 'Z'): arguments("ne"); break;
 		default:
 		unknown_command:
-			error("%s:%x: unknown command '%x'", sjis2utf(sco->sco_name), dc_addr(), cmd);
+			error("%s:%x: unknown command %.*s", sjis2utf(sco->sco_name), topaddr, dc_addr() - topaddr, sco->data + topaddr);
 		}
 		dc_putc('\n');
 	}
