@@ -22,9 +22,13 @@
 #include <string.h>
 
 enum {
-	  IF_END   = 1 << 0,
-	  LABEL    = 1 << 1,
-	  FUNC_TOP = 1 << 2,
+	  CODE        = 1 << 0,
+	  DATA        = 1 << 1,
+	  LABEL       = 1 << 2,
+	  FUNC_TOP    = 1 << 3,
+	  IF_END      = 1 << 4,
+	  WHILE_START = 1 << 5,
+	  FOR_START   = 1 << 6,
 };
 
 #define CMD2(a, b) (a | b << 8)
@@ -42,6 +46,15 @@ static Decompiler dc;
 
 static inline int dc_addr(void) {
 	return dc.p - ((Sco *)dc.scos->data[dc.page])->data;
+}
+
+static uint8_t *mark_at(int page, int addr) {
+	if (page >= dc.scos->len)
+		error("page out of range (%x:%x)", page, addr);
+	Sco *sco = dc.scos->data[page];
+	if (addr >= sco->filesize)
+		error("address out of range (%x:%x)", addr, addr);
+	return &sco->mark[addr];
 }
 
 static void indent(void) {
@@ -80,10 +93,18 @@ static void label(void) {
 	dc.p += 4;
 	dc_printf("L_%05x", addr);
 
-	Sco *sco = dc.scos->data[dc.page];
-	if (addr >= sco->filesize)
-		error("address out of range (%x)", addr);
-	sco->mark[addr] |= LABEL;
+	*mark_at(dc.page, addr) |= LABEL;
+}
+
+static void data_table(void) {
+	uint32_t addr = le32(dc.p);
+	dc.p += 4;
+	dc_printf("L_%05x", addr);
+	dc_putc(',');
+	dc.p += cali(dc.p, false, NULL, dc.out);
+	dc_putc(':');
+
+	*mark_at(dc.page, addr) |= DATA | LABEL;
 }
 
 static void conditional(void) {
@@ -93,10 +114,7 @@ static void conditional(void) {
 	uint32_t endaddr = le32(dc.p);
 	dc.p += 4;
 
-	Sco *sco = dc.scos->data[dc.page];
-	if (endaddr >= sco->filesize)
-		error("address out of range (%x)", endaddr);
-	sco->mark[endaddr] |= IF_END;
+	*mark_at(dc.page, endaddr) |= IF_END;
 }
 
 static void funcall(void) {
@@ -118,16 +136,50 @@ static void funcall(void) {
 			dc.p += 4;
 			dc_printf("F_%d_%05x", page, addr);
 
-			if (page >= dc.scos->len)
-				error("page out of range (%x)", page);
-			Sco *sco = dc.scos->data[page];
-			if (addr >= sco->filesize)
-				error("address out of range (%x:%x)", page, addr);
-			sco->mark[addr] |= FUNC_TOP;
+			*mark_at(page, addr) |= FUNC_TOP;
 			break;
 		}
 	}
 	dc_putc(':');
+}
+
+static void for_loop(void) {
+	uint8_t *mark = mark_at(dc.page, dc_addr()) - 2;
+	while (!(*mark & CODE))
+		mark--;
+	*mark |= FOR_START;
+	if (*dc.p++ != 0)
+		error("for_loop: 0 expected, got 0x%02x", *--dc.p);
+	if (*dc.p++ != '<')
+		error("for_loop: '<' expected, got 0x%02x", *--dc.p);
+	if (*dc.p++ != 1)
+		error("for_loop: 1 expected, got 0x%02x", *--dc.p);
+	dc.p += 4; // skip label
+	dc.p += cali(dc.p, false, NULL, NULL);  // var
+	dc.p += cali(dc.p, false, NULL, dc.out);  // e2
+	dc_putc(',');
+	dc.p += cali(dc.p, false, NULL, dc.out);  // e3
+	dc_putc(',');
+	dc.p += cali(dc.p, false, NULL, dc.out);  // e4
+	dc_putc(':');
+	dc.indent++;
+}
+
+static void loop_end(void) {
+	uint32_t addr = le32(dc.p);
+	dc.p += 4;
+
+	uint8_t *mark = mark_at(dc.page, addr);
+	Sco *sco = dc.scos->data[dc.page];
+	switch (sco->data[addr]) {
+	case '{':
+		*mark |= WHILE_START;
+		break;
+	case '<':
+		break;
+	default:
+		error("Unexpected loop structure");
+	}
 }
 
 static void arguments(const char *sig) {
@@ -181,6 +233,7 @@ static int get_command(void) {
 			goto cmd1;
 	case 'L':
 	case 'M':
+	case 'P':
 	case 'W':
 	case 'Z':
 	cmd2:
@@ -213,6 +266,12 @@ static void decompile_page(int page) {
 			dc_printf("**F_%d_%05x:\n", page, dc.p - sco->data);
 		if (mark & LABEL)
 			dc_printf("*L_%05x:\n", dc.p - sco->data);
+		if (mark & DATA) {
+			// TODO: find next code block
+			break;
+		}
+		if (*dc.p == '>')
+			dc.indent--;
 		indent();
 		if (*dc.p == 0x20 || *dc.p > 0x80) {
 			dc_putc('\'');
@@ -220,6 +279,7 @@ static void decompile_page(int page) {
 			dc_puts("'\n");
 			continue;
 		}
+		sco->mark[dc.p - sco->data] |= CODE;
 		int cmd = get_command();
 		switch (cmd) {
 		case '!':  // Assign
@@ -248,6 +308,14 @@ static void decompile_page(int page) {
 			dc_putc(':');
 			break;
 
+		case '<':  // For-loop
+			for_loop();
+			break;
+
+		case '>':  // Loop end
+			loop_end();
+			break;
+
 		case ']':  // Menu
 			break;
 
@@ -261,6 +329,10 @@ static void decompile_page(int page) {
 					break;
 			}
 			error("%s:%x: Complex $ not implemented", sjis2utf(sco->sco_name), topaddr);
+
+		case '#':  // Data table address
+			data_table();
+			break;
 
 		case '~':  // Function call
 			funcall();
@@ -296,6 +368,7 @@ static void decompile_page(int page) {
 				goto unknown_command;
 			}
 			break;
+		case 'F': arguments("nee"); break;
 		case 'G':
 			switch (subcommand_num()) {
 			case 0:
@@ -325,6 +398,37 @@ static void decompile_page(int page) {
 		case CMD2('M', 'T'): arguments("s"); break;
 		case CMD2('M', 'V'): arguments("e"); break;
 		case CMD2('M', 'Z'): arguments("neee"); break;
+		case CMD2('P', 'C'): arguments("e"); break;
+		case CMD2('P', 'D'): arguments("e"); break;
+		case CMD2('P', 'F'): // fall through
+		case CMD2('P', 'W'):
+			switch (subcommand_num()) {
+			case 0:
+			case 1:
+				arguments("e"); break;
+			case 2:
+			case 3:
+				arguments("ee"); break;
+			default:
+				goto unknown_command;
+			}
+			break;
+		case CMD2('P', 'G'): arguments("vee"); break;
+		case CMD2('P', 'N'): arguments("e"); break;
+		case CMD2('P', 'P'): arguments("vee"); break;
+		case CMD2('P', 'S'): arguments("eeee"); break;
+		case CMD2('P', 'T'):
+			switch (subcommand_num()) {
+			case 0:
+				arguments("vee"); break;
+			case 1:
+				arguments("vvvee"); break;
+			case 2:
+				arguments("vvee"); break;
+			default:
+				goto unknown_command;
+			}
+			break;
 		case 'R': break;
 		case 'T': arguments("ee"); break;
 		case CMD2('W', 'W'): arguments("eee"); break;
