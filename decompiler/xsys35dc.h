@@ -23,12 +23,13 @@ typedef struct {
 	uint32_t hdrsize;
 	uint32_t filesize;
 	uint32_t page;
-	char *src_name;
+	const char *src_name;
+	const char *sco_name;
 } Sco;
 
 // cali.c
 
-int cali(uint8_t *p, Vector *variables, FILE *out);
+int cali(const uint8_t *p, bool is_lhs, Vector *variables, FILE *out);
 
 // decompile.c
 

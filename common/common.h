@@ -39,6 +39,7 @@ noreturn void error(char *fmt, ...);
 char *sjis2utf(const char *str);
 char *utf2sjis(const char *str);
 uint8_t to_sjis_half_kana(uint8_t c1, uint8_t c2);
+uint16_t from_sjis_half_kana(uint8_t c);
 
 static inline bool is_sjis_half_kana(uint8_t c) {
 	return 0xa1 <= c && c <= 0xdf;

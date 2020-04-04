@@ -41,6 +41,6 @@ test: common/ald_test compiler/compile_test compiler/sco_test compiler/xsys35c r
 	./regression_test.sh
 
 clean:
-	rm -rf *.o common/*.o compiler/*.o compiler/xsys35c common/ald_test compiler/compile_test compiler/sco_test
+	rm -rf *.o common/*.o compiler/*.o decompiler/*.o compiler/xsys35c decompiler/xsys35dc common/ald_test compiler/compile_test compiler/sco_test
 
 .PHONY: clean test

@@ -22,6 +22,7 @@
 Sco *sco_new(const char *name, const uint8_t *data, int len) {
 	Sco *sco = calloc(1, sizeof(Sco));
 	sco->data = data;
+	sco->sco_name = name;
 	if (!memcmp(data, "S350", 4))
 		sco->version = SCO_S350;
 	else if (!memcmp(data, "153S", 4))
