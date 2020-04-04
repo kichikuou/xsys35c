@@ -16,12 +16,15 @@
  *
 */
 #include "xsys35dc.h"
+#include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
 enum {
-	  LABEL = 0x80,
+	  IF_END   = 1 << 0,
+	  LABEL    = 1 << 1,
+	  FUNC_TOP = 1 << 2,
 };
 
 #define CMD2(a, b) (a | b << 8)
@@ -32,12 +35,20 @@ typedef struct {
 
 	int page;
 	const uint8_t *p;  // Points inside scos->data[page]->data
+	int indent;
 } Decompiler;
 
 static Decompiler dc;
 
 static inline int dc_addr(void) {
 	return dc.p - ((Sco *)dc.scos->data[dc.page])->data;
+}
+
+static void indent(void) {
+	if (!dc.out)
+		return;
+	for (int i = 0; i < dc.indent; i++)
+		fputc('\t', dc.out);
 }
 
 static void dc_putc(int c) {
@@ -67,14 +78,25 @@ static int subcommand_num(void) {
 static void label(void) {
 	uint32_t addr = le32(dc.p);
 	dc.p += 4;
-	if (!dc.out) {  // first pass
-		Sco *sco = dc.scos->data[dc.page];
-		if (addr >= sco->filesize)
-			error("address out of range (%x)", addr);
-		sco->mark[addr] |= LABEL;
-	} else {
-		dc_printf("L_%05x", addr);
-	}
+	dc_printf("L_%05x", addr);
+
+	Sco *sco = dc.scos->data[dc.page];
+	if (addr >= sco->filesize)
+		error("address out of range (%x)", addr);
+	sco->mark[addr] |= LABEL;
+}
+
+static void conditional(void) {
+	dc.indent++;
+	dc.p += cali(dc.p, false, NULL, dc.out);
+	dc_putc(':');
+	uint32_t endaddr = le32(dc.p);
+	dc.p += 4;
+
+	Sco *sco = dc.scos->data[dc.page];
+	if (endaddr >= sco->filesize)
+		error("address out of range (%x)", endaddr);
+	sco->mark[endaddr] |= IF_END;
 }
 
 static void funcall(void) {
@@ -90,9 +112,20 @@ static void funcall(void) {
 		dc.p += cali(dc.p, false, NULL, dc.out);
 		break;
 	default:
-		dc_printf("F_%d_%05x", page, le32(dc.p));
-		dc.p += 4;
-		break;
+		{
+			page -= 1;
+			uint32_t addr = le32(dc.p);
+			dc.p += 4;
+			dc_printf("F_%d_%05x", page, addr);
+
+			if (page >= dc.scos->len)
+				error("page out of range (%x)", page);
+			Sco *sco = dc.scos->data[page];
+			if (addr >= sco->filesize)
+				error("address out of range (%x:%x)", page, addr);
+			sco->mark[addr] |= FUNC_TOP;
+			break;
+		}
 	}
 	dc_putc(':');
 }
@@ -141,14 +174,21 @@ static void message(void) {
 
 static int get_command(void) {
 	switch (*dc.p) {
+	case 'G':
+		if (dc.p[1] == 'S' || dc.p[1] == 'X')
+			goto cmd2;
+		else
+			goto cmd1;
 	case 'L':
 	case 'M':
 	case 'W':
 	case 'Z':
+	cmd2:
 		dc_putc(*dc.p++);
 		dc_putc(*dc.p++);
 		return CMD2(dc.p[-2], dc.p[-1]);
 	default:
+	cmd1:
 		dc_putc(*dc.p++);
 		return dc.p[-1];
 	}
@@ -158,12 +198,22 @@ static void decompile_page(int page) {
 	Sco *sco = dc.scos->data[page];
 	dc.page = page;
 	dc.p = sco->data + sco->hdrsize;
+	dc.indent = 1;
 
 	while (dc.p < sco->data + sco->filesize) {
 		int topaddr = dc.p - sco->data;
-		if (sco->mark[dc.p - sco->data] & LABEL)
+		uint8_t mark = sco->mark[dc.p - sco->data];
+		if (mark & IF_END) {
+			dc.indent--;
+			assert(dc.indent > 0);
+			indent();
+			dc_puts("}\n");
+		}
+		if (mark & FUNC_TOP)
+			dc_printf("**F_%d_%05x:\n", page, dc.p - sco->data);
+		if (mark & LABEL)
 			dc_printf("*L_%05x:\n", dc.p - sco->data);
-		dc_putc('\t');
+		indent();
 		if (*dc.p == 0x20 || *dc.p > 0x80) {
 			dc_putc('\'');
 			message();
@@ -172,11 +222,15 @@ static void decompile_page(int page) {
 		}
 		int cmd = get_command();
 		switch (cmd) {
-		case '!':
+		case '!':  // Assign
 			dc.p += cali(dc.p, true, NULL, dc.out);
 			dc_putc(':');
 			dc.p += cali(dc.p, false, NULL, dc.out);
 			dc_putc('!');
+			break;
+
+		case '{':  // Branch
+			conditional();
 			break;
 
 		case '@':  // Label jump
@@ -185,6 +239,11 @@ static void decompile_page(int page) {
 			break;
 
 		case '&':  // Page jump
+			dc.p += cali(dc.p, false, NULL, dc.out);
+			dc_putc(':');
+			break;
+
+		case '%':  // Page call / return
 			dc.p += cali(dc.p, false, NULL, dc.out);
 			dc_putc(':');
 			break;
@@ -237,6 +296,17 @@ static void decompile_page(int page) {
 				goto unknown_command;
 			}
 			break;
+		case 'G':
+			switch (subcommand_num()) {
+			case 0:
+				arguments("e"); break;
+			case 1:
+				arguments("ee"); break;
+			default:
+				goto unknown_command;
+			}
+			break;
+		case 'H': arguments("ne"); break;
 		case CMD2('L', 'C'): arguments("ees"); break;
 		case CMD2('M', 'A'): arguments("ee"); break;
 		case CMD2('M', 'C'): arguments("ee"); break;
@@ -256,8 +326,11 @@ static void decompile_page(int page) {
 		case CMD2('M', 'V'): arguments("e"); break;
 		case CMD2('M', 'Z'): arguments("neee"); break;
 		case 'R': break;
+		case 'T': arguments("ee"); break;
 		case CMD2('W', 'W'): arguments("eee"); break;
 		case CMD2('W', 'V'): arguments("eeee"); break;
+		case 'X': arguments("e"); break;
+		case 'Y': arguments("ee"); break;
 		case CMD2('Z', 'A'): arguments("ne"); break;
 		case CMD2('Z', 'B'): arguments("e"); break;
 		case CMD2('Z', 'C'): arguments("ee"); break;
