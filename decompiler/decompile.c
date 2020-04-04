@@ -32,6 +32,7 @@ enum {
 };
 
 #define CMD2(a, b) (a | b << 8)
+#define CMD3(a, b, c) (a | b << 8 | c << 16)
 
 typedef struct {
 	Vector *scos;
@@ -91,7 +92,10 @@ static int subcommand_num(void) {
 static void label(void) {
 	uint32_t addr = le32(dc.p);
 	dc.p += 4;
-	dc_printf("L_%05x", addr);
+	if (addr == 0)
+		dc_putc('0');
+	else
+		dc_printf("L_%05x", addr);
 
 	*mark_at(dc.page, addr) |= LABEL;
 }
@@ -174,6 +178,7 @@ static void loop_end(void) {
 	switch (sco->data[addr]) {
 	case '{':
 		*mark |= WHILE_START;
+		*mark_at(dc.page, dc_addr()) &= ~IF_END;  // ??
 		break;
 	case '<':
 		break;
@@ -190,6 +195,7 @@ static void arguments(const char *sig) {
 
 		switch (*sig) {
 		case 'e':
+		case 'v':
 			dc.p += cali(dc.p, false, NULL, dc.out);
 			break;
 		case 'n':
@@ -231,9 +237,15 @@ static int get_command(void) {
 			goto cmd2;
 		else
 			goto cmd1;
+	case 'C':
+	case 'E':
+	case 'I':
 	case 'L':
 	case 'M':
 	case 'P':
+	case 'Q':
+	case 'S':
+	case 'U':
 	case 'W':
 	case 'Z':
 	cmd2:
@@ -252,6 +264,7 @@ static void decompile_page(int page) {
 	dc.page = page;
 	dc.p = sco->data + sco->hdrsize;
 	dc.indent = 1;
+	bool in_menu_item = false;
 
 	while (dc.p < sco->data + sco->filesize) {
 		int topaddr = dc.p - sco->data;
@@ -298,6 +311,11 @@ static void decompile_page(int page) {
 			dc_putc(':');
 			break;
 
+		case '\\': // Label call
+			label();
+			dc_putc(':');
+			break;
+
 		case '&':  // Page jump
 			dc.p += cali(dc.p, false, NULL, dc.out);
 			dc_putc(':');
@@ -320,15 +338,12 @@ static void decompile_page(int page) {
 			break;
 
 		case '$':  // Menu item
-			label();
-			dc_putc('$');
-			if (*dc.p == 0x20 || *dc.p > 0x80) {
-				message();
+			in_menu_item = !in_menu_item;
+			if (in_menu_item) {
+				label();
 				dc_putc('$');
-				if (*dc.p++ == '$')
-					break;
 			}
-			error("%s:%x: Complex $ not implemented", sjis2utf(sco->sco_name), topaddr);
+			break;
 
 		case '#':  // Data table address
 			data_table();
@@ -368,6 +383,27 @@ static void decompile_page(int page) {
 				goto unknown_command;
 			}
 			break;
+		case CMD2('C', 'B'): arguments("eeeee"); break;
+		case CMD2('C', 'C'): arguments("eeeeee"); break;
+		case CMD2('C', 'D'): arguments("eeeeeeeeee"); break;
+		case CMD2('C', 'E'): arguments("eeeeeeeee"); break;
+		case CMD2('C', 'F'): arguments("eeeee"); break;
+		case CMD2('C', 'K'): arguments("neeeeeeee"); break;
+		case CMD2('C', 'L'): arguments("eeeee"); break;
+		case CMD2('C', 'M'): arguments("eeeeeeeee"); break;
+		case CMD2('C', 'P'): arguments("eee"); break;
+		case CMD2('C', 'S'): arguments("eeeeeee"); break;
+		case CMD2('C', 'T'): arguments("vee"); break;
+		case CMD2('C', 'U'): arguments("eeeeee"); break;
+		case CMD2('C', 'V'): arguments("eeeeee"); break;
+		case CMD2('C', 'X'): arguments("eeeeeeee"); break;
+		case CMD2('C', 'Y'): arguments("eeeee"); break;
+		case CMD2('C', 'Z'): arguments("eeeeeee"); break;
+		case CMD2('E', 'C'): arguments("e"); break;
+		case CMD2('E', 'G'): arguments("evvvv"); break;
+		case CMD2('E', 'M'): arguments("evee"); break;
+		case CMD2('E', 'N'): arguments("veeee"); break;
+		case CMD2('E', 'S'): arguments("eeeeee"); break;
 		case 'F': arguments("nee"); break;
 		case 'G':
 			switch (subcommand_num()) {
@@ -380,7 +416,45 @@ static void decompile_page(int page) {
 			}
 			break;
 		case 'H': arguments("ne"); break;
+		case CMD2('I', 'C'): arguments("ev"); break;
+		case CMD2('I', 'G'): arguments("veee"); break;
+		case CMD2('I', 'K'): arguments("n"); break;
+		case CMD2('I', 'M'): arguments("vv"); break;
+		case CMD2('I', 'X'): arguments("v"); break;
+		case CMD2('I', 'Y'): arguments("e"); break;
+		case CMD2('I', 'Z'): arguments("ee"); break;
+		case 'J':
+			switch (subcommand_num()) {
+			case 0:
+			case 1:
+			case 2:
+			case 3:
+				arguments("ee"); break;
+			case 4:
+				arguments(""); break;
+			default:
+				goto unknown_command;
+			}
+			break;
 		case CMD2('L', 'C'): arguments("ees"); break;
+		case CMD2('L', 'D'): arguments("e"); break;
+		case CMD2('L', 'E'): arguments("nfee"); break;
+		case CMD3('L', 'H', 'D'): arguments("ne"); break;
+		case CMD3('L', 'H', 'G'): arguments("ne"); break;
+		case CMD3('L', 'H', 'M'): arguments("ne"); break;
+		case CMD3('L', 'H', 'S'): arguments("ne"); break;
+		case CMD3('L', 'H', 'W'): arguments("ne"); break;
+		case CMD3('L', 'X', 'C'): arguments("e"); break;
+		case CMD3('L', 'X', 'G'): arguments("ess"); break;
+		case CMD3('L', 'X', 'L'): arguments("eee"); break;
+		case CMD3('L', 'X', 'O'): arguments("eee"); break;
+		case CMD3('L', 'X', 'P'): arguments("eee"); break;
+		case CMD3('L', 'X', 'R'): arguments("eve"); break;
+		case CMD3('L', 'X', 'S'): arguments("evv"); break;
+		case CMD3('L', 'X', 'W'): arguments("eve"); break;
+		case CMD2('L', 'L'): arguments("neee"); break;
+		case CMD2('L', 'P'): arguments("eve"); break;
+		case CMD2('L', 'T'): arguments("ev"); break;
 		case CMD2('M', 'A'): arguments("ee"); break;
 		case CMD2('M', 'C'): arguments("ee"); break;
 		case CMD2('M', 'D'): arguments("eee"); break;
@@ -429,8 +503,73 @@ static void decompile_page(int page) {
 				goto unknown_command;
 			}
 			break;
+		case CMD2('Q', 'C'): arguments("ee"); break;
+		case CMD2('Q', 'D'): arguments("e"); break;
+		case CMD2('Q', 'E'): arguments("nfee"); break;
+		case CMD2('Q', 'P'): arguments("eve"); break;
 		case 'R': break;
+		case CMD2('S', 'C'): arguments("v"); break;
+		case CMD2('S', 'G'):
+			switch (subcommand_num()) {
+			case 0:
+			case 1:
+			case 2:
+			case 3:
+			case 4:
+				arguments("e"); break;
+			case 5:
+			case 6:
+			case 7:
+			case 8:
+				arguments("ee"); break;
+			default:
+				goto unknown_command;
+			}
+			break;
+		case CMD2('S', 'I'): arguments("nv"); break;
+		case CMD2('S', 'L'): arguments("e"); break;
+		case CMD2('S', 'M'): arguments("e"); break;
+		case CMD2('S', 'O'): arguments("v"); break;
+		case CMD2('S', 'P'): arguments("ee"); break;
+		case CMD2('S', 'Q'): arguments("eee"); break;
+		case CMD2('S', 'R'): arguments(*dc.p < 0x40 ? "nv" : "ev"); break;
+		case CMD2('S', 'S'): arguments("e"); break;
+		case CMD2('S', 'T'): arguments("e"); break;
+		case CMD2('S', 'U'): arguments("vv"); break;
+		case CMD2('S', 'W'): arguments("veee"); break;
+		case CMD2('S', 'X'):
+			subcommand_num();  // device
+			switch (subcommand_num()) {
+			case 1:
+				arguments("eee"); break;
+			case 2:
+			case 4:
+				arguments("v"); break;
+			case 3:
+				break;
+			default:
+				goto unknown_command;
+			}
+			break;
 		case 'T': arguments("ee"); break;
+		case CMD2('U', 'C'): arguments("ne"); break;
+		case CMD2('U', 'D'): arguments("e"); break;
+		case CMD2('U', 'G'): arguments("ee"); break;
+		case CMD2('U', 'P'):
+			switch (subcommand_num()) {
+			case 0:
+				arguments("ee"); break;
+			case 1:
+				arguments("se"); break;
+			case 2:
+			case 3:
+				arguments("ss"); break;
+			default:
+				goto unknown_command;
+			}
+			break;
+		case CMD2('U', 'R'): arguments("v"); break;
+		case CMD2('U', 'S'): arguments("ee"); break;
 		case CMD2('W', 'W'): arguments("eee"); break;
 		case CMD2('W', 'V'): arguments("eeee"); break;
 		case 'X': arguments("e"); break;
