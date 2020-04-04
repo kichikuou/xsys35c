@@ -182,6 +182,7 @@ static void print_cali(Node *node, Vector *variables, FILE *out) {
 int cali(const uint8_t *p, bool is_lhs, Vector *variables, FILE *out) {
 	const uint8_t *endptr = p;
 	Node *node = parse_cali(&endptr, is_lhs);
-	print_cali(node, variables, out);
+	if (out)
+		print_cali(node, variables, out);
 	return endptr - p;
 }

@@ -16,8 +16,13 @@
  *
 */
 #include "xsys35dc.h"
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+
+enum {
+	  LABEL = 0x80,
+};
 
 #define CMD2(a, b) (a | b << 8)
 
@@ -35,22 +40,47 @@ static inline int dc_addr(void) {
 	return dc.p - ((Sco *)dc.scos->data[dc.page])->data;
 }
 
+static void dc_putc(int c) {
+	if (dc.out)
+		fputc(c, dc.out);
+}
+
+static void dc_puts(const char *s) {
+	if (dc.out)
+		fputs(s, dc.out);
+}
+
+static void dc_printf(const char *fmt, ...) {
+	if (!dc.out)
+		return;
+	va_list args;
+	va_start(args, fmt);
+	vfprintf(dc.out, fmt, args);
+}
+
 static int subcommand_num(void) {
 	int c = *dc.p++;
-	fprintf(dc.out, "%d", c);
+	dc_printf("%d", c);
 	return c;
 }
 
 static void label(void) {
 	uint32_t addr = le32(dc.p);
 	dc.p += 4;
-	fprintf(dc.out, "L_%x", addr);
+	if (!dc.out) {  // first pass
+		Sco *sco = dc.scos->data[dc.page];
+		if (addr >= sco->filesize)
+			error("address out of range (%x)", addr);
+		sco->mark[addr] |= LABEL;
+	} else {
+		dc_printf("L_%05x", addr);
+	}
 }
 
 static void arguments(const char *sig) {
 	const char *sep = " ";
 	for (; *sig; sig++) {
-		fputs(sep, dc.out);
+		dc_puts(sep);
 		sep = ",";
 
 		switch (*sig) {
@@ -58,33 +88,33 @@ static void arguments(const char *sig) {
 			dc.p += cali(dc.p, false, NULL, dc.out);
 			break;
 		case 'n':
-			fprintf(dc.out, "%d", *dc.p++);
+			dc_printf("%d", *dc.p++);
 			break;
 		case 's':
 			while (*dc.p != ':')
-				fputc(*dc.p++, dc.out);
+				dc_putc(*dc.p++);
 			dc.p++;  // skip ':'
 			break;
 		default:
 			error("BUG: invalid arguments() template : %c", *sig);
 		}
 	}
-	fputc(':', dc.out);
+	dc_putc(':');
 }
 
 static void message(void) {
 	while (*dc.p == 0x20 || *dc.p > 0x80) {
 		uint8_t c = *dc.p++;
 		if (c == ' ') {
-			fputs("\x81\x40", dc.out); // full-width space
+			dc_puts("\x81\x40"); // full-width space
 		} else if (is_sjis_half_kana(c)) {
 			uint16_t full = from_sjis_half_kana(c);
-			fputc(full >> 8, dc.out);
-			fputc(full & 0xff, dc.out);
+			dc_putc(full >> 8);
+			dc_putc(full & 0xff);
 		} else {
-			fputc(c, dc.out);
+			dc_putc(c);
 			if (is_sjis_byte1(c))
-				fputc(*dc.p++, dc.out);
+				dc_putc(*dc.p++);
 		}
 	}
 }
@@ -94,45 +124,47 @@ static int get_command(void) {
 	case 'L':
 	case 'W':
 	case 'Z':
-		fputc(*dc.p++, dc.out);
-		fputc(*dc.p++, dc.out);
+		dc_putc(*dc.p++);
+		dc_putc(*dc.p++);
 		return CMD2(dc.p[-2], dc.p[-1]);
 	default:
-		fputc(*dc.p++, dc.out);
+		dc_putc(*dc.p++);
 		return dc.p[-1];
 	}
 }
 
-static void decompile_sco(int page) {
+static void decompile_page(int page) {
 	Sco *sco = dc.scos->data[page];
 	dc.page = page;
 	dc.p = sco->data + sco->hdrsize;
 
 	while (dc.p < sco->data + sco->filesize) {
-		fputc('\t', dc.out);
+		if (sco->mark[dc.p - sco->data] & LABEL)
+			dc_printf("*L_%05x:\n", dc.p - sco->data);
+		dc_putc('\t');
 		if (*dc.p == 0x20 || *dc.p > 0x80) {
-			fputc('\'', dc.out);
+			dc_putc('\'');
 			message();
-			fputs("'\n", dc.out);
+			dc_puts("'\n");
 			continue;
 		}
 		int cmd = get_command();
 		switch (cmd) {
 		case '!':
 			dc.p += cali(dc.p, true, NULL, dc.out);
-			fputc(':', dc.out);
+			dc_putc(':');
 			dc.p += cali(dc.p, false, NULL, dc.out);
-			fputc('!', dc.out);
+			dc_putc('!');
 			break;
 
 		case '@':  // Label jump
 			label();
-			fputc(':', dc.out);
+			dc_putc(':');
 			break;
 
 		case '&':  // Page jump
 			dc.p += cali(dc.p, false, NULL, dc.out);
-			fputc(':', dc.out);
+			dc_putc(':');
 			break;
 
 		case ']':  // Menu
@@ -140,10 +172,10 @@ static void decompile_sco(int page) {
 
 		case '$':  // Menu item
 			label();
-			fputc('$', dc.out);
+			dc_putc('$');
 			if (*dc.p == 0x20 || *dc.p > 0x80) {
 				message();
-				fputc('$', dc.out);
+				dc_putc('$');
 				if (*dc.p++ == '$')
 					break;
 			}
@@ -223,7 +255,7 @@ static void decompile_sco(int page) {
 		unknown_command:
 			error("%s:%x: unknown command '%x'", sjis2utf(sco->sco_name), dc_addr(), cmd);
 		}
-		fputc('\n', dc.out);
+		dc_putc('\n');
 	}
 }
 
@@ -240,10 +272,13 @@ static void write_hed(const char *path) {
 void decompile(Vector *scos) {
 	memset(&dc, 0, sizeof(dc));
 	dc.scos = scos;
-	dc.out = stdout;
 
 	for (int i = 0; i < scos->len; i++)
-		decompile_sco(i);
+		decompile_page(i);
+
+	dc.out = stdout;
+	for (int i = 0; i < scos->len; i++)
+		decompile_page(i);
 
 	write_hed("xsys35dc.hed");
 }
