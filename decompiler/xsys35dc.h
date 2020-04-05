@@ -26,6 +26,7 @@ typedef struct {
 	uint32_t page;
 	const char *src_name;
 	const char *sco_name;
+	bool preprocessed;
 } Sco;
 
 // cali.c

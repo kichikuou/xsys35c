@@ -216,7 +216,10 @@ static void funcall(void) {
 			dc.p += 4;
 			dc_printf("F_%d_%05x", page, addr);
 
-			*mark_at(page, addr) |= FUNC_TOP;
+			uint8_t *mark = mark_at(page, addr);
+			*mark |= FUNC_TOP;
+			if (!(*mark & CODE))
+				((Sco *)dc.scos->data[page])->preprocessed = false;
 			break;
 		}
 	}
@@ -798,9 +801,21 @@ void decompile(Vector *scos, const char *outdir) {
 	dc.scos = scos;
 	dc.variables = new_vec();
 
-	for (int i = 0; i < scos->len; i++)
-		decompile_page(i);
+	// Preprocess
+	bool done = false;
+	while (!done) {
+		done = true;
+		for (int i = 0; i < scos->len; i++) {
+			Sco *sco = scos->data[i];
+			if (sco->preprocessed)
+				continue;
+			done = false;
+			decompile_page(i);
+			sco->preprocessed = true;
+		}
+	}
 
+	// Decompile
 	for (int i = 0; i < scos->len; i++) {
 		Sco *sco = scos->data[i];
 		dc.out = fopen(path_join(outdir, sjis2utf(sco->src_name)), "w");
