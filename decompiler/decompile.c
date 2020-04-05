@@ -53,8 +53,8 @@ static uint8_t *mark_at(int page, int addr) {
 	if (page >= dc.scos->len)
 		error("page out of range (%x:%x)", page, addr);
 	Sco *sco = dc.scos->data[page];
-	if (addr >= sco->filesize)
-		error("address out of range (%x:%x)", addr, addr);
+	if (addr > sco->filesize)
+		error("address out of range (%x:%x)", page, addr);
 	return &sco->mark[addr];
 }
 
@@ -298,10 +298,15 @@ static int get_command(void) {
 			goto cmd2;
 		else
 			goto cmd1;
+	case 'N':
+		if (dc.p[1] == 'D')
+			goto cmd3;
+		goto cmd2;
 	case 'C':
+	case 'D':
 	case 'E':
 	case 'I':
-	case 'L':
+	case 'L':  // FIXME
 	case 'M':
 	case 'P':
 	case 'Q':
@@ -318,6 +323,11 @@ static int get_command(void) {
 		dc_putc(*dc.p++);
 		return dc.p[-1];
 	}
+ cmd3:
+	dc_putc(*dc.p++);
+	dc_putc(*dc.p++);
+	dc_putc(*dc.p++);
+	return CMD3(dc.p[-3], dc.p[-2], dc.p[-1]);
 }
 
 static void decompile_page(int page) {
@@ -505,6 +515,11 @@ static void decompile_page(int page) {
 		case CMD2('C', 'X'): arguments("eeeeeeee"); break;
 		case CMD2('C', 'Y'): arguments("eeeee"); break;
 		case CMD2('C', 'Z'): arguments("eeeeeee"); break;
+		case CMD2('D', 'C'): arguments("eee"); break;
+		case CMD2('D', 'F'): arguments("vee"); break;
+		case CMD2('D', 'I'): arguments("evv"); break;
+		case CMD2('D', 'R'): arguments("v"); break;
+		case CMD2('D', 'S'): arguments("vvee"); break;
 		case CMD2('E', 'C'): arguments("e"); break;
 		case CMD2('E', 'G'): arguments("evvvv"); break;
 		case CMD2('E', 'M'): arguments("evee"); break;
@@ -578,6 +593,34 @@ static void decompile_page(int page) {
 		case CMD2('M', 'T'): arguments("s"); break;
 		case CMD2('M', 'V'): arguments("e"); break;
 		case CMD2('M', 'Z'): arguments("neee"); break;
+		case CMD2('N', '+'): arguments("vee"); break;
+		case CMD2('N', '-'): arguments("vee"); break;
+		case CMD2('N', '*'): arguments("vee"); break;
+		case CMD2('N', '/'): arguments("vee"); break;
+		case CMD2('N', '>'): arguments("veev"); break;
+		case CMD2('N', '<'): arguments("veev"); break;
+		case CMD2('N', '='): arguments("veev"); break;
+		case CMD2('N', '\\'): arguments("ve"); break;
+		case CMD2('N', '&'): arguments("vev"); break;
+		case CMD2('N', '|'): arguments("vev"); break;
+		case CMD2('N', '^'): arguments("vev"); break;
+		case CMD2('N', '~'): arguments("ve"); break;
+		case CMD2('N', 'B'): arguments("vve"); break;
+		case CMD2('N', 'C'): arguments("ve"); break;
+		case CMD2('N', 'I'): arguments("veee"); break;
+		case CMD2('N', 'O'): arguments("nvve"); break;
+		case CMD2('N', 'P'): arguments("vvev"); break;
+		case CMD2('N', 'R'): arguments("ev"); break;
+		case CMD2('N', 'T'): arguments("s"); break;
+		case CMD3('N', 'D', '+'): arguments("eee"); break;
+		case CMD3('N', 'D', '-'): arguments("eee"); break;
+		case CMD3('N', 'D', '*'): arguments("eee"); break;
+		case CMD3('N', 'D', '/'): arguments("eee"); break;
+		case CMD3('N', 'D', 'A'): arguments("ee"); break;
+		case CMD3('N', 'D', 'C'): arguments("ee"); break;
+		case CMD3('N', 'D', 'D'): arguments("ve"); break;
+		case CMD3('N', 'D', 'H'): arguments("ee"); break;
+		case CMD3('N', 'D', 'M'): arguments("ee"); break;
 		case CMD2('P', 'C'): arguments("e"); break;
 		case CMD2('P', 'D'): arguments("e"); break;
 		case CMD2('P', 'F'): // fall through
@@ -721,6 +764,13 @@ static void decompile_page(int page) {
 			error("%s:%x: unknown command %.*s", sjis2utf(sco->sco_name), topaddr, dc_addr() - topaddr, sco->data + topaddr);
 		}
 		dc_putc('\n');
+	}
+	while (branch_end_stack->len > 0 && stack_top(branch_end_stack) == sco->filesize) {
+		stack_pop(branch_end_stack);
+		dc.indent--;
+		assert(dc.indent > 0);
+		indent();
+		dc_puts("}\n");
 	}
 }
 
