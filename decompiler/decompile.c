@@ -115,6 +115,59 @@ static void label(void) {
 	*mark_at(dc.page, addr) |= LABEL;
 }
 
+static bool is_string_data(const uint8_t *begin, const uint8_t *end) {
+	for (const uint8_t *p = begin; p < end;) {
+		if (*p == '\0')
+			return p - begin >= 3;
+		if (is_sjis_byte1(p[0]) && is_sjis_byte2(p[1]))
+			p += 2;
+		else if (is_sjis_half_kana(*p))
+			p++;
+		else
+			break;
+	}
+	return false;
+}
+
+static void data_block(const uint8_t *p, const uint8_t *end) {
+	if (!dc.out)
+		return;
+
+	while (p < end) {
+		indent();
+		if (is_string_data(p, end)) {
+			dc_putc('"');
+			while (*p) {
+				uint8_t c = *p++;
+				if (c == ' ') {
+					dc_puts("\x81\x40"); // full-width space
+				} else if (is_sjis_half_kana(c)) {
+					uint16_t full = from_sjis_half_kana(c);
+					dc_putc(full >> 8);
+					dc_putc(full & 0xff);
+				} else {
+					assert(is_sjis_byte1(c));
+					dc_putc(c);
+					dc_putc(*p++);
+				}
+			}
+			dc_puts("\"\n");
+			p++;
+			continue;
+		}
+
+		dc_putc('[');
+		const char *sep = "";
+		for (; p < end && !is_string_data(p, end); p += 2) {
+			if (p + 1 == end)
+				error("data block with odd number of bytes");
+			dc_printf("%s%d", sep, p[0] | p[1] << 8);
+			sep = ", ";
+		}
+		dc_puts("]\n");
+	}
+}
+
 static void data_table(void) {
 	uint32_t addr = le32(dc.p);
 	dc.p += 4;
@@ -283,8 +336,14 @@ static void decompile_page(int page) {
 		if (mark & LABEL)
 			dc_printf("*L_%05x:\n", dc.p - sco->data);
 		if (mark & DATA) {
-			// TODO: find next code block
-			break;
+			const uint8_t *data_end = dc.p + 1;
+			for (; data_end < sco->data + sco->filesize; data_end++) {
+				if (sco->mark[data_end - sco->data] & ~DATA)
+					break;
+			}
+			data_block(dc.p, data_end);
+			dc.p = data_end;
+			continue;
 		}
 		if (*dc.p == '>')
 			dc.indent--;
