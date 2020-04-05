@@ -23,8 +23,6 @@
 #include <string.h>
 #include <time.h>
 
-#define PATH_SEPARATOR '/'
-
 enum {
 	LOPT_OBJDIR = 256,
 	LOPT_TIMESTAMP,
@@ -78,28 +76,6 @@ static char *read_file(const char *path) {
 		error("%s: read error", path);
 	fclose(fp);
 	buf[size] = '\0';
-	return buf;
-}
-
-static const char *basename(const char *path) {
-	char *p = strrchr(path, PATH_SEPARATOR);
-	if (!p)
-		return path;
-	return p + 1;
-}
-
-static char *dirname(const char *path) {
-	char *p = strrchr(path, PATH_SEPARATOR);
-	if (!p)
-		return ".";
-	return strndup(path, p - path);
-}
-
-static char *path_join(const char *dir, char *path) {
-	if (path[0] == PATH_SEPARATOR)
-		return path;
-	char *buf = malloc(strlen(dir) + strlen(path) + 2);
-	sprintf(buf, "%s%c%s", dir, PATH_SEPARATOR, path);
 	return buf;
 }
 

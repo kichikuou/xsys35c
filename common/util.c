@@ -141,6 +141,28 @@ uint16_t from_sjis_half_kana(uint8_t c) {
 	return kanatbl[c - 0xa0];
 }
 
+const char *basename(const char *path) {
+	char *p = strrchr(path, PATH_SEPARATOR);
+	if (!p)
+		return path;
+	return p + 1;
+}
+
+char *dirname(const char *path) {
+	char *p = strrchr(path, PATH_SEPARATOR);
+	if (!p)
+		return ".";
+	return strndup(path, p - path);
+}
+
+char *path_join(const char *dir, char *path) {
+	if (!dir || path[0] == PATH_SEPARATOR)
+		return path;
+	char *buf = malloc(strlen(dir) + strlen(path) + 2);
+	sprintf(buf, "%s%c%s", dir, PATH_SEPARATOR, path);
+	return buf;
+}
+
 Vector *new_vec(void) {
 	Vector *v = malloc(sizeof(Vector));
 	v->data = malloc(sizeof(void *) * 16);

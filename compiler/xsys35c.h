@@ -17,8 +17,6 @@
 */
 #include "common.h"
 
-#define VERSION "0.1.0"
-
 // sco.c
 
 typedef enum {

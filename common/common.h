@@ -21,6 +21,8 @@
 #include <stdnoreturn.h>
 #include <time.h>
 
+#define VERSION "0.1.0"
+
 static inline uint32_t le32(const uint8_t *p) {
 	return p[0] | p[1] << 8 | p[2] << 16 | p[3] << 24;
 }
@@ -52,6 +54,11 @@ static inline bool is_sjis_byte1(uint8_t c) {
 static inline bool is_sjis_byte2(uint8_t c) {
 	return 0x40 <= c && c <= 0xfc && c != 0x7f;
 }
+
+#define PATH_SEPARATOR '/'
+const char *basename(const char *path);
+char *dirname(const char *path);
+char *path_join(const char *dir, char *path);
 
 typedef struct {
 	void **data;

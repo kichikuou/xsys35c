@@ -34,4 +34,4 @@ int cali(const uint8_t *p, bool is_lhs, Vector *variables, FILE *out);
 
 // decompile.c
 
-void decompile(Vector *scos);
+void decompile(Vector *scos, const char *outdir);

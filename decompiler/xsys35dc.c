@@ -16,8 +16,29 @@
  *
 */
 #include "xsys35dc.h"
+#include <getopt.h>
 #include <stdlib.h>
 #include <string.h>
+
+static const char short_options[] = "ho:v";
+static const struct option long_options[] = {
+	{ "help",    no_argument,       NULL, 'h' },
+	{ "outdir",  required_argument, NULL, 'o' },
+	{ "version", no_argument,       NULL, 'v' },
+	{ 0, 0, 0, 0 }
+};
+
+static void usage(void) {
+	puts("Usage: xsys35dc [options] aldfile");
+	puts("Options:");
+	puts("    -h, --help                Display this message and exit");
+	puts("    -o, --outdir <directory>  Write output into <directory>");
+	puts("    -v, --version             Print version information and exit");
+}
+
+static void version(void) {
+	puts("xsys35dc " VERSION);
+}
 
 Sco *sco_new(const char *name, const uint8_t *data, int len) {
 	Sco *sco = calloc(1, sizeof(Sco));
@@ -50,17 +71,40 @@ Sco *sco_new(const char *name, const uint8_t *data, int len) {
 }
 
 int main(int argc, char *argv[]) {
-	if (argc == 1) {
-		printf("usage: xsys35dc aldfile\n");
+	const char *outdir = NULL;
+
+	int opt;
+	while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
+		switch (opt) {
+		case 'h':
+			usage();
+			return 0;
+		case 'o':
+			outdir = optarg;
+			break;
+		case 'v':
+			version();
+			return 0;
+		case '?':
+			usage();
+			return 1;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+
+	if (argc != 1) {
+		usage();
 		return 1;
 	}
-	Vector *scos = ald_read(argv[1]);
+
+	Vector *scos = ald_read(argv[0]);
 	for (int i = 0; i < scos->len; i++) {
 		AldEntry *e = scos->data[i];
 		scos->data[i] = sco_new(e->name, e->data, e->size);
 	}
 
-	decompile(scos);
+	decompile(scos, outdir);
 
 	return 0;
 }

@@ -406,7 +406,7 @@ static void decompile_page(int page) {
 		case CMD2('E', 'S'): arguments("eeeeee"); break;
 		case 'F': arguments("nee"); break;
 		case 'G':
-			switch (subcommand_num()) {
+			switch (*dc.p++) {
 			case 0:
 				arguments("e"); break;
 			case 1:
@@ -628,16 +628,19 @@ static void write_hed(const char *path) {
 	fclose(fp);
 }
 
-void decompile(Vector *scos) {
+void decompile(Vector *scos, const char *outdir) {
 	memset(&dc, 0, sizeof(dc));
 	dc.scos = scos;
 
 	for (int i = 0; i < scos->len; i++)
 		decompile_page(i);
 
-	dc.out = stdout;
-	for (int i = 0; i < scos->len; i++)
+	for (int i = 0; i < scos->len; i++) {
+		Sco *sco = scos->data[i];
+		dc.out = fopen(path_join(outdir, sjis2utf(sco->src_name)), "w");
 		decompile_page(i);
+		fclose(dc.out);
+	}
 
-	write_hed("xsys35dc.hed");
+	write_hed(path_join(outdir, "xsys35dc.hed"));
 }
