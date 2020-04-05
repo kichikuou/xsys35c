@@ -133,6 +133,7 @@ static void conditional(Vector *branch_end_stack) {
 	uint32_t endaddr = le32(dc.p);
 	dc.p += 4;
 
+	*mark_at(dc.page, endaddr) |= CODE;
 	stack_push(branch_end_stack, endaddr);
 }
 
@@ -230,23 +231,6 @@ static void arguments(const char *sig) {
 	dc_putc(':');
 }
 
-static void message(void) {
-	while (*dc.p == 0x20 || *dc.p > 0x80) {
-		uint8_t c = *dc.p++;
-		if (c == ' ') {
-			dc_puts("\x81\x40"); // full-width space
-		} else if (is_sjis_half_kana(c)) {
-			uint16_t full = from_sjis_half_kana(c);
-			dc_putc(full >> 8);
-			dc_putc(full & 0xff);
-		} else {
-			dc_putc(c);
-			if (is_sjis_byte1(c))
-				dc_putc(*dc.p++);
-		}
-	}
-}
-
 static int get_command(void) {
 	switch (*dc.p) {
 	case 'G':
@@ -308,7 +292,22 @@ static void decompile_page(int page) {
 		sco->mark[dc.p - sco->data] |= CODE;
 		if (*dc.p == 0x20 || *dc.p > 0x80) {
 			dc_putc('\'');
-			message();
+			while (*dc.p == 0x20 || *dc.p > 0x80) {
+				uint8_t c = *dc.p++;
+				if (c == ' ') {
+					dc_puts("\x81\x40"); // full-width space
+				} else if (is_sjis_half_kana(c)) {
+					uint16_t full = from_sjis_half_kana(c);
+					dc_putc(full >> 8);
+					dc_putc(full & 0xff);
+				} else {
+					dc_putc(c);
+					if (is_sjis_byte1(c))
+						dc_putc(*dc.p++);
+				}
+				if (*mark_at(dc.page, dc_addr()) != 0)
+					break;
+			}
 			dc_puts("'\n");
 			continue;
 		}
