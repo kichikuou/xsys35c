@@ -26,9 +26,8 @@ enum {
 	  DATA        = 1 << 1,
 	  LABEL       = 1 << 2,
 	  FUNC_TOP    = 1 << 3,
-	  IF_END      = 1 << 4,
-	  WHILE_START = 1 << 5,
-	  FOR_START   = 1 << 6,
+	  WHILE_START = 1 << 4,
+	  FOR_START   = 1 << 5,
 };
 
 #define CMD2(a, b) (a | b << 8)
@@ -56,6 +55,22 @@ static uint8_t *mark_at(int page, int addr) {
 	if (addr >= sco->filesize)
 		error("address out of range (%x:%x)", addr, addr);
 	return &sco->mark[addr];
+}
+
+static void stack_push(Vector *stack, uint32_t n) {
+	vec_push(stack, (void *)n);
+}
+
+static void stack_pop(Vector *stack) {
+	if (stack->len == 0)
+		error("stack underflow");
+	stack->len--;
+}
+
+static uint32_t stack_top(Vector *stack) {
+	if (stack->len == 0)
+		error("stack_top: empty stack");
+	return (uint32_t)stack->data[stack->len - 1];
 }
 
 static void indent(void) {
@@ -111,14 +126,14 @@ static void data_table(void) {
 	*mark_at(dc.page, addr) |= DATA | LABEL;
 }
 
-static void conditional(void) {
+static void conditional(Vector *branch_end_stack) {
 	dc.indent++;
 	dc.p += cali(dc.p, false, NULL, dc.out);
 	dc_putc(':');
 	uint32_t endaddr = le32(dc.p);
 	dc.p += 4;
 
-	*mark_at(dc.page, endaddr) |= IF_END;
+	stack_push(branch_end_stack, endaddr);
 }
 
 static void funcall(void) {
@@ -169,7 +184,7 @@ static void for_loop(void) {
 	dc.indent++;
 }
 
-static void loop_end(void) {
+static void loop_end(Vector *branch_end_stack) {
 	uint32_t addr = le32(dc.p);
 	dc.p += 4;
 
@@ -178,7 +193,9 @@ static void loop_end(void) {
 	switch (sco->data[addr]) {
 	case '{':
 		*mark |= WHILE_START;
-		*mark_at(dc.page, dc_addr()) &= ~IF_END;  // ??
+		if (stack_top(branch_end_stack) != dc_addr())
+			error("while-loop: unexpected address (%d != %d)", stack_top(branch_end_stack), dc_addr());
+		stack_pop(branch_end_stack);
 		break;
 	case '<':
 		break;
@@ -265,11 +282,13 @@ static void decompile_page(int page) {
 	dc.p = sco->data + sco->hdrsize;
 	dc.indent = 1;
 	bool in_menu_item = false;
+	Vector *branch_end_stack = new_vec();
 
 	while (dc.p < sco->data + sco->filesize) {
 		int topaddr = dc.p - sco->data;
 		uint8_t mark = sco->mark[dc.p - sco->data];
-		if (mark & IF_END) {
+		while (branch_end_stack->len > 0 && stack_top(branch_end_stack) == topaddr) {
+			stack_pop(branch_end_stack);
 			dc.indent--;
 			assert(dc.indent > 0);
 			indent();
@@ -303,7 +322,7 @@ static void decompile_page(int page) {
 			break;
 
 		case '{':  // Branch
-			conditional();
+			conditional(branch_end_stack);
 			break;
 
 		case '@':  // Label jump
@@ -331,7 +350,7 @@ static void decompile_page(int page) {
 			break;
 
 		case '>':  // Loop end
-			loop_end();
+			loop_end(branch_end_stack);
 			break;
 
 		case ']':  // Menu
