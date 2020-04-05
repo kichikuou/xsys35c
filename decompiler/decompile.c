@@ -305,13 +305,35 @@ static void decompile_page(int page) {
 		if (*dc.p == '>')
 			dc.indent--;
 		indent();
+		sco->mark[dc.p - sco->data] |= CODE;
 		if (*dc.p == 0x20 || *dc.p > 0x80) {
 			dc_putc('\'');
 			message();
 			dc_puts("'\n");
 			continue;
 		}
-		sco->mark[dc.p - sco->data] |= CODE;
+		if (mark & FOR_START) {
+			assert(*dc.p == '!');
+			dc.p++;
+			dc_putc('<');
+			dc.p += cali(dc.p, true, NULL, dc.out);
+			dc_putc(',');
+			dc.p += cali(dc.p, false, NULL, dc.out);
+			dc_putc(',');
+			assert(*dc.p == '<');
+			dc.p++;
+			for_loop();
+			dc_putc('\n');
+			continue;
+		}
+		if (mark & WHILE_START) {
+			assert(*dc.p == '{');
+			dc.p++;
+			dc_puts("<@");
+			conditional(branch_end_stack);
+			dc_putc('\n');
+			continue;
+		}
 		int cmd = get_command();
 		switch (cmd) {
 		case '!':  // Assign
