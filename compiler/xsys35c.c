@@ -72,7 +72,7 @@ static char *read_file(const char *path) {
 	if (fseek(fp, 0, SEEK_SET) != 0)
 		error("%s: %s", path, strerror(errno));
 	char *buf = malloc(size + 1);
-	if (fread(buf, size, 1, fp) != 1)
+	if (size > 0 && fread(buf, size, 1, fp) != 1)
 		error("%s: read error", path);
 	fclose(fp);
 	buf[size] = '\0';
