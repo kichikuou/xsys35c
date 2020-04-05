@@ -125,7 +125,7 @@ static void label(void) {
 static bool is_string_data(const uint8_t *begin, const uint8_t *end) {
 	for (const uint8_t *p = begin; p < end;) {
 		if (*p == '\0')
-			return p - begin >= 3;
+			return p - begin >= 2;
 		if (is_sjis_byte1(p[0]) && is_sjis_byte2(p[1]))
 			p += 2;
 		else if (is_sjis_half_kana(*p))
@@ -283,6 +283,7 @@ static void arguments(const char *sig) {
 			dc_printf("%d", *dc.p++);
 			break;
 		case 's':
+		case 'f':
 			while (*dc.p != ':')
 				dc_putc(*dc.p++);
 			dc.p++;  // skip ':'
@@ -305,10 +306,15 @@ static int get_command(void) {
 		if (dc.p[1] == 'D')
 			goto cmd3;
 		goto cmd2;
+	case 'V':
+		if (dc.p[1] == 'I')
+			goto cmd3;
+		goto cmd2;
 	case 'C':
 	case 'D':
 	case 'E':
 	case 'I':
+	case 'K':
 	case 'L':  // FIXME
 	case 'M':
 	case 'P':
@@ -539,6 +545,8 @@ static void decompile_page(int page) {
 				goto unknown_command;
 			}
 			break;
+		case CMD2('G', 'S'): arguments("ev"); break;
+		case CMD2('G', 'X'): arguments("ee"); break;
 		case 'H': arguments("ne"); break;
 		case CMD2('I', 'C'): arguments("ev"); break;
 		case CMD2('I', 'G'): arguments("veee"); break;
@@ -560,6 +568,13 @@ static void decompile_page(int page) {
 				goto unknown_command;
 			}
 			break;
+		case CMD2('K', 'I'): arguments("vee"); break;
+		case CMD2('K', 'K'): arguments("e"); break;
+		case CMD2('K', 'N'): arguments("v"); break;
+		case CMD2('K', 'P'): arguments("v"); break;
+		case CMD2('K', 'Q'): arguments("ve"); break;
+		case CMD2('K', 'R'): arguments("v"); break;
+		case CMD2('K', 'W'): arguments("ve"); break;
 		case CMD2('L', 'C'): arguments("ees"); break;
 		case CMD2('L', 'D'): arguments("e"); break;
 		case CMD2('L', 'E'): arguments("nfee"); break;
@@ -691,12 +706,13 @@ static void decompile_page(int page) {
 		case CMD2('S', 'W'): arguments("veee"); break;
 		case CMD2('S', 'X'):
 			subcommand_num();  // device
+			dc_putc(',');
 			switch (subcommand_num()) {
 			case 1:
-				arguments("eee"); break;
+				dc_putc(','); arguments("eee"); break;
 			case 2:
 			case 4:
-				arguments("v"); break;
+				dc_putc(','); arguments("v"); break;
 			case 3:
 				break;
 			default:
@@ -722,8 +738,28 @@ static void decompile_page(int page) {
 			break;
 		case CMD2('U', 'R'): arguments("v"); break;
 		case CMD2('U', 'S'): arguments("ee"); break;
-		case CMD2('W', 'W'): arguments("eee"); break;
+		case CMD2('V', 'A'): arguments("neee"); break;
+		case CMD2('V', 'B'): arguments("eeeeeee"); break;
+		case CMD2('V', 'C'): arguments("eeeeeee"); break;
+		case CMD2('V', 'E'): arguments("eeeeee"); break;
+		case CMD2('V', 'F'): arguments(""); break;
+		case CMD2('V', 'G'): arguments("eeee"); break;
+		case CMD2('V', 'H'): arguments("eeeeee"); break;
+		case CMD3('V', 'I', 'C'): arguments("eeee"); break;
+		case CMD3('V', 'I', 'P'): arguments("eeee"); break;
+		case CMD2('V', 'J'): arguments("eeee"); break;
+		case CMD2('V', 'P'): arguments("eeeeee"); break;
+		case CMD2('V', 'R'): arguments("eev"); break;
+		case CMD2('V', 'S'): arguments("eeeee"); break;
+		case CMD2('V', 'T'): arguments("eeeeeeeeee"); break;
+		case CMD2('V', 'V'): arguments("ee"); break;
+		case CMD2('V', 'W'): arguments("eev"); break;
+		case CMD2('V', 'X'): arguments("eeee"); break;
+		case CMD2('V', 'Z'): arguments("nee"); break;
 		case CMD2('W', 'V'): arguments("eeee"); break;
+		case CMD2('W', 'W'): arguments("eee"); break;
+		case CMD2('W', 'X'): arguments("eeee"); break;
+		case CMD2('W', 'Z'): arguments("ne"); break;
 		case 'X': arguments("e"); break;
 		case 'Y': arguments("ee"); break;
 		case CMD2('Z', 'A'): arguments("ne"); break;
