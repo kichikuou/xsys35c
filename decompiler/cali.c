@@ -17,8 +17,9 @@
 */
 #include "xsys35dc.h"
 #include <stdlib.h>
+#include <string.h>
 
-typedef struct Node {
+typedef struct Cali {
 	enum {
 		NODE_NUMBER,
 		NODE_VARIABLE,
@@ -26,11 +27,11 @@ typedef struct Node {
 		NODE_AREF,
 	} type;
 	int val;
-	struct Node *lhs, *rhs;
-} Node;
+	struct Cali *lhs, *rhs;
+} Cali;
 
-static Node *new_node(int type, int val, Node *lhs, Node *rhs) {
-	Node *n = calloc(1, sizeof(Node));
+static Cali *new_node(int type, int val, Cali *lhs, Cali *rhs) {
+	Cali *n = calloc(1, sizeof(Cali));
 	n->type = type;
 	n->val = val;
 	n->lhs = lhs;
@@ -38,9 +39,9 @@ static Node *new_node(int type, int val, Node *lhs, Node *rhs) {
 	return n;
 }
 
-static Node *parse_cali(const uint8_t **code, bool is_lhs) {
-	Node *stack[256];
-	Node **top = stack;
+Cali *parse_cali(const uint8_t **code, bool is_lhs) {
+	Cali *stack[256];
+	Cali **top = stack;
 	const uint8_t *p = *code;
 	do {
 		uint8_t op = *p++;
@@ -65,8 +66,8 @@ static Node *parse_cali(const uint8_t **code, bool is_lhs) {
 			{
 				if (top - 2 < stack)
 					error("cali: stack underflow");
-				Node *rhs = *--top;
-				Node *lhs = *--top;
+				Cali *rhs = *--top;
+				Cali *lhs = *--top;
 				*top++ = new_node(NODE_OP, op, lhs, rhs);
 			}
 			break;
@@ -82,7 +83,7 @@ static Node *parse_cali(const uint8_t **code, bool is_lhs) {
 				{
 					int var = p[0] << 8 | p[1];
 					p += 2;
-					Node *index = parse_cali(&p, false);
+					Cali *index = parse_cali(&p, false);
 					*top++ = new_node(NODE_AREF, var, index, NULL);
 				}
 				break;
@@ -93,8 +94,8 @@ static Node *parse_cali(const uint8_t **code, bool is_lhs) {
 				{
 					if (top - 2 < stack)
 						error("cali: stack underflow");
-					Node *rhs = *--top;
-					Node *lhs = *--top;
+					Cali *rhs = *--top;
+					Cali *lhs = *--top;
 					*top++ = new_node(NODE_OP, op, lhs, rhs);
 				}
 				break;
@@ -126,14 +127,14 @@ static Node *parse_cali(const uint8_t **code, bool is_lhs) {
 
 	if (--top != stack)
 		error("cali: unexpected end of expression");
-	Node *node = *top;
+	Cali *node = *top;
 	if (node->type != NODE_VARIABLE && node->type != NODE_AREF)
 		error("cali: unexpected left-hand-side for assignment %d", node->type);
 	*code = p;
 	return node;
 }
 
-static void print_cali(Node *node, Vector *variables, FILE *out) {
+void print_cali(Cali *node, Vector *variables, FILE *out) {
 	switch (node->type) {
 	case NODE_NUMBER:
 		fprintf(out, "%d", node->val);
@@ -141,10 +142,14 @@ static void print_cali(Node *node, Vector *variables, FILE *out) {
 
 	case NODE_VARIABLE:
 	case NODE_AREF:
-		if (variables && node->val < variables->len)
-			fputs(variables->data[node->val], out);
-		else
-			fprintf(out, "VAR%d", node->val);
+		while (variables->len <= node->val)
+			vec_push(variables, NULL);
+		if (!variables->data[node->val]) {
+			char buf[10];
+			sprintf(buf, "VAR%d", node->val);
+			variables->data[node->val] = strdup(buf);
+		}
+		fputs(variables->data[node->val], out);
 		if (node->type == NODE_AREF) {
 			fputc('[', out);
 			print_cali(node->lhs, variables, out);
@@ -177,12 +182,4 @@ static void print_cali(Node *node, Vector *variables, FILE *out) {
 		fputc(')', out);
 		break;
 	}
-}
-
-int cali(const uint8_t *p, bool is_lhs, Vector *variables, FILE *out) {
-	const uint8_t *endptr = p;
-	Node *node = parse_cali(&endptr, is_lhs);
-	if (out)
-		print_cali(node, variables, out);
-	return endptr - p;
 }

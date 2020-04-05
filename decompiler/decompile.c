@@ -35,6 +35,7 @@ enum {
 
 typedef struct {
 	Vector *scos;
+	Vector *variables;
 	FILE *out;
 
 	int page;
@@ -96,6 +97,12 @@ static void dc_printf(const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
 	vfprintf(dc.out, fmt, args);
+}
+
+static void cali(bool is_lhs) {
+	struct Cali *node = parse_cali(&dc.p, is_lhs);
+	if (dc.out)
+		print_cali(node, dc.variables, dc.out);
 }
 
 static int subcommand_num(void) {
@@ -173,7 +180,7 @@ static void data_table(void) {
 	dc.p += 4;
 	dc_printf("L_%05x", addr);
 	dc_putc(',');
-	dc.p += cali(dc.p, false, NULL, dc.out);
+	cali(false);
 	dc_putc(':');
 
 	*mark_at(dc.page, addr) |= DATA | LABEL;
@@ -181,7 +188,7 @@ static void data_table(void) {
 
 static void conditional(Vector *branch_end_stack) {
 	dc.indent++;
-	dc.p += cali(dc.p, false, NULL, dc.out);
+	cali(false);
 	dc_putc(':');
 	uint32_t endaddr = le32(dc.p);
 	dc.p += 4;
@@ -196,11 +203,11 @@ static void funcall(void) {
 	switch (page) {
 	case 0:  // return
 		dc_puts("0,");
-		dc.p += cali(dc.p, false, NULL, dc.out);
+		cali(false);
 		break;
 	case 0xffff:
 		dc_putc('~');
-		dc.p += cali(dc.p, false, NULL, dc.out);
+		cali(false);
 		break;
 	default:
 		{
@@ -228,12 +235,12 @@ static void for_loop(void) {
 	if (*dc.p++ != 1)
 		error("for_loop: 1 expected, got 0x%02x", *--dc.p);
 	dc.p += 4; // skip label
-	dc.p += cali(dc.p, false, NULL, NULL);  // var
-	dc.p += cali(dc.p, false, NULL, dc.out);  // e2
+	parse_cali(&dc.p, false);  // var
+	cali(false);  // e2
 	dc_putc(',');
-	dc.p += cali(dc.p, false, NULL, dc.out);  // e3
+	cali(false);  // e3
 	dc_putc(',');
-	dc.p += cali(dc.p, false, NULL, dc.out);  // e4
+	cali(false);  // e4
 	dc_putc(':');
 	dc.indent++;
 }
@@ -267,7 +274,7 @@ static void arguments(const char *sig) {
 		switch (*sig) {
 		case 'e':
 		case 'v':
-			dc.p += cali(dc.p, false, NULL, dc.out);
+			cali(false);
 			break;
 		case 'n':
 			dc_printf("%d", *dc.p++);
@@ -374,9 +381,9 @@ static void decompile_page(int page) {
 			assert(*dc.p == '!');
 			dc.p++;
 			dc_putc('<');
-			dc.p += cali(dc.p, true, NULL, dc.out);
+			cali(true);
 			dc_putc(',');
-			dc.p += cali(dc.p, false, NULL, dc.out);
+			cali(false);
 			dc_putc(',');
 			assert(*dc.p == '<');
 			dc.p++;
@@ -395,9 +402,9 @@ static void decompile_page(int page) {
 		int cmd = get_command();
 		switch (cmd) {
 		case '!':  // Assign
-			dc.p += cali(dc.p, true, NULL, dc.out);
+			cali(true);
 			dc_putc(':');
-			dc.p += cali(dc.p, false, NULL, dc.out);
+			cali(false);
 			dc_putc('!');
 			break;
 
@@ -416,12 +423,12 @@ static void decompile_page(int page) {
 			break;
 
 		case '&':  // Page jump
-			dc.p += cali(dc.p, false, NULL, dc.out);
+			cali(false);
 			dc_putc(':');
 			break;
 
 		case '%':  // Page call / return
-			dc.p += cali(dc.p, false, NULL, dc.out);
+			cali(false);
 			dc_putc(':');
 			break;
 
@@ -727,9 +734,19 @@ static void write_hed(const char *path) {
 	fclose(fp);
 }
 
+static void write_variables(const char *path) {
+	FILE *fp = fopen(path, "w");
+	for (int i = 0; i < dc.variables->len; i++) {
+		const char *s = dc.variables->data[i];
+		fprintf(fp, "%s\n", s ? s : "");
+	}
+	fclose(fp);
+}
+
 void decompile(Vector *scos, const char *outdir) {
 	memset(&dc, 0, sizeof(dc));
 	dc.scos = scos;
+	dc.variables = new_vec();
 
 	for (int i = 0; i < scos->len; i++)
 		decompile_page(i);
@@ -742,4 +759,5 @@ void decompile(Vector *scos, const char *outdir) {
 	}
 
 	write_hed(path_join(outdir, "xsys35dc.hed"));
+	write_variables(path_join(outdir, "variables.txt"));
 }

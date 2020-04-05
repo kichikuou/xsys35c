@@ -30,7 +30,9 @@ typedef struct {
 
 // cali.c
 
-int cali(const uint8_t *p, bool is_lhs, Vector *variables, FILE *out);
+struct Cali;
+struct Cali *parse_cali(const uint8_t **code, bool is_lhs);
+void print_cali(struct Cali *node, Vector *variables, FILE *out);
 
 // decompile.c
 
