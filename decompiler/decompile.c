@@ -813,6 +813,21 @@ static void decompile_page(int page) {
 	}
 }
 
+static void write_sysver(const char *path) {
+	if (dc.scos->len == 0)
+		return;
+	Sco *sco = dc.scos->data[0];
+	FILE *fp = fopen(path, "w");
+	switch (sco->version) {
+	case SCO_S350: fputs("S350\n", fp); break;
+	case SCO_153S: fputs("153S\n", fp); break;
+	case SCO_S351: fputs("3.5\n", fp); break;
+	case SCO_S360: fputs("3.6\n", fp); break;
+	case SCO_S380: fputs("3.8\n", fp); break;
+	}
+	fclose(fp);
+}
+
 static void write_hed(const char *path) {
 	FILE *fp = fopen(path, "w");
 	fprintf(fp, "#SYSTEM35\n");
@@ -859,6 +874,7 @@ void decompile(Vector *scos, const char *outdir) {
 		fclose(dc.out);
 	}
 
+	write_sysver(path_join(outdir, "sysver.txt"));
 	write_hed(path_join(outdir, "xsys35dc.hed"));
 	write_variables(path_join(outdir, "variables.txt"));
 }
