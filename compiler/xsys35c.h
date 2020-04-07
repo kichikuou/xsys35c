@@ -25,7 +25,9 @@ typedef enum {
 	SYSTEM38,
 	SYSTEM39,
 } SysVer;
+
 extern SysVer sys_ver;
+extern ScoVer sco_ver;
 
 typedef struct {
 	uint8_t *buf;

@@ -20,6 +20,7 @@
 #include <string.h>
 
 SysVer sys_ver = SYSTEM38;
+ScoVer sco_ver = SCO_S380;
 
 Buffer *new_buf(void) {
 	Buffer *b = malloc(sizeof(Buffer));
@@ -139,17 +140,12 @@ void sco_init(Buffer *b, const char *src_name, int pageno) {
 	int hdrsize = (18 + namelen + 15) & ~0xf;
 
 	// SCO header
-	switch (sys_ver) {
-	case SYSTEM35:
-		emit_string(b, "S351");
-		break;
-	case SYSTEM36:
-		emit_string(b, "S360");
-		break;
-	case SYSTEM38:
-	case SYSTEM39:
-		emit_string(b, "S380");
-		break;
+	switch (sco_ver) {
+	case SCO_S350: emit_string(b, "S350"); break;
+	case SCO_153S: emit_string(b, "153S"); break;
+	case SCO_S351: emit_string(b, "S351"); break;
+	case SCO_S360: emit_string(b, "S360"); break;
+	case SCO_S380: emit_string(b, "S380"); break;
 	}
 	emit_dword(b, hdrsize);
 	emit_dword(b, 0);  // File size (to be filled by sco_finalize)

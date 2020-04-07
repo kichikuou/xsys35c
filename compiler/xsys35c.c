@@ -28,6 +28,25 @@ enum {
 	LOPT_TIMESTAMP,
 };
 
+typedef struct {
+	const char *opt_val;
+	SysVer sys_ver;
+	ScoVer sco_ver;
+} SysVerOptValue;
+
+static const SysVerOptValue sys_ver_opt_values[] = {
+	{"3.5", SYSTEM35, SCO_S351},
+	{"3.6", SYSTEM36, SCO_S360},
+	{"3.8", SYSTEM38, SCO_S380},
+	{"3.9", SYSTEM39, SCO_S380},
+	{"S350", SYSTEM35, SCO_S350},
+	{"153S", SYSTEM35, SCO_153S},
+	{"S351", SYSTEM35, SCO_S351},
+	{"S360", SYSTEM36, SCO_S360},
+	{"S380", SYSTEM39, SCO_S380},
+	{NULL, 0, 0},
+};
+
 static const char short_options[] = "hi:o:s:V:v";
 static const struct option long_options[] = {
 	{ "help",        no_argument,       NULL, 'h' },
@@ -232,16 +251,15 @@ int main(int argc, char *argv[]) {
 			output = optarg;
 			break;
 		case 's':
-			if (!strcmp(optarg, "3.5"))
-				sys_ver = SYSTEM35;
-			else if (!strcmp(optarg, "3.6"))
-				sys_ver = SYSTEM36;
-			else if (!strcmp(optarg, "3.8"))
-				sys_ver = SYSTEM38;
-			else if (!strcmp(optarg, "3.9"))
-				sys_ver = SYSTEM39;
-			else
-				error("Unknown system version '%s'. Possible values are '3.5', '3.6', '3.8' and '3.9'\n", optarg);
+			for (const SysVerOptValue *v = sys_ver_opt_values;; v++) {
+				if (!v->opt_val)
+					error("Unknown system version '%s'", optarg);
+				if (!strcmp(optarg, v->opt_val)) {
+					sys_ver = v->sys_ver;
+					sco_ver = v->sco_ver;
+					break;
+				}
+			}
 			break;
 		case 'V':
 			var_list = optarg;
