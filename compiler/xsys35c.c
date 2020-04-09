@@ -98,12 +98,6 @@ static char *read_file(const char *path) {
 	return buf;
 }
 
-static char *upcase(char *str) {
-	for (char *p = str; *p; p++)
-		*p = toupper(*p);
-	return str;
-}
-
 static char *trim_right(char *str) {
 	for (char *p = str + strlen(str) - 1; p >= str && isspace(*p); p--)
 		*p = '\0';
@@ -172,8 +166,6 @@ static Vector *build_ald(Vector *src_paths, Vector *variables, const char *objdi
 	for (int i = 0; i < src_paths->len; i++) {
 		char *path = src_paths->data[i];
 		const char *name = basename(path);
-		if (sys_ver <= SYSTEM36)
-			name = upcase(strdup(name));
 		map_put(srcs, utf2sjis(name), read_file(path));
 	}
 
