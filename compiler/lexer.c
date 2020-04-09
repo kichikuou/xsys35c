@@ -321,6 +321,11 @@ static int lower_case_command(const char *s, int len) {
 }
 
 static int replace_command(int cmd) {
+	switch (cmd) {
+	case CMD3('T', 'A', 'A'): return COMMAND_TAA;
+	case CMD3('T', 'A', 'B'): return COMMAND_TAB;
+	}
+
 	if (sys_ver < SYSTEM38)
 		return cmd;
 
@@ -331,8 +336,6 @@ static int replace_command(int cmd) {
 	case CMD3('T', 'P', 'S'): return COMMAND_TPS;
 	case CMD3('T', 'O', 'P'): return COMMAND_TOP;
 	case CMD3('T', 'P', 'P'): return COMMAND_TPP;
-	case CMD3('T', 'A', 'A'): return COMMAND_TAA;
-	case CMD3('T', 'A', 'B'): return COMMAND_TAB;
 	case CMD2('H', 'H'): return sys_ver == SYSTEM39 ? COMMAND_ainHH : COMMAND_newHH;
 	case CMD2('L', 'C'): return COMMAND_newLC;
 	case CMD2('L', 'E'): return COMMAND_newLE;
@@ -391,7 +394,7 @@ int get_command(Buffer *b) {
 		emit_command(b, cmd);
 		return cmd;
 	}
-	if (sys_ver >= SYSTEM38 && islower(*input)) {
+	if (islower(*input)) {
 		while (isalnum(*++input))
 			;
 		int len = input - command_top;

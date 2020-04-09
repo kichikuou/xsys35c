@@ -779,6 +779,7 @@ static bool command(void) {
 	case CMD2('G', 'X'): arguments("ee"); break;
 	case 'H': arguments("ne"); break;
 	case CMD2('I', 'C'): arguments("ev"); break;
+	case CMD2('I', 'E'): arguments("ee"); break;
 	case CMD2('I', 'G'): arguments("veee"); break;
 	case CMD2('I', 'K'): arguments("n"); break;
 	case CMD2('I', 'M'): arguments("vv"); break;

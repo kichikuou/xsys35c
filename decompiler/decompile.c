@@ -31,9 +31,6 @@ enum {
 	  FOR_START   = 1 << 5,
 };
 
-#define CMD2(a, b) (a | b << 8)
-#define CMD3(a, b, c) (a | b << 8 | c << 16)
-
 typedef struct {
 	Vector *scos;
 	Vector *variables;
@@ -301,6 +298,17 @@ static void arguments(const char *sig) {
 
 static int get_command(void) {
 	switch (*dc.p) {
+	case '/':
+		dc.p++;
+		switch(*dc.p++) {
+		case 0x06: dc_puts("inc"); return COMMAND_inc;
+		case 0x07: dc_puts("dec"); return COMMAND_dec;
+		case 0x08: dc_puts("TAA"); return COMMAND_TAA;
+		case 0x09: dc_puts("TAB"); return COMMAND_TAB;
+		default:
+			error_at(dc.p - 2, "Unsupported command 2f %02x", dc.p[-1]);
+		}
+		break;
 	case 'G':
 		if (dc.p[1] == 'S' || dc.p[1] == 'X')
 			goto cmd2;
@@ -314,12 +322,17 @@ static int get_command(void) {
 		if (dc.p[1] == 'I')
 			goto cmd3;
 		goto cmd2;
+	case 'L':
+		if (dc.p[1] == 'H')
+			goto cmd3;
+		if (dc.p[1] == 'X')
+			goto cmd3; // FIXME
+		goto cmd2;
 	case 'C':
 	case 'D':
 	case 'E':
 	case 'I':
 	case 'K':
-	case 'L':  // FIXME
 	case 'M':
 	case 'P':
 	case 'Q':
@@ -335,6 +348,10 @@ static int get_command(void) {
 	cmd1:
 		dc_putc(*dc.p++);
 		return dc.p[-1];
+	case 0x10: case 0x11: case 0x12: case 0x13:
+	case 0x14: case 0x15: case 0x16: case 0x17:
+		dc_putc('!');
+		return *dc.p++;
 	}
  cmd3:
 	dc_putc(*dc.p++);
@@ -425,7 +442,11 @@ static void decompile_page(int page) {
 		int cmd = get_command();
 		switch (cmd) {
 		case '!':  // Assign
+		case 0x10: case 0x11: case 0x12: case 0x13:
+		case 0x14: case 0x15: case 0x16: case 0x17:
 			cali(true);
+			if (cmd != '!')
+				dc_putc("+-*/%&|^"[cmd - 0x10]);
 			dc_putc(':');
 			cali(false);
 			dc_putc('!');
@@ -553,6 +574,7 @@ static void decompile_page(int page) {
 		case CMD2('G', 'X'): arguments("ee"); break;
 		case 'H': arguments("ne"); break;
 		case CMD2('I', 'C'): arguments("ev"); break;
+		case CMD2('I', 'E'): arguments("ee"); break;
 		case CMD2('I', 'G'): arguments("veee"); break;
 		case CMD2('I', 'K'): arguments("n"); break;
 		case CMD2('I', 'M'): arguments("vv"); break;
@@ -802,6 +824,140 @@ static void decompile_page(int page) {
 			break;
 		case CMD2('Z', 'W'): arguments("e"); break;
 		case CMD2('Z', 'Z'): arguments("ne"); break;
+		case COMMAND_TOC: arguments(""); break;
+		case COMMAND_TOS: arguments(""); break;
+		case COMMAND_TPC: arguments("e"); break;
+		case COMMAND_TPS: arguments("e"); break;
+		case COMMAND_TOP: arguments(""); break;
+		case COMMAND_TPP: arguments(""); break;
+		case COMMAND_inc: arguments("v"); break;
+		case COMMAND_dec: arguments("v"); break;
+		case COMMAND_TAA: arguments("e"); break;
+		case COMMAND_TAB: arguments("v"); break;
+		case COMMAND_wavLoad: arguments("ee"); break;
+		case COMMAND_wavPlay: arguments("ee"); break;
+		case COMMAND_wavStop: arguments("e"); break;
+		case COMMAND_wavUnload: arguments("e"); break;
+		case COMMAND_wavIsPlay: arguments("ev"); break;
+		case COMMAND_wavFade: arguments("eeee"); break;
+		case COMMAND_wavIsFade: arguments("ev"); break;
+		case COMMAND_wavStopFade: arguments("e"); break;
+		case COMMAND_trace: arguments("z"); break;
+		case COMMAND_wav3DSetPos: arguments("eeee"); break;
+		case COMMAND_wav3DCommit: arguments(""); break;
+		case COMMAND_wav3DGetPos: arguments("evvv"); break;
+		case COMMAND_wav3DSetPosL: arguments("eee"); break;
+		case COMMAND_wav3DGetPosL: arguments("vvv"); break;
+		case COMMAND_wav3DFadePos: arguments("eeeee"); break;
+		case COMMAND_wav3DIsFadePos: arguments("ev"); break;
+		case COMMAND_wav3DStopFadePos: arguments("e"); break;
+		case COMMAND_wav3DFadePosL: arguments("eeee"); break;
+		case COMMAND_wav3DIsFadePosL: arguments("v"); break;
+		case COMMAND_wav3DStopFadePosL: arguments(""); break;
+		case COMMAND_sndPlay: arguments("ee"); break;
+		case COMMAND_sndStop: arguments(""); break;
+		case COMMAND_sndIsPlay: arguments("v"); break;
+		case COMMAND_msg: arguments("z"); break;
+		case COMMAND_newHH: arguments("ne"); break;
+		case COMMAND_newLC: arguments("eez"); break;
+		case COMMAND_newLE: arguments("nzee"); break;
+		case COMMAND_newLXG: arguments("ezz"); break;
+		case COMMAND_newMI: arguments("eez"); break;
+		case COMMAND_newMS: arguments("ez"); break;
+		case COMMAND_newMT: arguments("z"); break;
+		case COMMAND_newNT: arguments("z"); break;
+		case COMMAND_newQE: arguments("nzee"); break;
+		case COMMAND_newUP:
+			switch (subcommand_num()) {
+			case 0:
+				arguments("ee"); break;
+			case 1:
+				arguments("ze"); break;
+			case 2:
+			case 3:
+				arguments("zz"); break;
+			default:
+				goto unknown_command;
+			}
+			break;
+		case COMMAND_newF: arguments("nee"); break;
+		case COMMAND_wavWaitTime: arguments("ee"); break;
+		case COMMAND_wavGetPlayPos: arguments("ev"); break;
+		case COMMAND_wavWaitEnd: arguments("e"); break;
+		case COMMAND_wavGetWaveTime: arguments("ev"); break;
+		case COMMAND_menuSetCbkSelect: arguments("F"); break;
+		case COMMAND_menuSetCbkCancel: arguments("F"); break;
+		case COMMAND_menuClearCbkSelect: arguments(""); break;
+		case COMMAND_menuClearCbkCancel: arguments(""); break;
+		case COMMAND_wav3DSetMode: arguments("ee"); break;
+		case COMMAND_grCopyStretch: arguments("eeeeeeeee"); break;
+		case COMMAND_grFilterRect: arguments("eeeee"); break;
+		case COMMAND_iptClearWheelCount: arguments(""); break;
+		case COMMAND_iptGetWheelCount: arguments("vv"); break;
+		case COMMAND_menuGetFontSize: arguments("v"); break;
+		case COMMAND_msgGetFontSize: arguments("v"); break;
+		case COMMAND_strGetCharType: arguments("eev"); break;
+		case COMMAND_strGetLengthASCII: arguments("ev"); break;
+		case COMMAND_sysWinMsgLock: arguments(""); break;
+		case COMMAND_sysWinMsgUnlock: arguments(""); break;
+		case COMMAND_aryCmpCount: arguments("veev"); break;
+		case COMMAND_aryCmpTrans: arguments("veeeev"); break;
+		case COMMAND_grBlendColorRect: arguments("eeeeeeeee"); break;
+		case COMMAND_grDrawFillCircle: arguments("eeee"); break;
+		case COMMAND_MHH: arguments("eee"); break;
+		case COMMAND_menuSetCbkInit: arguments("F"); break;
+		case COMMAND_menuClearCbkInit: arguments(""); break;
+		case COMMAND_sysOpenShell: arguments("z"); break;
+		case COMMAND_sysAddWebMenu: arguments("zz"); break;
+		case COMMAND_iptSetMoveCursorTime: arguments("e"); break;
+		case COMMAND_iptGetMoveCursorTime: arguments("v"); break;
+		case COMMAND_grBlt: arguments("eeeeee"); break;
+		case COMMAND_LXWT: arguments("ez"); break;
+		case COMMAND_LXWS: arguments("ee"); break;
+		case COMMAND_LXWE: arguments("ee"); break;
+		case COMMAND_LXWH: arguments("ene"); break;
+		case COMMAND_LXWHH: arguments("ene"); break;
+		case COMMAND_sysGetOSName: arguments("e"); break;
+		case COMMAND_patchEC: arguments("e"); break;
+		case COMMAND_mathSetClipWindow: arguments("eeee"); break;
+		case COMMAND_mathClip: arguments("vvvvvv"); break;
+		case COMMAND_LXF: arguments("ezz"); break;
+		case COMMAND_strInputDlg: arguments("zeev"); break;
+		case COMMAND_strCheckASCII: arguments("ev"); break;
+		case COMMAND_strCheckSJIS: arguments("ev"); break;
+		case COMMAND_strMessageBox: arguments("z"); break;
+		case COMMAND_strMessageBoxStr: arguments("e"); break;
+		case COMMAND_grCopyUseAMapUseA: arguments("eeeeeee"); break;
+		case COMMAND_grSetCEParam: arguments("ee"); break;
+		case COMMAND_grEffectMoveView: arguments("eeee"); break;
+		case COMMAND_cgSetCacheSize: arguments("e"); break;
+		case COMMAND_gaijiSet: arguments("ee"); break;
+		case COMMAND_gaijiClearAll: arguments(""); break;
+		case COMMAND_menuGetLatestSelect: arguments("v"); break;
+		case COMMAND_lnkIsLink: arguments("eev"); break;
+		case COMMAND_lnkIsData: arguments("eev"); break;
+		case COMMAND_fncSetTable: arguments("eF"); break;
+		case COMMAND_fncSetTableFromStr: arguments("eev"); break;
+		case COMMAND_fncClearTable: arguments("e"); break;
+		case COMMAND_fncCall: arguments("e"); break;
+		case COMMAND_fncSetReturnCode: arguments("e"); break;
+		case COMMAND_fncGetReturnCode: arguments("v"); break;
+		case COMMAND_msgSetOutputFlag: arguments("e"); break;
+		case COMMAND_saveDeleteFile: arguments("ev"); break;
+		case COMMAND_wav3DSetUseFlag: arguments("e"); break;
+		case COMMAND_wavFadeVolume: arguments("eeee"); break;
+		case COMMAND_patchEMEN: arguments("e"); break;
+		case COMMAND_wmenuEnableMsgSkip: arguments("e"); break;
+		case COMMAND_winGetFlipFlag: arguments("v"); break;
+		case COMMAND_cdGetMaxTrack: arguments("v"); break;
+		case COMMAND_dlgErrorOkCancel: arguments("zv"); break;
+		case COMMAND_menuReduce: arguments("e"); break;
+		case COMMAND_menuGetNumof: arguments("v"); break;
+		case COMMAND_menuGetText: arguments("ee"); break;
+		case COMMAND_menuGoto: arguments("ee"); break;
+		case COMMAND_menuReturnGoto: arguments("ee"); break;
+		case COMMAND_menuFreeShelterDIB: arguments(""); break;
+		case COMMAND_msgFreeShelterDIB: arguments(""); break;
 		default:
 		unknown_command:
 			error("%s:%x: unknown command '%.*s'", sjis2utf(sco->sco_name), topaddr, dc_addr() - topaddr, sco->data + topaddr);
