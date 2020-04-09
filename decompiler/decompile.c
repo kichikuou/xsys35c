@@ -167,9 +167,12 @@ static void data_block(const uint8_t *p, const uint8_t *end) {
 		dc_putc('[');
 		const char *sep = "";
 		for (; p < end && !is_string_data(p, end); p += 2) {
-			if (p + 1 == end)
-				error_at(p, "data block with odd number of bytes");
-			dc_printf("%s%d", sep, p[0] | p[1] << 8);
+			if (p + 1 == end) {
+				warning_at(p, "data block with odd number of bytes");
+				dc_printf("%s%d", sep, p[0]);
+			} else {
+				dc_printf("%s%d", sep, p[0] | p[1] << 8);
+			}
 			sep = ", ";
 		}
 		dc_puts("]\n");
@@ -860,6 +863,17 @@ noreturn void error_at(const uint8_t *pos, char *fmt, ...) {
 	vfprintf(stderr, fmt, args);
 	fputc('\n', stderr);
 	exit(1);
+}
+
+void warning_at(const uint8_t *pos, char *fmt, ...) {
+	Sco *sco = dc.scos->data[dc.page];
+	assert(sco->data <= pos);
+	assert(pos < sco->data + sco->filesize);;
+	fprintf(stderr, "Waring: %s:%lx: ", sjis2utf(sco->sco_name), pos - sco->data);
+	va_list args;
+	va_start(args, fmt);
+	vfprintf(stderr, fmt, args);
+	fputc('\n', stderr);
 }
 
 void decompile(Vector *scos, const char *outdir) {

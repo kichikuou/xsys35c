@@ -47,8 +47,10 @@ Cali *parse_cali(const uint8_t **code, bool is_lhs) {
 		uint8_t op = *p++;
 		switch (op) {
 		case OP_END:
+			if (top == stack)
+				error_at(p, "empty expression");
 			if (--top != stack)
-				error_at(p, "unexpected end of expression");
+				warning_at(p, "unexpected end of expression");
 			*code = p;
 			return *top;
 
@@ -125,8 +127,10 @@ Cali *parse_cali(const uint8_t **code, bool is_lhs) {
 		}
 	} while (!is_lhs);
 
+	if (top == stack)
+		error_at(p, "empty expression");
 	if (--top != stack)
-		error_at(p, "unexpected end of expression");
+		warning_at(p, "unexpected end of expression");
 	Cali *node = *top;
 	if (node->type != NODE_VARIABLE && node->type != NODE_AREF)
 		error_at(p, "unexpected left-hand-side for assignment %d", node->type);
