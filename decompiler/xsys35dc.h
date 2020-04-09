@@ -38,3 +38,4 @@ void print_cali(struct Cali *node, Vector *variables, FILE *out);
 // decompile.c
 
 void decompile(Vector *scos, const char *outdir);
+noreturn void error_at(const uint8_t *pos, char *fmt, ...);

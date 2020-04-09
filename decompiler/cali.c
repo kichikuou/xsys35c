@@ -48,7 +48,7 @@ Cali *parse_cali(const uint8_t **code, bool is_lhs) {
 		switch (op) {
 		case OP_END:
 			if (--top != stack)
-				error("cali: unexpected end of expression");
+				error_at(p, "unexpected end of expression");
 			*code = p;
 			return *top;
 
@@ -65,7 +65,7 @@ Cali *parse_cali(const uint8_t **code, bool is_lhs) {
 		case OP_NE:
 			{
 				if (top - 2 < stack)
-					error("cali: stack underflow");
+					error_at(p, "stack underflow");
 				Cali *rhs = *--top;
 				Cali *lhs = *--top;
 				*top++ = new_node(NODE_OP, op, lhs, rhs);
@@ -93,7 +93,7 @@ Cali *parse_cali(const uint8_t **code, bool is_lhs) {
 			case OP_C0_GE:
 				{
 					if (top - 2 < stack)
-						error("cali: stack underflow");
+						error_at(p, "stack underflow");
 					Cali *rhs = *--top;
 					Cali *lhs = *--top;
 					*top++ = new_node(NODE_OP, op, lhs, rhs);
@@ -101,7 +101,7 @@ Cali *parse_cali(const uint8_t **code, bool is_lhs) {
 				break;
 
 			default:
-				error("cali: unknown code c0 %02x", op);
+				error_at(p, "unknown code c0 %02x", op);
 				break;
 			}
 			break;
@@ -117,7 +117,7 @@ Cali *parse_cali(const uint8_t **code, bool is_lhs) {
 				if (op < 0x40) {
 					val = val << 8 | *p++;
 					if (val <= 0x33)
-						error("cali: unknown code 00 %02x", val);
+						error_at(p, "unknown code 00 %02x", val);
 				}
 				*top++ = new_node(NODE_NUMBER, val, NULL, NULL);
 			}
@@ -126,10 +126,10 @@ Cali *parse_cali(const uint8_t **code, bool is_lhs) {
 	} while (!is_lhs);
 
 	if (--top != stack)
-		error("cali: unexpected end of expression");
+		error_at(p, "unexpected end of expression");
 	Cali *node = *top;
 	if (node->type != NODE_VARIABLE && node->type != NODE_AREF)
-		error("cali: unexpected left-hand-side for assignment %d", node->type);
+		error_at(p, "unexpected left-hand-side for assignment %d", node->type);
 	*code = p;
 	return node;
 }

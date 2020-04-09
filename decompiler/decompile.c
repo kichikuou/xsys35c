@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 enum {
@@ -167,7 +168,7 @@ static void data_block(const uint8_t *p, const uint8_t *end) {
 		const char *sep = "";
 		for (; p < end && !is_string_data(p, end); p += 2) {
 			if (p + 1 == end)
-				error("data block with odd number of bytes");
+				error_at(p, "data block with odd number of bytes");
 			dc_printf("%s%d", sep, p[0] | p[1] << 8);
 			sep = ", ";
 		}
@@ -800,7 +801,7 @@ static void decompile_page(int page) {
 		case CMD2('Z', 'Z'): arguments("ne"); break;
 		default:
 		unknown_command:
-			error("%s:%x: unknown command %.*s", sjis2utf(sco->sco_name), topaddr, dc_addr() - topaddr, sco->data + topaddr);
+			error("%s:%x: unknown command '%.*s'", sjis2utf(sco->sco_name), topaddr, dc_addr() - topaddr, sco->data + topaddr);
 		}
 		dc_putc('\n');
 	}
@@ -845,6 +846,18 @@ static void write_variables(const char *path) {
 		fprintf(fp, "%s\n", s ? s : "");
 	}
 	fclose(fp);
+}
+
+noreturn void error_at(const uint8_t *pos, char *fmt, ...) {
+	Sco *sco = dc.scos->data[dc.page];
+	assert(sco->data <= pos);
+	assert(pos < sco->data + sco->filesize);;
+	fprintf(stderr, "%s:%lx: ", sjis2utf(sco->sco_name), pos - sco->data);
+	va_list args;
+	va_start(args, fmt);
+	vfprintf(stderr, fmt, args);
+	fputc('\n', stderr);
+	exit(1);
 }
 
 void decompile(Vector *scos, const char *outdir) {
