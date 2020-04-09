@@ -29,6 +29,7 @@ enum {
 	  FUNC_TOP    = 1 << 3,
 	  WHILE_START = 1 << 4,
 	  FOR_START   = 1 << 5,
+	  DATA_TABLE  = 1 << 6,
 };
 
 typedef struct {
@@ -178,7 +179,7 @@ static void data_block(const uint8_t *p, const uint8_t *end) {
 	}
 }
 
-static void data_table(void) {
+static void data_table_addr(void) {
 	uint32_t addr = le32(dc.p);
 	dc.p += 4;
 	dc_printf("L_%05x", addr);
@@ -186,7 +187,7 @@ static void data_table(void) {
 	cali(false);
 	dc_putc(':');
 
-	*mark_at(dc.page, addr) |= DATA | LABEL;
+	*mark_at(dc.page, addr) |= DATA_TABLE | LABEL;
 }
 
 static void conditional(Vector *branch_end_stack) {
@@ -384,6 +385,19 @@ static void decompile_page(int page) {
 			dc_printf("**F_%d_%05x:\n", page, dc.p - sco->data);
 		if (mark & LABEL)
 			dc_printf("*L_%05x:\n", dc.p - sco->data);
+		if (mark & DATA_TABLE) {
+			uint32_t addr = le32(dc.p);
+			if (dc_addr() < addr && addr < sco->filesize) {
+				indent();
+				dc_printf("_L_%05x:\n", addr);
+				sco->mark[addr] |= DATA | LABEL;
+				dc.p += 4;
+				if (!(sco->mark[dc.p - sco->data] & DATA))
+					sco->mark[dc.p - sco->data] |= DATA_TABLE;
+				continue;
+			}
+			mark |= DATA;
+		}
 		if (mark & DATA) {
 			const uint8_t *data_end = dc.p + 1;
 			for (; data_end < sco->data + sco->filesize; data_end++) {
@@ -498,7 +512,7 @@ static void decompile_page(int page) {
 			break;
 
 		case '#':  // Data table address
-			data_table();
+			data_table_addr();
 			break;
 
 		case '~':  // Function call
