@@ -29,8 +29,8 @@ static inline uint32_t le32(const uint8_t *p) {
 
 typedef enum {
 	SCO_S350,
-	SCO_153S,
 	SCO_S351,
+	SCO_153S,
 	SCO_S360,
 	SCO_S380
 } ScoVer;

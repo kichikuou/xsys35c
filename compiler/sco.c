@@ -142,8 +142,8 @@ void sco_init(Buffer *b, const char *src_name, int pageno) {
 	// SCO header
 	switch (sco_ver) {
 	case SCO_S350: emit_string(b, "S350"); break;
-	case SCO_153S: emit_string(b, "153S"); break;
 	case SCO_S351: emit_string(b, "S351"); break;
+	case SCO_153S: emit_string(b, "153S"); break;
 	case SCO_S360: emit_string(b, "S360"); break;
 	case SCO_S380: emit_string(b, "S380"); break;
 	}

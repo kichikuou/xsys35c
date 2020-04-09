@@ -47,10 +47,10 @@ Sco *sco_new(const char *name, const uint8_t *data, int len) {
 	sco->sco_name = name;
 	if (!memcmp(data, "S350", 4))
 		sco->version = SCO_S350;
-	else if (!memcmp(data, "153S", 4))
-		sco->version = SCO_153S;
 	else if (!memcmp(data, "S351", 4))
 		sco->version = SCO_S351;
+	else if (!memcmp(data, "153S", 4))
+		sco->version = SCO_153S;
 	else if (!memcmp(data, "S360", 4))
 		sco->version = SCO_S360;
 	else if (!memcmp(data, "S380", 4))

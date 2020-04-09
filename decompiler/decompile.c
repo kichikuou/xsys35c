@@ -826,8 +826,8 @@ static void write_sysver(const char *path) {
 	FILE *fp = fopen(path, "w");
 	switch (sco->version) {
 	case SCO_S350: fputs("S350\n", fp); break;
-	case SCO_153S: fputs("153S\n", fp); break;
 	case SCO_S351: fputs("3.5\n", fp); break;
+	case SCO_153S: fputs("153S\n", fp); break;
 	case SCO_S360: fputs("3.6\n", fp); break;
 	case SCO_S380: fputs("3.8\n", fp); break;
 	}
