@@ -812,6 +812,8 @@ static void decompile_page(int page) {
 		indent();
 		dc_puts("}\n");
 	}
+	if (sco->mark[sco->filesize] & LABEL)
+		dc_printf("*L_%05x:\n", sco->filesize);
 }
 
 static void write_sysver(const char *path) {
