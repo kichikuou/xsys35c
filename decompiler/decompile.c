@@ -121,6 +121,8 @@ static void label(void) {
 }
 
 static bool is_string_data(const uint8_t *begin, const uint8_t *end) {
+	if (*begin == '\0' && begin + 1 == end)
+		return true;
 	for (const uint8_t *p = begin; p < end;) {
 		if (*p == '\0')
 			return p - begin >= 2;
@@ -140,7 +142,7 @@ static void data_block(const uint8_t *p, const uint8_t *end) {
 
 	while (p < end) {
 		indent();
-		if (is_string_data(p, end)) {
+		if (is_string_data(p, end) || (*p == '\0' && is_string_data(p + 1, end))) {
 			dc_putc('"');
 			while (*p) {
 				uint8_t c = *p++;
