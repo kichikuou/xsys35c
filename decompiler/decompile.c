@@ -169,7 +169,7 @@ static void data_block(const uint8_t *p, const uint8_t *end) {
 		for (; p < end && !is_string_data(p, end); p += 2) {
 			if (p + 1 == end) {
 				warning_at(p, "data block with odd number of bytes");
-				dc_printf("%s%d", sep, p[0]);
+				dc_printf("%s%db", sep, p[0]);
 			} else {
 				dc_printf("%s%d", sep, p[0] | p[1] << 8);
 			}

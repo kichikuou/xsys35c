@@ -365,7 +365,11 @@ static void number_array(void) {
 		int n = get_number();
 		if (n > 0xffff)
 			error_at(top, "number constant out of range: %d", n);
-		emit_word(out, n);
+
+		if (consume('b'))  // byte constant (xsys35c extension)
+			emit(out, n);
+		else
+			emit_word(out, n);
 	}
 }
 
