@@ -489,6 +489,33 @@ static int get_command(void) {
 	return CMD3(dc.p[-3], dc.p[-2], dc.p[-1]);
 }
 
+static bool inline_menu_string(void) {
+	const uint8_t *end = dc.p;
+	while (*end == 0x20 || *end > 0x80)
+		end += is_sjis_byte1(*end) ? 2 : 1;
+	if (*end != '$')
+		return false;
+
+	while (dc.p < end) {
+		uint8_t c = *dc.p++;
+		if (c == ' ') {
+			dc_puts("\x81\x40"); // full-width space
+		} else if (is_sjis_half_kana(c)) {
+			uint16_t full = from_sjis_half_kana(c);
+			dc_putc(full >> 8);
+			dc_putc(full & 0xff);
+		} else {
+			dc_putc(c);
+			if (is_sjis_byte1(c))
+				dc_putc(*dc.p++);
+		}
+	}
+	if (*dc.p != '$')
+		error_at(dc.p, "'$' expected");
+	dc_putc(*dc.p++);
+	return true;
+}
+
 static void decompile_page(int page) {
 	Sco *sco = dc.scos->data[page];
 	dc.page = page;
@@ -634,6 +661,8 @@ static void decompile_page(int page) {
 			if (in_menu_item) {
 				label();
 				dc_putc('$');
+				if (inline_menu_string())
+					in_menu_item = false;
 			}
 			break;
 
