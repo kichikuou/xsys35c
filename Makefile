@@ -21,7 +21,7 @@ DECOMPILER_SRCS= \
 
 DECOMPILER_OBJS=$(DECOMPILER_SRCS:.c=.o)
 
-all: compiler/xsys35c decompiler/xsys35dc
+all: compiler/xsys35c decompiler/xsys35dc tools/ald
 
 $(COMMON_OBJS): common/common.h
 $(COMPILER_OBJS): compiler/xsys35c.h common/common.h
@@ -29,6 +29,7 @@ $(DECOMPILER_OBJS): decompiler/xsys35dc.h common/common.h
 
 compiler/xsys35c: compiler/xsys35c.o $(COMPILER_OBJS) $(COMMON_OBJS)
 decompiler/xsys35dc: decompiler/xsys35dc.o $(DECOMPILER_OBJS) $(COMMON_OBJS)
+tools/ald: tools/ald.o $(COMMON_OBJS)
 
 common/ald_test: common/ald_test.o $(COMMON_OBJS)
 compiler/compile_test: compiler/compile_test.o $(COMPILER_OBJS) $(COMMON_OBJS)
@@ -41,6 +42,6 @@ test: common/ald_test compiler/compile_test compiler/sco_test compiler/xsys35c r
 	./regression_test.sh
 
 clean:
-	rm -rf *.o common/*.o compiler/*.o decompiler/*.o compiler/xsys35c decompiler/xsys35dc common/ald_test compiler/compile_test compiler/sco_test
+	rm -rf *.o common/*.o compiler/*.o decompiler/*.o tools/*.o compiler/xsys35c decompiler/xsys35dc tools/ald common/ald_test compiler/compile_test compiler/sco_test
 
 .PHONY: clean test

@@ -83,7 +83,7 @@ void *map_get(Map *m, char *key);
 typedef struct {
 	const char *name;
 	time_t timestamp;
-	const void *data;
+	const uint8_t *data;
 	int size;
 } AldEntry;
 
