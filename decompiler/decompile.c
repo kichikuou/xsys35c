@@ -201,6 +201,15 @@ static void conditional(Vector *branch_end_stack) {
 	stack_push(branch_end_stack, endaddr);
 }
 
+static void func_label(uint16_t page, uint32_t addr) {
+	dc_printf("F_%d_%05x", page, addr);
+
+	uint8_t *mark = mark_at(page, addr);
+	*mark |= FUNC_TOP;
+	if (!(*mark & CODE))
+		((Sco *)dc.scos->data[page])->preprocessed = false;
+}
+
 static void funcall(void) {
 	uint16_t page = dc.p[0] | dc.p[1] << 8;
 	dc.p += 2;
@@ -218,12 +227,7 @@ static void funcall(void) {
 			page -= 1;
 			uint32_t addr = le32(dc.p);
 			dc.p += 4;
-			dc_printf("F_%d_%05x", page, addr);
-
-			uint8_t *mark = mark_at(page, addr);
-			*mark |= FUNC_TOP;
-			if (!(*mark & CODE))
-				((Sco *)dc.scos->data[page])->preprocessed = false;
+			func_label(page, addr);
 			break;
 		}
 	}
@@ -298,6 +302,14 @@ static void arguments(const char *sig) {
 				dc_putc(*dc.p++);
 			dc.p++;  // skip '\0'
 			dc_putc('"');
+			break;
+		case 'F':
+			{
+				uint16_t page = (dc.p[0] | dc.p[1] << 8) - 1;
+				uint32_t addr = le32(dc.p + 2);
+				func_label(page, addr);
+				dc.p += 6;
+			}
 			break;
 		default:
 			error("BUG: invalid arguments() template : %c", *sig);
