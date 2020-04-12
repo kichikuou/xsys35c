@@ -29,6 +29,8 @@ typedef enum {
 typedef struct {
 	SysVer sys_ver;
 	ScoVer sco_ver;
+	const char *source_list;
+	const char *var_list;
 } Config;
 extern Config config;
 

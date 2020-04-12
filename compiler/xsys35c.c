@@ -255,6 +255,10 @@ int main(int argc, char *argv[]) {
 
 	if (project)
 		load_config(project);
+	if (!source_list && config.source_list)
+		source_list = config.source_list;
+	if (!var_list && config.var_list)
+		var_list = config.var_list;
 
 	if (!source_list && argc < 1) {
 		usage();

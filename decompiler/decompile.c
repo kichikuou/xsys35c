@@ -1197,6 +1197,9 @@ static void write_config(const char *path) {
 	if (dc.scos->len == 0)
 		return;
 	FILE *fp = fopen(path, "w");
+	fputs("source_list = sources.txt\n", fp);
+	fputs("variables = variables.txt\n", fp);
+
 	if (dc.ain) {
 		fputs("sys_ver = 3.9\n", fp);
 	} else {
@@ -1283,6 +1286,6 @@ void decompile(Vector *scos, Ain *ain, const char *outdir) {
 	}
 
 	write_config(path_join(outdir, "xsys35c.cfg"));
-	write_hed(path_join(outdir, "xsys35dc.hed"));
+	write_hed(path_join(outdir, "sources.txt"));
 	write_variables(path_join(outdir, "variables.txt"));
 }

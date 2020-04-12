@@ -59,11 +59,16 @@ void load_config(const char *path) {
 	FILE *fp = fopen(path, "r");
 	if (!fp)
 		error("%s: %s", path, strerror(errno));
+	const char *cfg_dir = dirname(path);
 	char line[256];
 	while (fgets(line, sizeof(line), fp)) {
 		char val[256];
 		if (sscanf(line, "sys_ver = %s", val)) {
 			set_sys_ver(val);
+		} else if (sscanf(line, "source_list = %s", val)) {
+			config.source_list = path_join(cfg_dir, val);
+		} else if (sscanf(line, "variables = %s", val)) {
+			config.var_list = path_join(cfg_dir, val);
 		}
 	}
 }
