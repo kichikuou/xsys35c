@@ -1175,14 +1175,26 @@ static bool command(void) {
 	case COMMAND_msgFreeShelterDIB: expect(':'); break;
 	case COMMAND_ainH: // fall through
 	case COMMAND_ainHH:
-		emit(compiler->msg_buf, 0);  // FIXME: combine with next msg command
 		emit_dword(out, compiler->msg_count++);
 		arguments("ne");
+		skip_whitespaces();
+		if (*input == '\'') {
+			input++;
+			compile_message(compiler->msg_buf);
+		} else {
+			emit(compiler->msg_buf, 0);
+		}
 		break;
 	case COMMAND_ainX:
-		emit(compiler->msg_buf, 0);  // FIXME: combine with next msg command
 		emit_dword(out, compiler->msg_count++);
 		arguments("e");
+		skip_whitespaces();
+		if (*input == '\'') {
+			input++;
+			compile_message(compiler->msg_buf);
+		} else {
+			emit(compiler->msg_buf, 0);
+		}
 		break;
 
 	default:

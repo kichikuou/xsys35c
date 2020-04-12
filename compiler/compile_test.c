@@ -40,6 +40,9 @@ static void test(const char *name, const char *source,
 	vec_push(src_names, (char *)name);
 	compiler_init(&compiler, src_names, NULL);
 	preprocess(&compiler, source, 0);
+
+	compiler.msg_count = 0;
+
 	Buffer *sco = compile(&compiler, source, 0);
 	// Ignore SCO header
 	sco->buf += 32;
@@ -233,4 +236,14 @@ int main() {
 	TEST("lccmd",
 		 "sysAddWebMenu \"Home page\", \"https://kichikuou.github.io/\":",
 		 "/IHome page\0https://kichikuou.github.io/\0");
+
+	sys_ver = SYSTEM39;
+
+	TEST("ain-msg", "'ABC' R 'DEF'",
+		 "\x2f\x7c\x00\x00\x00\x00\x52\x2f\x7c\x01\x00\x00\x00");
+
+	TEST("ain-H", "H3 10: 'a' A 'b'",
+		 "\x2f\x7d\x00\x00\x00\x00\x03\x4a\x7f\x41\x2f\x7c\x01\x00\x00\x00");
+	TEST("ain-H2", "H3 10: A 'b'",
+		 "\x2f\x7d\x00\x00\x00\x00\x03\x4a\x7f\x41\x2f\x7c\x01\x00\x00\x00");
 }
