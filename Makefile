@@ -38,7 +38,7 @@ compiler/sco_test: compiler/sco_test.o $(COMPILER_OBJS) $(COMMON_OBJS)
 test: common/ald_test compiler/compile_test compiler/sco_test compiler/xsys35c regression_test.sh
 	compiler/sco_test
 	compiler/compile_test
-	common/ald_test && cmp testdata/expected.ald testdata/actual.ald && rm testdata/actual.ald
+	common/ald_test && cmp testdata/expected.ald testdata/actual.ald && rm testdata/actual*.ald
 	./regression_test.sh
 
 clean:

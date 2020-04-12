@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	Vector *scos = ald_read(argv[0]);
+	Vector *scos = ald_read(NULL, 1, argv[0]);
 	for (int i = 0; i < scos->len; i++) {
 		AldEntry *e = scos->data[i];
 		scos->data[i] = sco_new(e->name, e->data, e->size);

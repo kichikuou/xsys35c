@@ -179,6 +179,12 @@ void vec_push(Vector *v, void *e) {
 	v->data[v->len++] = e;
 }
 
+void vec_set(Vector *v, int index, void *e) {
+	while (v->len <= index)
+		vec_push(v, NULL);
+	v->data[index] = e;
+}
+
 Map *new_map(void) {
 	Map *m = malloc(sizeof(Map));
 	m->keys = new_vec();

@@ -194,6 +194,7 @@ static Vector *build_ald(Vector *src_paths, Vector *variables, const char *objdi
 		const char *source = srcs->vals->data[i];
 		Buffer *sco = compile(&compiler, source, i);
 		AldEntry *e = calloc(1, sizeof(AldEntry));
+		e->disk = 1;
 		e->name = sconame(srcs->keys->data[i]);
 		e->timestamp = (timestamp == (time_t)-1) ? time(NULL) : timestamp;
 		e->data = sco->buf;
@@ -289,6 +290,6 @@ int main(int argc, char *argv[]) {
 	FILE *fp = fopen(output, "wb");
 	if (!fp)
 		error("%s: %s", output, strerror(errno));
-	ald_write(ald, fp);
+	ald_write(ald, 1, fp);
 	fclose(fp);
 }

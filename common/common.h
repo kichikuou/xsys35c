@@ -68,6 +68,7 @@ typedef struct {
 
 Vector *new_vec(void);
 void vec_push(Vector *v, void *e);
+void vec_set(Vector *v, int index, void *e);
 
 typedef struct {
 	Vector *keys;
@@ -85,10 +86,11 @@ typedef struct {
 	time_t timestamp;
 	const uint8_t *data;
 	int size;
+	int disk;
 } AldEntry;
 
-void ald_write(Vector *entries, FILE *fp);
-Vector *ald_read(const char *path);
+void ald_write(Vector *entries, int disk, FILE *fp);
+Vector *ald_read(Vector *entries, int disk, const char *path);
 
 // opcodes
 

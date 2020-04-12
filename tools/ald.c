@@ -44,7 +44,7 @@ static int do_list(int argc, char *argv[]) {
 		help_list();
 		return 1;
 	}
-	Vector *ald = ald_read(argv[0]);
+	Vector *ald = ald_read(NULL, 1, argv[0]);
 	char buf[30];
 	for (int i = 0; i < ald->len; i++) {
 		AldEntry *e = ald->data[i];
@@ -64,7 +64,7 @@ static int do_extract(int argc, char *argv[]) {
 		help_extract();
 		return 1;
 	}
-	Vector *ald = ald_read(argv[0]);
+	Vector *ald = ald_read(NULL, 1, argv[0]);
 	for (int i = 0; i < ald->len; i++) {
 		AldEntry *e = ald->data[i];
 		FILE *fp = fopen(sjis2utf(e->name), "wb");
@@ -149,7 +149,7 @@ static int do_dump(int argc, char *argv[]) {
 		help_dump();
 		return 1;
 	}
-	Vector *ald = ald_read(argv[0]);
+	Vector *ald = ald_read(NULL, 1, argv[0]);
 
 	char *endptr;
 	unsigned long n = strtoul(argv[1], &endptr, 0);
@@ -196,8 +196,8 @@ static int do_compare(int argc, char *argv[]) {
 		help_compare();
 		return 1;
 	}
-	Vector *ald1 = ald_read(argv[0]);
-	Vector *ald2 = ald_read(argv[1]);
+	Vector *ald1 = ald_read(NULL, 1, argv[0]);
+	Vector *ald2 = ald_read(NULL, 1, argv[1]);
 
 	bool differs = false;
 	for (int i = 0; i < ald1->len && i < ald2->len; i++)

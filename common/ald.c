@@ -67,34 +67,48 @@ static void write_entry(AldEntry *entry, FILE *fp) {
 	fwrite(entry->data, entry->size, 1, fp);
 }
 
-void ald_write(Vector *entries, FILE *fp) {
-	const uint8_t diskid = 1;
+void ald_write(Vector *entries, int disk, FILE *fp) {
 	int sector = 0;
 
-	write_ptr((entries->len + 2) * 3, &sector, fp);
+	int ptr_count = 0;
+	for (int i = 0; i < entries->len; i++) {
+		AldEntry *entry = entries->data[i];
+		if (entry->disk == disk)
+			ptr_count++;
+	}
+
+	write_ptr((ptr_count + 2) * 3, &sector, fp);
 	write_ptr(entries->len * 3, &sector, fp);
 	for (int i = 0; i < entries->len; i++) {
 		AldEntry *entry = entries->data[i];
-		write_ptr(entry_header_size(entry) + entry->size, &sector, fp);
+		if (entry->disk == disk)
+			write_ptr(entry_header_size(entry) + entry->size, &sector, fp);
 	}
 	pad(fp);
 
-	for (int i = 1; i <= entries->len; i++) {
-		fputc(diskid, fp);
-		fputc(i & 0xff, fp);
-		fputc(i >> 8, fp);
+	uint16_t link[256];
+	memset(link, 0, sizeof(link));
+	for (int i = 0; i < entries->len; i++) {
+		AldEntry *entry = entries->data[i];
+		fputc(entry->disk, fp);
+		link[entry->disk]++;
+		fputc(link[entry->disk] & 0xff, fp);
+		fputc(link[entry->disk] >> 8, fp);
 	}
 	pad(fp);
 
 	for (int i = 0; i < entries->len; i++) {
-		write_entry(entries->data[i], fp);
+		AldEntry *entry = entries->data[i];
+		if (entry->disk != disk)
+			continue;
+		write_entry(entry, fp);
 		pad(fp);
 	}
 
 	// Footer
 	write_dword(0x14c4e, fp);
 	write_dword(0x10, fp);
-	write_dword(entries->len << 8 | diskid, fp);
+	write_dword(ptr_count << 8 | disk, fp);
 	write_dword(0, fp);
 }
 
@@ -108,28 +122,30 @@ static time_t to_unix_time(uint32_t wtime_l, uint32_t wtime_h) {
 	return (wtime - EPOCH_DIFF_100NS) / 10000000LL;
 }
 
-static Vector *ald_read_mem(uint8_t *data, int len) {
+static void ald_read_mem(Vector *entries, int disk, uint8_t *data, int len) {
 	uint8_t *link_sector = ald_sector(data, 0);
 	uint8_t *link_sector_end = ald_sector(data, 1);
 
-	Vector *entries = new_vec();
 	for (uint8_t *link = link_sector; link < link_sector_end; link += 3) {
 		uint8_t file_nr = link[0];
 		uint16_t ptr_nr = link[1] | link[2] << 8;
-		if (file_nr != 1)
-			break;
+		if (file_nr != disk)
+			continue;
 		uint8_t *entry_ptr = ald_sector(data, ptr_nr);
 		AldEntry *e = calloc(1, sizeof(AldEntry));
+		e->disk = disk;
 		e->name = (char *)entry_ptr + 16;
 		e->timestamp = to_unix_time(le32(entry_ptr + 8), le32(entry_ptr + 12));
 		e->data = entry_ptr + le32(entry_ptr);
 		e->size = le32(entry_ptr + 4);
-		vec_push(entries, e);
+		vec_set(entries, (link - link_sector) / 3, e);
 	}
-	return entries;
 }
 
-Vector *ald_read(const char *path) {
+Vector *ald_read(Vector *entries, int disk, const char *path) {
+	if (!entries)
+		entries = new_vec();
+
 	int fd = open(path, O_RDONLY);
 	if (fd == -1)
 		error("%s: %s", path, strerror(errno));
@@ -143,5 +159,7 @@ Vector *ald_read(const char *path) {
 	if (p == MAP_FAILED)
 		error("%s: %s", path, strerror(errno));
 
-	return ald_read_mem(p, sbuf.st_size);
+	ald_read_mem(entries, disk, p, sbuf.st_size);
+
+	return entries;
 }
