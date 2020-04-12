@@ -25,7 +25,7 @@
 #define TIMESTAMP 850953600  // 1996-12-19 00:00:00 UTC
 
 static void test_read(void) {
-	Vector *es = ald_read(NULL, 1, "testdata/expected.ald");
+	Vector *es = ald_read(NULL, "testdata/expected.ald");
 	assert(es->len == 2);
 	AldEntry *e1 = es->data[0];
 	AldEntry *e2 = es->data[1];
@@ -69,8 +69,8 @@ static void test_write(void) {
 
 static void test_multidisk_read(void) {
 	Vector *es = new_vec();
-	ald_read(es, 1, "testdata/expected_a.ald");
-	ald_read(es, 2, "testdata/expected_b.ald");
+	ald_read(es, "testdata/expected_a.ald");
+	ald_read(es, "testdata/expected_b.ald");
 	assert(es->len == 5);
 	for (int i = 0; i < 5; i++) {
 		char expected[20];

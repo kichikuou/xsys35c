@@ -90,7 +90,7 @@ typedef struct {
 } AldEntry;
 
 void ald_write(Vector *entries, int disk, FILE *fp);
-Vector *ald_read(Vector *entries, int disk, const char *path);
+Vector *ald_read(Vector *entries, const char *path);
 
 // opcodes
 

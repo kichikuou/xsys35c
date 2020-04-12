@@ -25,6 +25,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#define ALD_SIGNATURE  0x14c4e
+#define ALD_SIGNATURE2 0x12020
+
 // 1970-01-01 - 1601-01-01 in 100ns
 #define EPOCH_DIFF_100NS 116444736000000000LL
 
@@ -106,7 +109,7 @@ void ald_write(Vector *entries, int disk, FILE *fp) {
 	}
 
 	// Footer
-	write_dword(0x14c4e, fp);
+	write_dword(ALD_SIGNATURE, fp);
 	write_dword(0x10, fp);
 	write_dword(ptr_count << 8 | disk, fp);
 	write_dword(0, fp);
@@ -122,7 +125,7 @@ static time_t to_unix_time(uint32_t wtime_l, uint32_t wtime_h) {
 	return (wtime - EPOCH_DIFF_100NS) / 10000000LL;
 }
 
-static void ald_read_mem(Vector *entries, int disk, uint8_t *data, int len) {
+static void ald_read_entries(Vector *entries, int disk, uint8_t *data, int len) {
 	uint8_t *link_sector = ald_sector(data, 0);
 	uint8_t *link_sector_end = ald_sector(data, 1);
 
@@ -142,7 +145,7 @@ static void ald_read_mem(Vector *entries, int disk, uint8_t *data, int len) {
 	}
 }
 
-Vector *ald_read(Vector *entries, int disk, const char *path) {
+Vector *ald_read(Vector *entries, const char *path) {
 	if (!entries)
 		entries = new_vec();
 
@@ -154,12 +157,18 @@ Vector *ald_read(Vector *entries, int disk, const char *path) {
 	if (fstat(fd, &sbuf) < 0)
 		error("%s: %s", path, strerror(errno));
 
-	void *p = mmap(NULL, sbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
+	uint8_t *p = mmap(NULL, sbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
 	close(fd);
 	if (p == MAP_FAILED)
 		error("%s: %s", path, strerror(errno));
 
-	ald_read_mem(entries, disk, p, sbuf.st_size);
+	if ((sbuf.st_size & 0xff) != 16)
+		error("%s: unexpected file size (not an ald file?)", path);
+	uint8_t *footer = p + sbuf.st_size - 16;
+	if (le32(footer) != ALD_SIGNATURE && le32(footer) != ALD_SIGNATURE2)
+		error("%s: invalid ALD signature", path);
+
+	ald_read_entries(entries, footer[8], p, sbuf.st_size);
 
 	return entries;
 }
