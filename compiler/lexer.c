@@ -190,7 +190,7 @@ void compile_string(Buffer *b, char terminator) {
 		if (!is_sjis_byte1(c1) || !is_sjis_byte2(c2))
 			error_at(input - 2, "invalid SJIS character: %02x %02x", c1, c2);
 		uint8_t hk = 0;
-		if (sys_ver == SYSTEM35)
+		if (config.sys_ver == SYSTEM35)
 			hk = to_sjis_half_kana(c1, c2);
 		if (hk) {
 			emit(b, hk);
@@ -326,7 +326,7 @@ static int replace_command(int cmd) {
 	case CMD3('T', 'A', 'B'): return COMMAND_TAB;
 	}
 
-	if (sys_ver < SYSTEM38)
+	if (config.sys_ver < SYSTEM38)
 		return cmd;
 
 	switch (cmd) {
@@ -336,7 +336,7 @@ static int replace_command(int cmd) {
 	case CMD3('T', 'P', 'S'): return COMMAND_TPS;
 	case CMD3('T', 'O', 'P'): return COMMAND_TOP;
 	case CMD3('T', 'P', 'P'): return COMMAND_TPP;
-	case CMD2('H', 'H'): return sys_ver == SYSTEM39 ? COMMAND_ainHH : COMMAND_newHH;
+	case CMD2('H', 'H'): return config.sys_ver == SYSTEM39 ? COMMAND_ainHH : COMMAND_newHH;
 	case CMD2('L', 'C'): return COMMAND_newLC;
 	case CMD2('L', 'E'): return COMMAND_newLE;
 	case CMD3('L', 'X', 'G'): return COMMAND_newLXG;
@@ -347,7 +347,7 @@ static int replace_command(int cmd) {
 	case CMD2('Q', 'E'): return COMMAND_newQE;
 	case CMD2('U', 'P'): return COMMAND_newUP;
 	case 'F': return COMMAND_newF;
-	case 'H': return sys_ver == SYSTEM39 ? COMMAND_ainH : cmd;
+	case 'H': return config.sys_ver == SYSTEM39 ? COMMAND_ainH : cmd;
 	case CMD3('M', 'H', 'H'): return COMMAND_MHH;
 	case CMD2(COMMAND_LXW, 'T'): return COMMAND_LXWT;
 	case CMD2(COMMAND_LXW, 'S'): return COMMAND_LXWS;
@@ -355,7 +355,7 @@ static int replace_command(int cmd) {
 	case CMD2(COMMAND_LXW, 'H'): return COMMAND_LXWH;
 	case CMD3(COMMAND_LXW, 'H', 'H'): return COMMAND_LXWHH;
 	case CMD3('L', 'X', 'F'): return COMMAND_LXF;
-	case 'X': return sys_ver == SYSTEM39 ? COMMAND_ainX : cmd;
+	case 'X': return config.sys_ver == SYSTEM39 ? COMMAND_ainX : cmd;
 	default: return cmd;
 	}
 }

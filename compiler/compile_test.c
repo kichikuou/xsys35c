@@ -64,7 +64,7 @@ static void test(const char *name, const char *source,
 }
 
 int main() {
-	sys_ver = SYSTEM35;
+	config.sys_ver = SYSTEM35;
 
 	TEST("A", "A", "A");
 	TEST("B1",
@@ -199,13 +199,13 @@ int main() {
 		 "\x21\x80\x40\x7f\x21\x81\x40\x7f\x21\x81\x41\x7f\x21\x80\x42\x7f"
 		 "\x7e\x01\x00\x37\x00\x00\x00\x7e\x00\x00\x80\x7f");
 
-	sys_ver = SYSTEM36;
+	config.sys_ver = SYSTEM36;
 
 	TEST("msg-noconv",
 		 "'\x81\x40\x81\x75\x82\xCD\x82\xA2\x81\x76'",  // '　「はい」' in SJIS
 		 "\x81\x40\x81\x75\x82\xCD\x82\xA2\x81\x76");
 
-	sys_ver = SYSTEM38;
+	config.sys_ver = SYSTEM38;
 
 	TEST("TOC", "TOC:", "\x2f\x00");
 
@@ -237,7 +237,7 @@ int main() {
 		 "sysAddWebMenu \"Home page\", \"https://kichikuou.github.io/\":",
 		 "/IHome page\0https://kichikuou.github.io/\0");
 
-	sys_ver = SYSTEM39;
+	config.sys_ver = SYSTEM39;
 
 	TEST("ain-msg", "'ABC' R 'DEF'",
 		 "\x2f\x7c\x00\x00\x00\x00\x52\x2f\x7c\x01\x00\x00\x00");

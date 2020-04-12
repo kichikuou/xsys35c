@@ -1193,20 +1193,20 @@ static void decompile_page(int page) {
 		dc_printf("*L_%05x:\n", sco->filesize);
 }
 
-static void write_sysver(const char *path) {
+static void write_config(const char *path) {
 	if (dc.scos->len == 0)
 		return;
 	FILE *fp = fopen(path, "w");
 	if (dc.ain) {
-		fputs("3.9\n", fp);
+		fputs("sys_ver = 3.9\n", fp);
 	} else {
 		Sco *sco = dc.scos->data[0];
 		switch (sco->version) {
-		case SCO_S350: fputs("S350\n", fp); break;
-		case SCO_S351: fputs("3.5\n", fp); break;
-		case SCO_153S: fputs("153S\n", fp); break;
-		case SCO_S360: fputs("3.6\n", fp); break;
-		case SCO_S380: fputs("3.8\n", fp); break;
+		case SCO_S350: fputs("sys_ver = S350\n", fp); break;
+		case SCO_S351: fputs("sys_ver = 3.5\n", fp); break;
+		case SCO_153S: fputs("sys_ver = 153S\n", fp); break;
+		case SCO_S360: fputs("sys_ver = 3.6\n", fp); break;
+		case SCO_S380: fputs("sys_ver = 3.8\n", fp); break;
 		}
 	}
 	fclose(fp);
@@ -1282,7 +1282,7 @@ void decompile(Vector *scos, Ain *ain, const char *outdir) {
 		fclose(dc.out);
 	}
 
-	write_sysver(path_join(outdir, "sysver.txt"));
+	write_config(path_join(outdir, "xsys35c.cfg"));
 	write_hed(path_join(outdir, "xsys35dc.hed"));
 	write_variables(path_join(outdir, "variables.txt"));
 }

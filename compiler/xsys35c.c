@@ -28,30 +28,12 @@ enum {
 	LOPT_TIMESTAMP,
 };
 
-typedef struct {
-	const char *opt_val;
-	SysVer sys_ver;
-	ScoVer sco_ver;
-} SysVerOptValue;
-
-static const SysVerOptValue sys_ver_opt_values[] = {
-	{"3.5", SYSTEM35, SCO_S351},
-	{"3.6", SYSTEM36, SCO_S360},
-	{"3.8", SYSTEM38, SCO_S380},
-	{"3.9", SYSTEM39, SCO_S380},
-	{"S350", SYSTEM35, SCO_S350},
-	{"S351", SYSTEM35, SCO_S351},
-	{"153S", SYSTEM36, SCO_153S},
-	{"S360", SYSTEM36, SCO_S360},
-	{"S380", SYSTEM39, SCO_S380},
-	{NULL, 0, 0},
-};
-
-static const char short_options[] = "hi:o:s:V:v";
+static const char short_options[] = "hi:o:p:s:V:v";
 static const struct option long_options[] = {
 	{ "help",        no_argument,       NULL, 'h' },
 	{ "output",      required_argument, NULL, 'o' },
 	{ "objdir",      required_argument, NULL, LOPT_OBJDIR },
+	{ "project",     required_argument, NULL, 'p' },
 	{ "source-list", required_argument, NULL, 'i' },
 	{ "sys-ver",     required_argument, NULL, 's' },
 	{ "timestamp",   required_argument, NULL, LOPT_TIMESTAMP },
@@ -68,6 +50,7 @@ static void usage(void) {
 	puts("    -h, --help                Display this message and exit");
 	puts("        --objdir <directory>  Write object (.sco) files into <directory>");
 	puts("    -o, --output <file>       Write output to <file> (default: adisk.ald)");
+	puts("    -p, --project <file>      Read project configuration from <file>");
 	puts("    -i, --source-list <file>  Read list of source files from <file>");
 	puts("    -s, --sys-ver <ver>       Target System version (3.5|3.6|3.8(default)|3.9)");
 	puts("        --timestamp <time>    Set timestamp of ALD entries, in UNIX timestamp");
@@ -214,7 +197,7 @@ static Vector *build_ald(Vector *src_paths, Vector *variables, const char *objdi
 		}
 	}
 
-	if (sys_ver == SYSTEM39) {
+	if (config.sys_ver == SYSTEM39) {
 		FILE *fp = fopen("System39.ain", "wb");
 		if (!fp)
 			error("System39.ain: %s", strerror(errno));
@@ -226,6 +209,7 @@ static Vector *build_ald(Vector *src_paths, Vector *variables, const char *objdi
 }
 
 int main(int argc, char *argv[]) {
+	const char *project = NULL;
 	const char *objdir = NULL;
 	const char *output = "adisk.ald";
 	const char *source_list = NULL;
@@ -243,16 +227,11 @@ int main(int argc, char *argv[]) {
 		case 'o':
 			output = optarg;
 			break;
+		case 'p':
+			project = optarg;
+			break;
 		case 's':
-			for (const SysVerOptValue *v = sys_ver_opt_values;; v++) {
-				if (!v->opt_val)
-					error("Unknown system version '%s'", optarg);
-				if (!strcmp(optarg, v->opt_val)) {
-					sys_ver = v->sys_ver;
-					sco_ver = v->sco_ver;
-					break;
-				}
-			}
+			set_sys_ver(optarg);
 			break;
 		case 'V':
 			var_list = optarg;
@@ -273,6 +252,9 @@ int main(int argc, char *argv[]) {
 	}
 	argc -= optind;
 	argv += optind;
+
+	if (project)
+		load_config(project);
 
 	if (!source_list && argc < 1) {
 		usage();

@@ -10,6 +10,7 @@ COMMON_OBJS=$(COMMON_SRCS:.c=.o)
 COMPILER_SRCS= \
 	compiler/ain.c \
 	compiler/compile.c \
+	compiler/config.c \
 	compiler/lexer.c \
 	compiler/sco.c
 

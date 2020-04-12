@@ -496,7 +496,7 @@ static void conditional(void) {
 	emit_dword(out, 0);
 	commands();
 	expect('}');
-	if (sys_ver >= SYSTEM38) {
+	if (config.sys_ver >= SYSTEM38) {
 		emit(out, '@'); // Label jump
 		emit_dword(out, 0);
 		swap_dword(out, hole, current_address(out));
@@ -589,7 +589,7 @@ static bool command(void) {
 		break;
 
 	case '\'': // Message
-		switch (sys_ver) {
+		switch (config.sys_ver) {
 		case SYSTEM39:
 			emit_command(out, COMMAND_ainMsg);
 			compile_message(compiler->msg_buf);
@@ -663,7 +663,7 @@ static bool command(void) {
 		return false;
 
 	case ']':  // Menu
-		if (sys_ver >= SYSTEM38)
+		if (config.sys_ver >= SYSTEM38)
 			emit_command(out, COMMAND_menu);
 		emit(out, cmd);
 		break;
@@ -935,7 +935,7 @@ static bool command(void) {
 	case CMD2('S', 'O'): arguments("v"); break;
 	case CMD2('S', 'P'): arguments("ee"); break;
 	case CMD2('S', 'Q'): arguments("eee"); break;
-	case CMD2('S', 'R'): arguments(sys_ver == SYSTEM35 ? "ev" : "nv"); break;
+	case CMD2('S', 'R'): arguments(config.sys_ver == SYSTEM35 ? "ev" : "nv"); break;
 	case CMD2('S', 'S'): arguments("e"); break;
 	case CMD2('S', 'T'): arguments("e"); break;
 	case CMD2('S', 'U'): arguments("vv"); break;
@@ -1244,7 +1244,7 @@ void preprocess(Compiler *comp, const char *source, int pageno) {
 }
 
 void preprocess_done(Compiler *comp) {
-	if (sys_ver == SYSTEM39)
+	if (config.sys_ver == SYSTEM39)
 		compiler->msg_buf = new_buf();
 	comp->msg_count = 0;
 }

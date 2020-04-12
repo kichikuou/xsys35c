@@ -17,7 +17,7 @@
 */
 #include "common.h"
 
-// sco.c
+// config.c
 
 typedef enum {
 	SYSTEM35,
@@ -26,8 +26,16 @@ typedef enum {
 	SYSTEM39,
 } SysVer;
 
-extern SysVer sys_ver;
-extern ScoVer sco_ver;
+typedef struct {
+	SysVer sys_ver;
+	ScoVer sco_ver;
+} Config;
+extern Config config;
+
+void set_sys_ver(const char *ver);
+void load_config(const char *path);
+
+// sco.c
 
 typedef struct {
 	uint8_t *buf;

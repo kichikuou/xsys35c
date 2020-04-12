@@ -19,9 +19,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-SysVer sys_ver = SYSTEM38;
-ScoVer sco_ver = SCO_S380;
-
 Buffer *new_buf(void) {
 	Buffer *b = malloc(sizeof(Buffer));
 	b->buf = calloc(1, 4096);
@@ -140,7 +137,7 @@ void sco_init(Buffer *b, const char *src_name, int pageno) {
 	int hdrsize = (18 + namelen + 15) & ~0xf;
 
 	// SCO header
-	switch (sco_ver) {
+	switch (config.sco_ver) {
 	case SCO_S350: emit_string(b, "S350"); break;
 	case SCO_S351: emit_string(b, "S351"); break;
 	case SCO_153S: emit_string(b, "153S"); break;
