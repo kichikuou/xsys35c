@@ -34,6 +34,7 @@ enum {
 
 typedef struct {
 	Vector *scos;
+	Ain *ain;
 	Vector *variables;
 	FILE *out;
 
@@ -446,6 +447,10 @@ static int get_command(void) {
 		case 0x79: dc_puts("menuReturnGoto"); return COMMAND_menuReturnGoto;
 		case 0x7a: dc_puts("menuFreeShelterDIB"); return COMMAND_menuFreeShelterDIB;
 		case 0x7b: dc_puts("msgFreeShelterDIB"); return COMMAND_msgFreeShelterDIB;
+		case 0x7c: return COMMAND_ainMsg;
+		case 0x7d: return COMMAND_ainH;
+		case 0x7e: return COMMAND_ainHH;
+		case 0x7f: return COMMAND_ainX;
 		default:
 			error_at(dc.p - 2, "Unsupported command 2f %02x", dc.p[-1]);
 		}
@@ -526,6 +531,24 @@ static bool inline_menu_string(void) {
 		error_at(dc.p, "'$' expected");
 	dc_putc(*dc.p++);
 	return true;
+}
+
+static void ain_msg(const char *cmd, const char *args) {
+	uint32_t id = le32(dc.p);
+	dc.p += 4;
+	if (!dc.ain)
+		error("System39.ain is required to decompile this file.");
+	if (!dc.ain->messages || id >= dc.ain->messages->len)
+		error_at(dc.p - 6, "invalid message id %d", id);
+
+	if (cmd) {
+		dc_puts(cmd);
+		arguments(args);
+	}
+
+	dc_putc('\'');
+	dc_puts(dc.ain->messages->data[id]);
+	dc_putc('\'');
 }
 
 static void decompile_page(int page) {
@@ -1149,6 +1172,10 @@ static void decompile_page(int page) {
 		case COMMAND_menuReturnGoto: arguments("ee"); break;
 		case COMMAND_menuFreeShelterDIB: arguments(""); break;
 		case COMMAND_msgFreeShelterDIB: arguments(""); break;
+		case COMMAND_ainMsg: ain_msg(NULL, NULL); break;
+		case COMMAND_ainH: ain_msg("H", "ne"); break;
+		case COMMAND_ainHH: ain_msg("HH", "ne"); break;
+		case COMMAND_ainX: ain_msg("X", "e"); break;
 		default:
 		unknown_command:
 			error("%s:%x: unknown command '%.*s'", sjis2utf(sco->sco_name), topaddr, dc_addr() - topaddr, sco->data + topaddr);
@@ -1169,14 +1196,18 @@ static void decompile_page(int page) {
 static void write_sysver(const char *path) {
 	if (dc.scos->len == 0)
 		return;
-	Sco *sco = dc.scos->data[0];
 	FILE *fp = fopen(path, "w");
-	switch (sco->version) {
-	case SCO_S350: fputs("S350\n", fp); break;
-	case SCO_S351: fputs("3.5\n", fp); break;
-	case SCO_153S: fputs("153S\n", fp); break;
-	case SCO_S360: fputs("3.6\n", fp); break;
-	case SCO_S380: fputs("3.8\n", fp); break;
+	if (dc.ain) {
+		fputs("3.9\n", fp);
+	} else {
+		Sco *sco = dc.scos->data[0];
+		switch (sco->version) {
+		case SCO_S350: fputs("S350\n", fp); break;
+		case SCO_S351: fputs("3.5\n", fp); break;
+		case SCO_153S: fputs("153S\n", fp); break;
+		case SCO_S360: fputs("3.6\n", fp); break;
+		case SCO_S380: fputs("3.8\n", fp); break;
+		}
 	}
 	fclose(fp);
 }
@@ -1226,6 +1257,7 @@ void warning_at(const uint8_t *pos, char *fmt, ...) {
 void decompile(Vector *scos, Ain *ain, const char *outdir) {
 	memset(&dc, 0, sizeof(dc));
 	dc.scos = scos;
+	dc.ain = ain;
 	dc.variables = new_vec();
 
 	// Preprocess
