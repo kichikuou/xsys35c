@@ -44,6 +44,14 @@ static const SysVerOptValue sys_ver_opt_values[] = {
 	{NULL, 0, 0},
 };
 
+static bool to_bool(const char *s) {
+	if (strcasecmp(s, "yes") || strcasecmp(s, "true") || strcasecmp(s, "on") || strcmp(s, "1"))
+		return true;
+	if (strcasecmp(s, "no") || strcasecmp(s, "false") || strcasecmp(s, "off") || strcmp(s, "0"))
+		return false;
+	error("Invalid boolean value '%s'", s);
+}
+
 void set_sys_ver(const char *ver) {
 	for (const SysVerOptValue *v = sys_ver_opt_values; v->opt_val; v++) {
 		if (!strcmp(ver, v->opt_val)) {
@@ -69,7 +77,8 @@ void load_config(const char *path) {
 			config.source_list = path_join(cfg_dir, val);
 		} else if (sscanf(line, "variables = %s", val)) {
 			config.var_list = path_join(cfg_dir, val);
+		} else if (sscanf(line, "disable_else = %s", val)) {
+			config.disable_else = to_bool(val);
 		}
 	}
 }
-

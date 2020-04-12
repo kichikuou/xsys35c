@@ -496,7 +496,7 @@ static void conditional(void) {
 	emit_dword(out, 0);
 	commands();
 	expect('}');
-	if (config.sys_ver >= SYSTEM38) {
+	if (config.sys_ver >= SYSTEM38 && !config.disable_else) {
 		emit(out, '@'); // Label jump
 		emit_dword(out, 0);
 		swap_dword(out, hole, current_address(out));

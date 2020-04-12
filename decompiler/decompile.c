@@ -1199,6 +1199,7 @@ static void write_config(const char *path) {
 	FILE *fp = fopen(path, "w");
 	fputs("source_list = sources.txt\n", fp);
 	fputs("variables = variables.txt\n", fp);
+	fputs("disable_else = true\n", fp);
 
 	if (dc.ain) {
 		fputs("sys_ver = 3.9\n", fp);

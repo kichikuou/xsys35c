@@ -31,6 +31,7 @@ typedef struct {
 	ScoVer sco_ver;
 	const char *source_list;
 	const char *var_list;
+	bool disable_else;
 } Config;
 extern Config config;
 
