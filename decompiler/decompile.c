@@ -1223,7 +1223,7 @@ void warning_at(const uint8_t *pos, char *fmt, ...) {
 	fputc('\n', stderr);
 }
 
-void decompile(Vector *scos, const char *outdir) {
+void decompile(Vector *scos, Ain *ain, const char *outdir) {
 	memset(&dc, 0, sizeof(dc));
 	dc.scos = scos;
 	dc.variables = new_vec();

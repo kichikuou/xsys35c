@@ -76,8 +76,8 @@ typedef struct {
 } Map;
 
 Map *new_map(void);
-void map_put(Map *m, char *key, void *val);
-void *map_get(Map *m, char *key);
+void map_put(Map *m, const char *key, void *val);
+void *map_get(Map *m, const char *key);
 
 // ald.c
 

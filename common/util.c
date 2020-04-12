@@ -192,12 +192,12 @@ Map *new_map(void) {
 	return m;
 }
 
-void map_put(Map *m, char *key, void *val) {
-	vec_push(m->keys, key);
+void map_put(Map *m, const char *key, void *val) {
+	vec_push(m->keys, (void *)key);
 	vec_push(m->vals, val);
 }
 
-void *map_get(Map *m, char *key) {
+void *map_get(Map *m, const char *key) {
 	for (int i = m->keys->len - 1; i >= 0; i--)
 		if (!strcmp(m->keys->data[i], key))
 			return m->vals->data[i];

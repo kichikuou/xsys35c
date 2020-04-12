@@ -29,7 +29,7 @@ static const struct option long_options[] = {
 };
 
 static void usage(void) {
-	puts("Usage: xsys35dc [options] aldfile");
+	puts("Usage: xsys35dc [options] aldfile [ainfile]");
 	puts("Options:");
 	puts("    -h, --help                Display this message and exit");
 	puts("    -o, --outdir <directory>  Write output into <directory>");
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
 	argc -= optind;
 	argv += optind;
 
-	if (argc != 1) {
+	if (argc != 1 && argc != 2) {
 		usage();
 		return 1;
 	}
@@ -103,8 +103,11 @@ int main(int argc, char *argv[]) {
 		AldEntry *e = scos->data[i];
 		scos->data[i] = sco_new(e->name, e->data, e->size);
 	}
+	Ain *ain = NULL;
+	if (argc >= 2)
+		ain = ain_read(argv[1]);
 
-	decompile(scos, outdir);
+	decompile(scos, ain, outdir);
 
 	return 0;
 }

@@ -29,6 +29,28 @@ typedef struct {
 	bool preprocessed;
 } Sco;
 
+// ain.c
+
+typedef struct {
+	const char *name;
+	uint32_t argc;
+	uint32_t argtypes[];
+} DLLFunc;
+
+typedef struct {
+	uint16_t page;
+	uint32_t addr;
+} Function;
+
+typedef struct {
+	Map *dlls;         // dllname -> Vector<DLLFunc>
+	Map *functions;    // funcname -> Function
+	Vector *variables;
+	Vector *messages;
+} Ain;
+
+Ain *ain_read(const char *path);
+
 // cali.c
 
 struct Cali;
@@ -37,6 +59,6 @@ void print_cali(struct Cali *node, Vector *variables, FILE *out);
 
 // decompile.c
 
-void decompile(Vector *scos, const char *outdir);
+void decompile(Vector *scos, Ain *ain, const char *outdir);
 noreturn void error_at(const uint8_t *pos, char *fmt, ...);
 void warning_at(const uint8_t *pos, char *fmt, ...);

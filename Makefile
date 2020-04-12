@@ -16,6 +16,7 @@ COMPILER_SRCS= \
 COMPILER_OBJS=$(COMPILER_SRCS:.c=.o)
 
 DECOMPILER_SRCS= \
+	decompiler/ain.c \
 	decompiler/cali.c \
 	decompiler/decompile.c
 
