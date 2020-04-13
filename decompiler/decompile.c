@@ -1262,7 +1262,7 @@ void decompile(Vector *scos, Ain *ain, const char *outdir) {
 	memset(&dc, 0, sizeof(dc));
 	dc.scos = scos;
 	dc.ain = ain;
-	dc.variables = new_vec();
+	dc.variables = (ain && ain->variables) ? ain->variables : new_vec();
 
 	// Preprocess
 	bool done = false;
