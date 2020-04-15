@@ -216,6 +216,7 @@ enum {
 	COMMAND_grSetCEParam = CMD2F(0x5d),
 	COMMAND_grEffectMoveView = CMD2F(0x5e),
 	COMMAND_cgSetCacheSize = CMD2F(0x5f),
+	COMMAND_dllCall = CMD2F(0x60),
 	COMMAND_gaijiSet = CMD2F(0x61),
 	COMMAND_gaijiClearAll = CMD2F(0x62),
 	COMMAND_menuGetLatestSelect = CMD2F(0x63),

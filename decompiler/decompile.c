@@ -420,6 +420,7 @@ static int get_command(void) {
 		case 0x5d: dc_puts("grSetCEParam"); return COMMAND_grSetCEParam;
 		case 0x5e: dc_puts("grEffectMoveView"); return COMMAND_grEffectMoveView;
 		case 0x5f: dc_puts("cgSetCacheSize"); return COMMAND_cgSetCacheSize;
+		case 0x60: return COMMAND_dllCall;
 		case 0x61: dc_puts("gaijiSet"); return COMMAND_gaijiSet;
 		case 0x62: dc_puts("gaijiClearAll"); return COMMAND_gaijiClearAll;
 		case 0x63: dc_puts("menuGetLatestSelect"); return COMMAND_menuGetLatestSelect;
@@ -549,6 +550,56 @@ static void ain_msg(const char *cmd, const char *args) {
 	dc_putc('\'');
 	dc_puts(dc.ain->messages->data[id]);
 	dc_putc('\'');
+}
+
+static void dll_call(void) {
+	uint32_t dll_id = le32(dc.p);
+	uint32_t func_id = le32(dc.p + 4);
+	dc.p += 8;
+	if (!dc.ain)
+		error("System39.ain is required to decompile this file.");
+	if (dll_id >= dc.ain->dlls->vals->len)
+		error_at(dc.p - 8, "DLL id out of range (dll:%d, func:%d)", dll_id, func_id);
+
+	Vector *funcs = dc.ain->dlls->vals->data[dll_id];
+	if (func_id >= funcs->len)
+		error_at(dc.p - 8, "Function id out of range (dll:%d, func:%d)", dll_id, func_id);
+	DLLFunc *f = funcs->data[func_id];
+
+	dc_puts(dc.ain->dlls->keys->data[dll_id]);
+	dc_putc('.');
+	dc_puts(f->name);
+
+	const char *sep = " ";
+	for (int i = 0; i < f->argc; i++) {
+		switch (f->argtypes[i]) {
+		case Arg_pword:
+		case Arg_int:
+		case Arg_IString:
+			dc_puts(sep);
+			sep = ",";
+			cali(false);
+			break;
+		case Arg_ISurface:
+		case Arg_IWinMsg:
+		case Arg_ITimer:
+		case Arg_IUI:
+		case Arg_ISys3xDIB:
+		case Arg_ISys3xCG:
+		case Arg_ISys3xStringTable:
+		case Arg_ISys3xSystem:
+		case Arg_ISys3xMusic:
+		case Arg_ISys3xMsgString:
+		case Arg_ISys3xInputDevice:
+		case Arg_ISys3x:
+			dc.p += 2;  // ??
+			break;
+		case Arg_IConstString:
+		default:
+			error("argtype %d not implemented", f->argtypes[i]);
+		}
+	}
+	dc_putc(':');
 }
 
 static void decompile_page(int page) {
@@ -1145,6 +1196,7 @@ static void decompile_page(int page) {
 		case COMMAND_grSetCEParam: arguments("ee"); break;
 		case COMMAND_grEffectMoveView: arguments("eeee"); break;
 		case COMMAND_cgSetCacheSize: arguments("e"); break;
+		case COMMAND_dllCall: dll_call(); break;
 		case COMMAND_gaijiSet: arguments("ee"); break;
 		case COMMAND_gaijiClearAll: arguments(""); break;
 		case COMMAND_menuGetLatestSelect: arguments("v"); break;
