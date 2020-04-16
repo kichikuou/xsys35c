@@ -1341,4 +1341,6 @@ void decompile(Vector *scos, Ain *ain, const char *outdir) {
 	write_config(path_join(outdir, "xsys35c.cfg"));
 	write_hed(path_join(outdir, "sources.txt"));
 	write_variables(path_join(outdir, "variables.txt"));
+	if (ain && ain->dlls)
+		write_hels(ain->dlls, outdir);
 }

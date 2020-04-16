@@ -69,6 +69,7 @@ typedef struct {
 } Ain;
 
 Ain *ain_read(const char *path);
+void write_hels(Map *dlls, const char *dir);
 
 // cali.c
 
