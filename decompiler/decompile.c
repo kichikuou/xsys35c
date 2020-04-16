@@ -1268,12 +1268,20 @@ static void write_config(const char *path) {
 	fclose(fp);
 }
 
-static void write_hed(const char *path) {
+static void write_hed(const char *path, Map *dlls) {
 	FILE *fp = fopen(path, "w");
-	fprintf(fp, "#SYSTEM35\n");
+	fputs("#SYSTEM35\n", fp);
 	for (int i = 0; i < dc.scos->len; i++) {
 		Sco *sco = dc.scos->data[i];
 		fprintf(fp, "%s\n", sco->src_name);
+	}
+
+	if (dlls && dlls->keys->len) {
+		fputs("\n#DLLHeader\n", fp);
+		for (int i = 0; i < dlls->keys->len; i++) {
+			Vector *funcs = dlls->vals->data[i];
+			fprintf(fp, "%s.%s\n", dlls->keys->data[i], funcs->len ? "HEL" : "DLL");
+		}
 	}
 	fclose(fp);
 }
@@ -1339,7 +1347,7 @@ void decompile(Vector *scos, Ain *ain, const char *outdir) {
 	}
 
 	write_config(path_join(outdir, "xsys35c.cfg"));
-	write_hed(path_join(outdir, "sources.txt"));
+	write_hed(path_join(outdir, "sources.txt"), ain ? ain->dlls : NULL);
 	write_variables(path_join(outdir, "variables.txt"));
 	if (ain && ain->dlls)
 		write_hels(ain->dlls, outdir);
