@@ -202,8 +202,23 @@ static void conditional(Vector *branch_end_stack) {
 	stack_push(branch_end_stack, endaddr);
 }
 
-static void func_label(uint16_t page, uint32_t addr) {
+static void func_name(uint16_t page, uint32_t addr) {
+	if (dc.ain && dc.ain->functions) {
+		Map *functions = dc.ain->functions;
+		for (int i = 0; i < functions->vals->len; i++) {
+			Function *f = functions->vals->data[i];
+			if (f->page - 1 == page && f->addr == addr) {
+				dc_puts(functions->keys->data[i]);
+				return;
+			}
+		}
+		warning_at(dc.p, "function %d:%d is not found in System39.ain", page, addr);
+	}
 	dc_printf("F_%d_%05x", page, addr);
+}
+
+static void func_label(uint16_t page, uint32_t addr) {
+	func_name(page, addr);
 
 	uint8_t *mark = mark_at(page, addr);
 	*mark |= FUNC_TOP;
@@ -620,8 +635,11 @@ static void decompile_page(int page) {
 			indent();
 			dc_puts("}\n");
 		}
-		if (mark & FUNC_TOP)
-			dc_printf("**F_%d_%05x:\n", page, dc.p - sco->data);
+		if (mark & FUNC_TOP) {
+			dc_puts("**");
+			func_name(page, dc.p - sco->data);
+			dc_puts(":\n");
+		}
 		if (mark & LABEL)
 			dc_printf("*L_%05x:\n", dc.p - sco->data);
 		if (mark & DATA_TABLE) {
@@ -1323,6 +1341,8 @@ void decompile(Vector *scos, Ain *ain, const char *outdir) {
 	dc.scos = scos;
 	dc.ain = ain;
 	dc.variables = (ain && ain->variables) ? ain->variables : new_vec();
+
+	// TODO: mark FUNC_TOP using dc.ain->functions
 
 	// Preprocess
 	bool done = false;

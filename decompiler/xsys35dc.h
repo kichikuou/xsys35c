@@ -57,7 +57,7 @@ typedef struct {
 } DLLFunc;
 
 typedef struct {
-	uint16_t page;
+	uint16_t page;  // one-based numbering
 	uint32_t addr;
 } Function;
 
