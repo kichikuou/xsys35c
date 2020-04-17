@@ -34,31 +34,31 @@ static char *identifier(void) {
 
 typedef struct {
 	const char *name;
-	DllArgType type;
-} DllArgTypeName;
+	HELType type;
+} HELTypeName;
 
-static const DllArgTypeName type_names[] = {
-	{"pword", Arg_pword},
-	{"int", Arg_int},
-	{"ISurface", Arg_ISurface},
-	{"IString", Arg_IString},
-	{"IWinMsg", Arg_IWinMsg},
-	{"ITimer", Arg_ITimer},
-	{"IUI", Arg_IUI},
-	{"ISys3xDIB", Arg_ISys3xDIB},
-	{"ISys3xCG", Arg_ISys3xCG},
-	{"ISys3xStringTable", Arg_ISys3xStringTable},
-	{"ISys3xSystem", Arg_ISys3xSystem},
-	{"ISys3xMusic", Arg_ISys3xMusic},
-	{"ISys3xMsgString", Arg_ISys3xMsgString},
-	{"ISys3xInputDevice", Arg_ISys3xInputDevice},
-	{"ISys3x", Arg_ISys3x},
-	{"IConstString", Arg_IConstString},
+static const HELTypeName hel_type_names[] = {
+	{"pword", HEL_pword},
+	{"int", HEL_int},
+	{"ISurface", HEL_ISurface},
+	{"IString", HEL_IString},
+	{"IWinMsg", HEL_IWinMsg},
+	{"ITimer", HEL_ITimer},
+	{"IUI", HEL_IUI},
+	{"ISys3xDIB", HEL_ISys3xDIB},
+	{"ISys3xCG", HEL_ISys3xCG},
+	{"ISys3xStringTable", HEL_ISys3xStringTable},
+	{"ISys3xSystem", HEL_ISys3xSystem},
+	{"ISys3xMusic", HEL_ISys3xMusic},
+	{"ISys3xMsgString", HEL_ISys3xMsgString},
+	{"ISys3xInputDevice", HEL_ISys3xInputDevice},
+	{"ISys3x", HEL_ISys3x},
+	{"IConstString", HEL_IConstString},
 	{NULL, 0},
 };
 
-static DllArgType param_type_from_name(const char *name) {
-	for (const DllArgTypeName *e = type_names; e->name; e++) {
+static HELType param_type_from_name(const char *name) {
+	for (const HELTypeName *e = hel_type_names; e->name; e++) {
 		if (!strcmp(e->name, name))
 			return e->type;
 	}
@@ -84,7 +84,7 @@ static DLLFunc *fundecl(void) {
 	if (!consume_keyword("void"))
 		error_at(input, "keyword 'void' expected");
 
-	DLLFunc *func = calloc(1, sizeof(DLLFunc) + sizeof(DllArgType) * MAX_DLL_FUNC_PARAMS);
+	DLLFunc *func = calloc(1, sizeof(DLLFunc) + sizeof(HELType) * MAX_DLL_FUNC_PARAMS);
 	func->name = identifier();
 	expect('(');
 	params(func);

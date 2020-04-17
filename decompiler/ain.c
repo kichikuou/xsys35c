@@ -151,22 +151,22 @@ void write_hels(Map *dlls, const char *dir) {
 			for (int k = 0; k < func->argc; k++) {
 				const char *type;
 				switch (func->argtypes[k]) {
-				case Arg_pword: type = "pword"; break;
-				case Arg_int: type = "int"; break;
-				case Arg_ISurface: type = "ISurface"; break;
-				case Arg_IString: type = "IString"; break;
-				case Arg_IWinMsg: type = "IWinMsg"; break;
-				case Arg_ITimer: type = "ITimer"; break;
-				case Arg_IUI: type = "IUI"; break;
-				case Arg_ISys3xDIB: type = "ISys3xDIB"; break;
-				case Arg_ISys3xCG: type = "ISys3xCG"; break;
-				case Arg_ISys3xStringTable: type = "ISys3xStringTable"; break;
-				case Arg_ISys3xSystem: type = "ISys3xSystem"; break;
-				case Arg_ISys3xMusic: type = "ISys3xMusic"; break;
-				case Arg_ISys3xMsgString: type = "ISys3xMsgString"; break;
-				case Arg_ISys3xInputDevice: type = "ISys3xInputDevice"; break;
-				case Arg_ISys3x: type = "ISys3x"; break;
-				case Arg_IConstString: type = "IConstString"; break;
+				case HEL_pword: type = "pword"; break;
+				case HEL_int: type = "int"; break;
+				case HEL_ISurface: type = "ISurface"; break;
+				case HEL_IString: type = "IString"; break;
+				case HEL_IWinMsg: type = "IWinMsg"; break;
+				case HEL_ITimer: type = "ITimer"; break;
+				case HEL_IUI: type = "IUI"; break;
+				case HEL_ISys3xDIB: type = "ISys3xDIB"; break;
+				case HEL_ISys3xCG: type = "ISys3xCG"; break;
+				case HEL_ISys3xStringTable: type = "ISys3xStringTable"; break;
+				case HEL_ISys3xSystem: type = "ISys3xSystem"; break;
+				case HEL_ISys3xMusic: type = "ISys3xMusic"; break;
+				case HEL_ISys3xMsgString: type = "ISys3xMsgString"; break;
+				case HEL_ISys3xInputDevice: type = "ISys3xInputDevice"; break;
+				case HEL_ISys3x: type = "ISys3x"; break;
+				case HEL_IConstString: type = "IConstString"; break;
 				default: error("%s.%s: unknown parameter type %d", dlls->keys->data[i], func->name, func->argtypes[k]);
 				}
 				fprintf(fp, "%s%s arg%d", sep, type, k + 1);

@@ -38,8 +38,8 @@ int main() {
 	assert(!strcmp(f1->name, "func1"));
 	assert(!strcmp(f2->name, "func2"));
 	assert(f1->argc == 1);
-	assert(f1->argtypes[0] == Arg_pword);
+	assert(f1->argtypes[0] == HEL_pword);
 	assert(f2->argc == 2);
-	assert(f2->argtypes[0] == Arg_int);
-	assert(f2->argtypes[1] == Arg_IConstString);
+	assert(f2->argtypes[0] == HEL_int);
+	assert(f2->argtypes[1] == HEL_IConstString);
 }

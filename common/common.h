@@ -95,28 +95,28 @@ Vector *ald_read(Vector *entries, const char *path);
 // System39.ain
 
 typedef enum {
-	Arg_pword = 0,
-	Arg_int = 1,
-	Arg_ISurface = 2,
-	Arg_IString = 3,
-	Arg_IWinMsg = 4,
-	Arg_ITimer = 5,
-	Arg_IUI = 6,
-	Arg_ISys3xDIB = 7,
-	Arg_ISys3xCG = 9,
-	Arg_ISys3xStringTable = 10,
-	Arg_ISys3xSystem = 13,
-	Arg_ISys3xMusic = 14,
-	Arg_ISys3xMsgString = 15,
-	Arg_ISys3xInputDevice = 16,
-	Arg_ISys3x = 17,
-	Arg_IConstString = 18,
-} DllArgType;
+	HEL_pword = 0,
+	HEL_int = 1,
+	HEL_ISurface = 2,
+	HEL_IString = 3,
+	HEL_IWinMsg = 4,
+	HEL_ITimer = 5,
+	HEL_IUI = 6,
+	HEL_ISys3xDIB = 7,
+	HEL_ISys3xCG = 9,
+	HEL_ISys3xStringTable = 10,
+	HEL_ISys3xSystem = 13,
+	HEL_ISys3xMusic = 14,
+	HEL_ISys3xMsgString = 15,
+	HEL_ISys3xInputDevice = 16,
+	HEL_ISys3x = 17,
+	HEL_IConstString = 18,
+} HELType;
 
 typedef struct {
 	const char *name;
 	uint32_t argc;
-	DllArgType argtypes[];
+	HELType argtypes[];
 } DLLFunc;
 
 // opcodes

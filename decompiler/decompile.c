@@ -588,28 +588,28 @@ static void dll_call(void) {
 	const char *sep = " ";
 	for (int i = 0; i < f->argc; i++) {
 		switch (f->argtypes[i]) {
-		case Arg_pword:
-		case Arg_int:
-		case Arg_IString:
+		case HEL_pword:
+		case HEL_int:
+		case HEL_IString:
 			dc_puts(sep);
 			sep = ",";
 			cali(false);
 			break;
-		case Arg_ISurface:
-		case Arg_IWinMsg:
-		case Arg_ITimer:
-		case Arg_IUI:
-		case Arg_ISys3xDIB:
-		case Arg_ISys3xCG:
-		case Arg_ISys3xStringTable:
-		case Arg_ISys3xSystem:
-		case Arg_ISys3xMusic:
-		case Arg_ISys3xMsgString:
-		case Arg_ISys3xInputDevice:
-		case Arg_ISys3x:
+		case HEL_ISurface:
+		case HEL_IWinMsg:
+		case HEL_ITimer:
+		case HEL_IUI:
+		case HEL_ISys3xDIB:
+		case HEL_ISys3xCG:
+		case HEL_ISys3xStringTable:
+		case HEL_ISys3xSystem:
+		case HEL_ISys3xMusic:
+		case HEL_ISys3xMsgString:
+		case HEL_ISys3xInputDevice:
+		case HEL_ISys3x:
 			dc.p += 2;  // ??
 			break;
-		case Arg_IConstString:
+		case HEL_IConstString:
 		default:
 			error("argtype %d not implemented", f->argtypes[i]);
 		}
