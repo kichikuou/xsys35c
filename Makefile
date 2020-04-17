@@ -11,6 +11,7 @@ COMPILER_SRCS= \
 	compiler/ain.c \
 	compiler/compile.c \
 	compiler/config.c \
+	compiler/hel.c \
 	compiler/lexer.c \
 	compiler/sco.c
 
@@ -36,14 +37,16 @@ tools/ald: tools/ald.o $(COMMON_OBJS)
 common/ald_test: common/ald_test.o $(COMMON_OBJS)
 compiler/compile_test: compiler/compile_test.o $(COMPILER_OBJS) $(COMMON_OBJS)
 compiler/sco_test: compiler/sco_test.o $(COMPILER_OBJS) $(COMMON_OBJS)
+compiler/hel_test: compiler/hel_test.o $(COMPILER_OBJS) $(COMMON_OBJS)
 
-test: common/ald_test compiler/compile_test compiler/sco_test compiler/xsys35c regression_test.sh
+test: common/ald_test compiler/compile_test compiler/sco_test compiler/hel_test compiler/xsys35c regression_test.sh
 	compiler/sco_test
+	compiler/hel_test
 	compiler/compile_test
 	common/ald_test && cmp testdata/expected.ald testdata/actual.ald && rm testdata/actual*.ald
 	./regression_test.sh
 
 clean:
-	rm -rf *.o common/*.o compiler/*.o decompiler/*.o tools/*.o compiler/xsys35c decompiler/xsys35dc tools/ald common/ald_test compiler/compile_test compiler/sco_test
+	rm -rf *.o common/*.o compiler/*.o decompiler/*.o tools/*.o compiler/xsys35c decompiler/xsys35dc tools/ald common/ald_test compiler/compile_test compiler/sco_test compiler/hel_test
 
 .PHONY: clean test

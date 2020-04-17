@@ -92,6 +92,33 @@ typedef struct {
 void ald_write(Vector *entries, int disk, FILE *fp);
 Vector *ald_read(Vector *entries, const char *path);
 
+// System39.ain
+
+typedef enum {
+	Arg_pword = 0,
+	Arg_int = 1,
+	Arg_ISurface = 2,
+	Arg_IString = 3,
+	Arg_IWinMsg = 4,
+	Arg_ITimer = 5,
+	Arg_IUI = 6,
+	Arg_ISys3xDIB = 7,
+	Arg_ISys3xCG = 9,
+	Arg_ISys3xStringTable = 10,
+	Arg_ISys3xSystem = 13,
+	Arg_ISys3xMusic = 14,
+	Arg_ISys3xMsgString = 15,
+	Arg_ISys3xInputDevice = 16,
+	Arg_ISys3x = 17,
+	Arg_IConstString = 18,
+} DllArgType;
+
+typedef struct {
+	const char *name;
+	uint32_t argc;
+	DllArgType argtypes[];
+} DLLFunc;
+
 // opcodes
 
 enum {

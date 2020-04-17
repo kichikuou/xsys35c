@@ -111,3 +111,7 @@ Buffer *compile(Compiler *comp, const char *source, int pageno);
 // ain.c
 
 void ain_write(Compiler *compiler, FILE *fp);
+
+// hel.c
+
+Vector *parse_hel(const char* hel, const char *name);
