@@ -185,6 +185,10 @@ void compile_string(Buffer *b, char terminator) {
 	while (*input != terminator) {
 		if (!*input)
 			error_at(top, "unfinished message");
+		if (isprint(*input)) {
+			emit(b, *input++);
+			continue;
+		}
 		uint8_t c1 = *input++;
 		uint8_t c2 = *input++;
 		if (!is_sjis_byte1(c1) || !is_sjis_byte2(c2))

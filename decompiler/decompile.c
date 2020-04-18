@@ -17,6 +17,7 @@
 */
 #include "xsys35dc.h"
 #include <assert.h>
+#include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -124,7 +125,7 @@ static void label(void) {
 	*mark_at(dc.page, addr) |= LABEL;
 }
 
-static bool is_string_data(const uint8_t *begin, const uint8_t *end) {
+static bool is_string_data(const uint8_t *begin, const uint8_t *end, bool conv_half_to_full) {
 	if (*begin == '\0' && begin + 1 == end)
 		return true;
 	for (const uint8_t *p = begin; p < end;) {
@@ -132,7 +133,7 @@ static bool is_string_data(const uint8_t *begin, const uint8_t *end) {
 			return p - begin >= 2;
 		if (is_sjis_byte1(p[0]) && is_sjis_byte2(p[1]))
 			p += 2;
-		else if (is_sjis_half_kana(*p))
+		else if (isprint(*p) || (conv_half_to_full && is_sjis_half_kana(*p)))
 			p++;
 		else
 			break;
@@ -144,15 +145,20 @@ static void data_block(const uint8_t *p, const uint8_t *end) {
 	if (!dc.out)
 		return;
 
+	bool conv_half_to_full = ((Sco *)dc.scos->data[dc.page])->version <= SCO_S351;
+
 	while (p < end) {
 		indent();
-		if (is_string_data(p, end) || (*p == '\0' && is_string_data(p + 1, end))) {
+		if (is_string_data(p, end, conv_half_to_full) ||
+			(*p == '\0' && is_string_data(p + 1, end, conv_half_to_full))) {
 			dc_putc('"');
 			while (*p) {
 				uint8_t c = *p++;
-				if (c == ' ') {
+				if (conv_half_to_full && c == ' ') {
 					dc_puts("\x81\x40"); // full-width space
-				} else if (is_sjis_half_kana(c)) {
+				} else if (isprint(c)) {
+					dc_putc(c);
+				} else if (conv_half_to_full && is_sjis_half_kana(c)) {
 					uint16_t full = from_sjis_half_kana(c);
 					dc_putc(full >> 8);
 					dc_putc(full & 0xff);
@@ -169,7 +175,7 @@ static void data_block(const uint8_t *p, const uint8_t *end) {
 
 		dc_putc('[');
 		const char *sep = "";
-		for (; p < end && !is_string_data(p, end); p += 2) {
+		for (; p < end && !is_string_data(p, end, conv_half_to_full); p += 2) {
 			if (p + 1 == end) {
 				warning_at(p, "data block with odd number of bytes");
 				dc_printf("%s%db", sep, p[0]);
