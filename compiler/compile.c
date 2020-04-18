@@ -654,10 +654,13 @@ static bool command(void) {
 	case '\'': // Message
 		switch (config.sys_ver) {
 		case SYSTEM39:
-			emit_command(out, COMMAND_ainMsg);
-			compile_message(compiler->msg_buf);
-			emit_dword(out, compiler->msg_count++);
-			break;
+			if (use_ain_message()) {
+				emit_command(out, COMMAND_ainMsg);
+				compile_message(compiler->msg_buf);
+				emit_dword(out, compiler->msg_count++);
+				break;
+			}
+			// fall through
 		case SYSTEM38:
 			emit_command(out, COMMAND_msg);
 			compile_message(out);

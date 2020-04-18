@@ -32,11 +32,15 @@ typedef struct {
 	const char *source_list;
 	const char *var_list;
 	bool disable_else;
+	bool disable_ain_message;
 } Config;
 extern Config config;
 
 void set_sys_ver(const char *ver);
 void load_config(const char *path);
+static inline bool use_ain_message(void) {
+	return config.sys_ver == SYSTEM39 && !config.disable_ain_message;
+}
 
 // sco.c
 

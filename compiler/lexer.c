@@ -336,7 +336,7 @@ static int replace_command(int cmd) {
 	case CMD3('T', 'P', 'S'): return COMMAND_TPS;
 	case CMD3('T', 'O', 'P'): return COMMAND_TOP;
 	case CMD3('T', 'P', 'P'): return COMMAND_TPP;
-	case CMD2('H', 'H'): return config.sys_ver == SYSTEM39 ? COMMAND_ainHH : COMMAND_newHH;
+	case CMD2('H', 'H'): return use_ain_message() ? COMMAND_ainHH : COMMAND_newHH;
 	case CMD2('L', 'C'): return COMMAND_newLC;
 	case CMD2('L', 'E'): return COMMAND_newLE;
 	case CMD3('L', 'X', 'G'): return COMMAND_newLXG;
@@ -347,7 +347,7 @@ static int replace_command(int cmd) {
 	case CMD2('Q', 'E'): return COMMAND_newQE;
 	case CMD2('U', 'P'): return COMMAND_newUP;
 	case 'F': return COMMAND_newF;
-	case 'H': return config.sys_ver == SYSTEM39 ? COMMAND_ainH : cmd;
+	case 'H': return use_ain_message() ? COMMAND_ainH : cmd;
 	case CMD3('M', 'H', 'H'): return COMMAND_MHH;
 	case CMD2(COMMAND_LXW, 'T'): return COMMAND_LXWT;
 	case CMD2(COMMAND_LXW, 'S'): return COMMAND_LXWS;
@@ -355,7 +355,7 @@ static int replace_command(int cmd) {
 	case CMD2(COMMAND_LXW, 'H'): return COMMAND_LXWH;
 	case CMD3(COMMAND_LXW, 'H', 'H'): return COMMAND_LXWHH;
 	case CMD3('L', 'X', 'F'): return COMMAND_LXF;
-	case 'X': return config.sys_ver == SYSTEM39 ? COMMAND_ainX : cmd;
+	case 'X': return use_ain_message() ? COMMAND_ainX : cmd;
 	default: return cmd;
 	}
 }

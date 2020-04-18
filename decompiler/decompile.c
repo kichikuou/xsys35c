@@ -41,6 +41,8 @@ typedef struct {
 	int page;
 	const uint8_t *p;  // Points inside scos->data[page]->data
 	int indent;
+
+	bool disable_ain_message;
 } Decompiler;
 
 static Decompiler dc;
@@ -1134,6 +1136,7 @@ static void decompile_page(int page) {
 		case COMMAND_sndStop: arguments(""); break;
 		case COMMAND_sndIsPlay: arguments("v"); break;
 		case COMMAND_msg:
+			dc.disable_ain_message = true;
 			dc_putc('\'');
 			while (*dc.p)
 				dc_putc(*dc.p++);
@@ -1273,6 +1276,8 @@ static void write_config(const char *path) {
 
 	if (dc.ain) {
 		fputs("sys_ver = 3.9\n", fp);
+		if (dc.disable_ain_message)
+			fputs("disable_ain_message = true\n", fp);
 	} else {
 		Sco *sco = dc.scos->data[0];
 		switch (sco->version) {

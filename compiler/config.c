@@ -79,6 +79,8 @@ void load_config(const char *path) {
 			config.var_list = path_join(cfg_dir, val);
 		} else if (sscanf(line, "disable_else = %s", val)) {
 			config.disable_else = to_bool(val);
+		} else if (sscanf(line, "disable_ain_message = %s", val)) {
+			config.disable_ain_message = to_bool(val);
 		}
 	}
 }
