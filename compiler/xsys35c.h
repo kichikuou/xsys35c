@@ -98,12 +98,13 @@ typedef struct {
 	Vector *src_names;
 	Vector *variables;
 	Map *functions;
+	Map *dlls;
 	Buffer *msg_buf;
 	int msg_count;
 	Buffer **scos;
 } Compiler;
 
-void compiler_init(Compiler *compiler, Vector *src_names, Vector *variables);
+void compiler_init(Compiler *compiler, Vector *src_names, Vector *variables, Map *dlls);
 void preprocess(Compiler *comp, const char *source, int pageno);
 void preprocess_done(Compiler *comp);
 Buffer *compile(Compiler *comp, const char *source, int pageno);

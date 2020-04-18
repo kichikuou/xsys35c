@@ -373,6 +373,69 @@ static void number_array(void) {
 	}
 }
 
+static void dll_arguments(DLLFunc *f) {
+	for (int i = 0; i < f->argc; i++) {
+		if (i > 0)
+			expect(',');
+		switch (f->argtypes[i]) {
+		case HEL_pword:
+		case HEL_int:
+		case HEL_IString:
+			expr();
+			break;
+		case HEL_ISurface:
+		case HEL_IWinMsg:
+		case HEL_ITimer:
+		case HEL_IUI:
+		case HEL_ISys3xDIB:
+		case HEL_ISys3xCG:
+		case HEL_ISys3xStringTable:
+		case HEL_ISys3xSystem:
+		case HEL_ISys3xMusic:
+		case HEL_ISys3xMsgString:
+		case HEL_ISys3xInputDevice:
+		case HEL_ISys3x:
+			emit_number(out, 0);
+			emit(out, OP_END);
+			break;
+		case HEL_IConstString:
+			error("argtype %d not implemented", f->argtypes[i]);
+		}
+	}
+	expect(':');
+}
+
+static int hel_index(const char *dllname) {
+	for (int i = 0; i < compiler->dlls->keys->len; i++) {
+		Vector *funcs = compiler->dlls->vals->data[i];
+		if (funcs->len > 0 && !strcmp(compiler->dlls->keys->data[i], dllname))
+			return i;
+	}
+	return -1;
+}
+
+static void dll_call(void) {
+	const char *dot = strchr(input, '.');
+	assert(dot);
+	const char *dllname = strndup(input, dot - input);
+	int dll_index = hel_index(dllname);
+	if (dll_index < 0)
+		error_at(input, "unknown DLL name '%s'", dllname);
+	emit_dword(out, dll_index);
+	Vector *funcs = compiler->dlls->vals->data[dll_index];
+	input = dot + 1;
+	const char *funcname = get_identifier();
+	for (int i = 0; i < funcs->len; i++) {
+		DLLFunc *f = funcs->data[i];
+		if (!strcmp(f->name, funcname)) {
+			emit_dword(out, i);
+			dll_arguments(f);
+			return;
+		}
+	}
+	error_at(dot + 1, "unknown DLL function '%s'", funcname);
+}
+
 // Compile command arguments. Directives:
 //  e: expression
 //  f: file name
@@ -1146,6 +1209,7 @@ static bool command(void) {
 	case COMMAND_grSetCEParam: arguments("ee"); break;
 	case COMMAND_grEffectMoveView: arguments("eeee"); break;
 	case COMMAND_cgSetCacheSize: arguments("e"); break;
+	case COMMAND_dllCall: dll_call(); break;
 	case COMMAND_gaijiSet: arguments("ee"); break;
 	case COMMAND_gaijiClearAll: expect(':'); break;
 	case COMMAND_menuGetLatestSelect: arguments("v"); break;
@@ -1211,11 +1275,12 @@ static void commands(void) {
 		;
 }
 
-void compiler_init(Compiler *comp, Vector *src_names, Vector *variables) {
+void compiler_init(Compiler *comp, Vector *src_names, Vector *variables, Map *dlls) {
 	memset(comp, 0, sizeof(Compiler));
 	comp->src_names = src_names;
 	comp->variables = variables ? variables : new_vec();
 	comp->functions = new_map();
+	comp->dlls = dlls ? dlls : new_map();
 	comp->scos = calloc(src_names->len, sizeof(Buffer*));
 }
 

@@ -138,7 +138,7 @@ static void read_hed(const char *path, Vector *sources, Map *dlls) {
 				char *dot = strchr(line, '.');
 				if (dot && !strcasecmp(dot + 1, "dll")) {
 					*dot = '\0';
-					map_put(dlls, line, new_vec());
+					map_put(dlls, strdup(line), new_vec());
 				} else {
 					char *hel_text = read_file(path_join(dir, sjis2utf(line)));
 					Vector *funcs = parse_hel(hel_text, line);
@@ -175,7 +175,7 @@ static char *sconame(const char *advname) {
 	return s;
 }
 
-static Vector *build_ald(Vector *src_paths, Vector *variables, const char *objdir) {
+static Vector *build_ald(Vector *src_paths, Vector *variables, Map *dlls, const char *objdir) {
 	Map *srcs = new_map();
 	for (int i = 0; i < src_paths->len; i++) {
 		char *path = src_paths->data[i];
@@ -184,7 +184,7 @@ static Vector *build_ald(Vector *src_paths, Vector *variables, const char *objdi
 	}
 
 	Compiler compiler;
-	compiler_init(&compiler, srcs->keys, variables);
+	compiler_init(&compiler, srcs->keys, variables, dlls);
 
 	for (int i = 0; i < srcs->keys->len; i++) {
 		const char *source = srcs->vals->data[i];
@@ -306,7 +306,7 @@ int main(int argc, char *argv[]) {
 
 	Vector *vars = var_list ? read_var_list(var_list) : NULL;
 
-	Vector *ald = build_ald(srcs, vars, objdir);
+	Vector *ald = build_ald(srcs, vars, dlls, objdir);
 
 	FILE *fp = fopen(output, "wb");
 	if (!fp)

@@ -363,6 +363,17 @@ static int replace_command(int cmd) {
 int get_command(Buffer *b) {
 	const char *command_top = input;
 
+	// DLL call?
+	if (config.sys_ver == SYSTEM39 && isalpha(*input)) {
+		const char *p = input + 1;
+		while (isalnum(*p))
+			p++;
+		if (*p == '.') {
+			emit_command(b, COMMAND_dllCall);
+			return COMMAND_dllCall;
+		}
+	}
+
 	if (!*input || *input == '}' || *input == '>')
 		return *input;
 	if (*input == 'A' || *input == 'R')
