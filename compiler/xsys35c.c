@@ -30,16 +30,16 @@ enum {
 
 static const char short_options[] = "a:hi:o:p:s:V:v";
 static const struct option long_options[] = {
-	{ "ain",         required_argument, NULL, 'a' },
-	{ "help",        no_argument,       NULL, 'h' },
-	{ "output",      required_argument, NULL, 'o' },
-	{ "objdir",      required_argument, NULL, LOPT_OBJDIR },
-	{ "project",     required_argument, NULL, 'p' },
-	{ "source-list", required_argument, NULL, 'i' },
-	{ "sys-ver",     required_argument, NULL, 's' },
-	{ "timestamp",   required_argument, NULL, LOPT_TIMESTAMP },
-	{ "variables",   required_argument, NULL, 'V' },
-	{ "version",     no_argument,       NULL, 'v' },
+	{ "ain",       required_argument, NULL, 'a' },
+	{ "hed",       required_argument, NULL, 'i' },
+	{ "help",      no_argument,       NULL, 'h' },
+	{ "output",    required_argument, NULL, 'o' },
+	{ "objdir",    required_argument, NULL, LOPT_OBJDIR },
+	{ "project",   required_argument, NULL, 'p' },
+	{ "sys-ver",   required_argument, NULL, 's' },
+	{ "timestamp", required_argument, NULL, LOPT_TIMESTAMP },
+	{ "variables", required_argument, NULL, 'V' },
+	{ "version",   no_argument,       NULL, 'v' },
 	{ 0, 0, 0, 0 }
 };
 
@@ -49,11 +49,11 @@ static void usage(void) {
 	puts("Usage: xsys35c [options] file...");
 	puts("Options:");
 	puts("    -a, --ain <file>          Write .ain output to <file> (default: System39.ain)");
+	puts("    -i, --hed <file>          Read compile header (.hed) from <file>");
 	puts("    -h, --help                Display this message and exit");
 	puts("        --objdir <directory>  Write object (.sco) files into <directory>");
 	puts("    -o, --output <file>       Write output to <file> (default: adisk.ald)");
 	puts("    -p, --project <file>      Read project configuration from <file>");
-	puts("    -i, --source-list <file>  Read list of source files from <file>");
 	puts("    -s, --sys-ver <ver>       Target System version (3.5|3.6|3.8(default)|3.9)");
 	puts("        --timestamp <time>    Set timestamp of ALD entries, in UNIX timestamp");
 	puts("    -V, --variables <file>    Read list of variables from <file>");
@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
 	const char *objdir = NULL;
 	const char *output = "adisk.ald";
 	const char *output_ain = "System39.ain";
-	const char *source_list = NULL;
+	const char *hed = NULL;
 	const char *var_list = NULL;
 
 	int opt;
@@ -264,7 +264,7 @@ int main(int argc, char *argv[]) {
 			usage();
 			return 0;
 		case 'i':
-			source_list = optarg;
+			hed = optarg;
 			break;
 		case 'o':
 			output = optarg;
@@ -297,20 +297,20 @@ int main(int argc, char *argv[]) {
 
 	if (project)
 		load_config(project);
-	if (!source_list && config.source_list)
-		source_list = config.source_list;
+	if (!hed && config.hed)
+		hed = config.hed;
 	if (!var_list && config.var_list)
 		var_list = config.var_list;
 
-	if (!source_list && argc < 1) {
+	if (!hed && argc < 1) {
 		usage();
 		return 1;
 	}
 
 	Vector *srcs = new_vec();
 	Map *dlls = new_map();
-	if (source_list)
-		read_hed(source_list, srcs, dlls);
+	if (hed)
+		read_hed(hed, srcs, dlls);
 
 	for (int i = 0; i < argc; i++)
 		vec_push(srcs, argv[i]);

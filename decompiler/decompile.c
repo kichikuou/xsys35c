@@ -1328,7 +1328,7 @@ static void write_config(const char *path) {
 	if (dc.scos->len == 0)
 		return;
 	FILE *fp = fopen(path, "w");
-	fputs("source_list = sources.txt\n", fp);
+	fputs("hed = xsys35dc.hed\n", fp);
 	fputs("variables = variables.txt\n", fp);
 	fputs("disable_else = true\n", fp);
 
@@ -1435,7 +1435,7 @@ void decompile(Vector *scos, Ain *ain, const char *outdir) {
 	}
 
 	write_config(path_join(outdir, "xsys35c.cfg"));
-	write_hed(path_join(outdir, "sources.txt"), ain ? ain->dlls : NULL);
+	write_hed(path_join(outdir, "xsys35dc.hed"), ain ? ain->dlls : NULL);
 	write_variables(path_join(outdir, "variables.txt"));
 	if (ain && ain->dlls)
 		write_hels(ain->dlls, outdir);

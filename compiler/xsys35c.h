@@ -29,7 +29,7 @@ typedef enum {
 typedef struct {
 	SysVer sys_ver;
 	ScoVer sco_ver;
-	const char *source_list;
+	const char *hed;
 	const char *var_list;
 	bool disable_else;
 	bool disable_ain_message;

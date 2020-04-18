@@ -73,8 +73,8 @@ void load_config(const char *path) {
 		char val[256];
 		if (sscanf(line, "sys_ver = %s", val)) {
 			set_sys_ver(val);
-		} else if (sscanf(line, "source_list = %s", val)) {
-			config.source_list = path_join(cfg_dir, val);
+		} else if (sscanf(line, "hed = %s", val)) {
+			config.hed = path_join(cfg_dir, val);
 		} else if (sscanf(line, "variables = %s", val)) {
 			config.var_list = path_join(cfg_dir, val);
 		} else if (sscanf(line, "disable_else = %s", val)) {
