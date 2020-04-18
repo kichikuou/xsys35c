@@ -28,8 +28,9 @@ enum {
 	LOPT_TIMESTAMP,
 };
 
-static const char short_options[] = "hi:o:p:s:V:v";
+static const char short_options[] = "a:hi:o:p:s:V:v";
 static const struct option long_options[] = {
+	{ "ain",         required_argument, NULL, 'a' },
 	{ "help",        no_argument,       NULL, 'h' },
 	{ "output",      required_argument, NULL, 'o' },
 	{ "objdir",      required_argument, NULL, LOPT_OBJDIR },
@@ -47,6 +48,7 @@ static time_t timestamp = (time_t)-1;
 static void usage(void) {
 	puts("Usage: xsys35c [options] file...");
 	puts("Options:");
+	puts("    -a, --ain <file>          Write .ain output to <file> (default: System39.ain)");
 	puts("    -h, --help                Display this message and exit");
 	puts("        --objdir <directory>  Write object (.sco) files into <directory>");
 	puts("    -o, --output <file>       Write output to <file> (default: adisk.ald)");
@@ -175,7 +177,7 @@ static char *sconame(const char *advname) {
 	return s;
 }
 
-static Vector *build_ald(Vector *src_paths, Vector *variables, Map *dlls, const char *objdir) {
+static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *objdir, const char *ald_path, const char *ain_path) {
 	Map *srcs = new_map();
 	for (int i = 0; i < src_paths->len; i++) {
 		char *path = src_paths->data[i];
@@ -229,26 +231,35 @@ static Vector *build_ald(Vector *src_paths, Vector *variables, Map *dlls, const 
 	}
 
 	if (config.sys_ver == SYSTEM39) {
-		FILE *fp = fopen("System39.ain", "wb");
+		FILE *fp = fopen(ain_path, "wb");
 		if (!fp)
-			error("System39.ain: %s", strerror(errno));
+			error("%s: %s", ain_path, strerror(errno));
 		ain_write(&compiler, fp);
 		fclose(fp);
 	}
 
-	return ald;
+
+	FILE *fp = fopen(ald_path, "wb");
+	if (!fp)
+		error("%s: %s", ald_path, strerror(errno));
+	ald_write(ald, 1, fp);
+	fclose(fp);
 }
 
 int main(int argc, char *argv[]) {
 	const char *project = NULL;
 	const char *objdir = NULL;
 	const char *output = "adisk.ald";
+	const char *output_ain = "System39.ain";
 	const char *source_list = NULL;
 	const char *var_list = NULL;
 
 	int opt;
 	while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
 		switch (opt) {
+		case 'a':
+			output_ain = optarg;
+			break;
 		case 'h':
 			usage();
 			return 0;
@@ -306,11 +317,5 @@ int main(int argc, char *argv[]) {
 
 	Vector *vars = var_list ? read_var_list(var_list) : NULL;
 
-	Vector *ald = build_ald(srcs, vars, dlls, objdir);
-
-	FILE *fp = fopen(output, "wb");
-	if (!fp)
-		error("%s: %s", output, strerror(errno));
-	ald_write(ald, 1, fp);
-	fclose(fp);
+	build(srcs, vars, dlls, objdir, output, output_ain);
 }
