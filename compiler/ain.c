@@ -16,6 +16,8 @@
  *
 */
 #include "xsys35c.h"
+#include <stdlib.h>
+#include <string.h>
 
 static void ain_emit_HEL0(Buffer *out, Map *dlls) {
 	emit(out, 'H');
@@ -40,17 +42,27 @@ static void ain_emit_HEL0(Buffer *out, Map *dlls) {
 	}
 }
 
+static int func_compare(const void *a, const void *b) {
+	return strcmp(*(const char **)a, *(const char **)b);
+}
+
 static void ain_emit_FUNC(Buffer *out, Map *functions) {
 	emit(out, 'F');
 	emit(out, 'U');
 	emit(out, 'N');
 	emit(out, 'C');
 	emit_dword(out, 0);  // reserved
-	emit_dword(out, functions->keys->len);
-	for (int i = 0; i < functions->keys->len; i++) {
-		emit_string(out, functions->keys->data[i]);
+
+	int nfunc = functions->keys->len;
+	const char **sorted_keys = malloc(nfunc * sizeof(const char *));
+	memcpy(sorted_keys, functions->keys->data, nfunc * sizeof(const char *));
+	qsort(sorted_keys, nfunc, sizeof(const char *), func_compare);
+
+	emit_dword(out, nfunc);
+	for (int i = 0; i < nfunc; i++) {
+		emit_string(out, sorted_keys[i]);
 		emit(out, 0);
-		Function *f = functions->vals->data[i];
+		Function *f = map_get(functions, sorted_keys[i]);
 		emit_word(out, f->page);
 		emit_dword(out, f->addr);
 	}
