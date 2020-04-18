@@ -138,7 +138,7 @@ char *get_identifier(void) {
 char *get_label(void) {
 	skip_whitespaces();
 	const char *top = input;
-	while (isalnum(*input) || *input == '_' || *input == '-' ||
+	while (isalnum(*input) || *input == '_' || *input == '-' || *input == '.' ||
 		   is_sjis_byte1(*input) || is_sjis_half_kana(*input)) {
 		if (is_sjis_byte1(input[0]) && is_sjis_byte2(input[1]))
 			input++;

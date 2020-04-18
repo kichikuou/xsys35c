@@ -230,7 +230,7 @@ static void label(void) {
 // defun ::= '**' name (',' var)* ':'
 static void defun(void) {
 	const char *top = input;
-	char *name = get_identifier();
+	char *name = get_label();
 
 	if (!compiling) {
 		// First pass - create a function record and store parameter info
@@ -313,7 +313,7 @@ static void funcall(void) {
 		return;
 	}
 	const char *top = input;
-	char *name = get_identifier();
+	char *name = get_label();
 	if (!compiling) {
 		// First pass - skip parameters
 		bool needs_comma = false;
@@ -494,7 +494,7 @@ static void arguments(const char *sig) {
 			break;
 		case 'F':
 			{
-				char *name = get_identifier();
+				char *name = get_label();
 				if (compiling) {
 					Function *func = map_get(compiler->functions, name);
 					if (!func)
