@@ -99,11 +99,13 @@ static void ain_write_buf(Buffer *buf, FILE *fp) {
 void ain_write(Compiler *compiler, FILE *fp) {
 	fputs("AINI", fp);
 	Buffer *out = new_buf();
-	emit_dword(out, 4);  // number of sections
+	emit_dword(out, 4);
 	ain_emit_HEL0(out, compiler->dlls);
 	ain_emit_FUNC(out, compiler->functions);
 	ain_emit_VARI(out, compiler->variables);
-	ain_emit_MSGI_head(out, compiler->msg_count);
+	if (compiler->msg_count > 0)
+		ain_emit_MSGI_head(out, compiler->msg_count);
 	ain_write_buf(out, fp);
-	ain_write_buf(compiler->msg_buf, fp);
+	if (compiler->msg_count > 0)
+		ain_write_buf(compiler->msg_buf, fp);
 }
