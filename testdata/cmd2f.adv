@@ -127,3 +127,16 @@ menuGoto 0,0:
 menuReturnGoto 0,0:
 menuFreeShelterDIB:
 msgFreeShelterDIB:
+; dataSetPointer
+dataGetWORD v,0:
+dataGetString 0,0:
+dataSkipWORD 0:
+dataSkipString 0:
+varGetNumof v:
+patchG0 0:
+regReadString 0,0,0,v:
+fileCheckExist 0,v:
+timeCheckCurDate 0,0,0,v:
+dlgManualProtect "a","a":
+fileCheckDVD "a",0,0,"a",v:
+sysReset:

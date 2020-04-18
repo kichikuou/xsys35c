@@ -347,6 +347,15 @@ static void arguments(const char *sig) {
 			dc.p++;  // skip '\0'
 			dc_putc('"');
 			break;
+		case 'o':  // obfuscated string
+			if (*dc.p != 0)
+				error_at(dc.p, "0x00 expected");
+			dc_putc('"');
+			while (*++dc.p)
+				dc_putc(*dc.p >> 4 | *dc.p << 4);
+			dc.p++;  // skip '\0'
+			dc_putc('"');
+			break;
 		case 'F':
 			{
 				uint16_t page = (dc.p[0] | dc.p[1] << 8) - 1;
@@ -495,6 +504,19 @@ static int get_command(void) {
 		case 0x7d: return COMMAND_ainH;
 		case 0x7e: return COMMAND_ainHH;
 		case 0x7f: return COMMAND_ainX;
+		case 0x80: dc_puts("dataSetPointer"); return COMMAND_dataSetPointer;
+		case 0x81: dc_puts("dataGetWORD"); return COMMAND_dataGetWORD;
+		case 0x82: dc_puts("dataGetString"); return COMMAND_dataGetString;
+		case 0x83: dc_puts("dataSkipWORD"); return COMMAND_dataSkipWORD;
+		case 0x84: dc_puts("dataSkipString"); return COMMAND_dataSkipString;
+		case 0x85: dc_puts("varGetNumof"); return COMMAND_varGetNumof;
+		case 0x86: dc_puts("patchG0"); return COMMAND_patchG0;
+		case 0x87: dc_puts("regReadString"); return COMMAND_regReadString;
+		case 0x88: dc_puts("fileCheckExist"); return COMMAND_fileCheckExist;
+		case 0x89: dc_puts("timeCheckCurDate"); return COMMAND_timeCheckCurDate;
+		case 0x8a: dc_puts("dlgManualProtect"); return COMMAND_dlgManualProtect;
+		case 0x8b: dc_puts("fileCheckDVD"); return COMMAND_fileCheckDVD;
+		case 0x8c: dc_puts("sysReset"); return COMMAND_sysReset;
 		default:
 			error_at(dc.p - 2, "Unsupported command 2f %02x", dc.p[-1]);
 		}
@@ -1272,6 +1294,19 @@ static void decompile_page(int page) {
 		case COMMAND_ainH: ain_msg("H", "ne"); break;
 		case COMMAND_ainHH: ain_msg("HH", "ne"); break;
 		case COMMAND_ainX: ain_msg("X", "e"); break;
+		case COMMAND_dataSetPointer: goto unknown_command;
+		case COMMAND_dataGetWORD: arguments("ve"); break;
+		case COMMAND_dataGetString: arguments("ee"); break;
+		case COMMAND_dataSkipWORD: arguments("e"); break;
+		case COMMAND_dataSkipString: arguments("e"); break;
+		case COMMAND_varGetNumof: arguments("v"); break;
+		case COMMAND_patchG0: arguments("e"); break;
+		case COMMAND_regReadString: arguments("eeev"); break;
+		case COMMAND_fileCheckExist: arguments("ev"); break;
+		case COMMAND_timeCheckCurDate: arguments("eeev"); break;
+		case COMMAND_dlgManualProtect: arguments("oo"); break;
+		case COMMAND_fileCheckDVD: arguments("oeeov"); break;
+		case COMMAND_sysReset: arguments(""); break;
 		default:
 		unknown_command:
 			error("%s:%x: unknown command '%.*s'", sjis2utf(sco->sco_name), topaddr, dc_addr() - topaddr, sco->data + topaddr);

@@ -488,6 +488,14 @@ static void arguments(const char *sig) {
 			}
 			emit(out, *sig == 's' ? ':' : 0);
 			break;
+		case 'o': // obfuscated string
+			emit(out, 0);
+			expect('"');
+			for (; *input && *input != '"'; input++)
+				emit(out, *input >> 4 | *input << 4);
+			expect('"');
+			emit(out, 0);
+			break;
 		case 'v':
 			variable(false);
 			emit(out, OP_END);
@@ -1263,6 +1271,19 @@ static bool command(void) {
 			emit(compiler->msg_buf, 0);
 		}
 		break;
+	case COMMAND_dataSetPointer: goto unknown_command;
+	case COMMAND_dataGetWORD: arguments("ve"); break;
+	case COMMAND_dataGetString: arguments("ee"); break;
+	case COMMAND_dataSkipWORD: arguments("e"); break;
+	case COMMAND_dataSkipString: arguments("e"); break;
+	case COMMAND_varGetNumof: arguments("v"); break;
+	case COMMAND_patchG0: arguments("e"); break;
+	case COMMAND_regReadString: arguments("eeev"); break;
+	case COMMAND_fileCheckExist: arguments("ev"); break;
+	case COMMAND_timeCheckCurDate: arguments("eeev"); break;
+	case COMMAND_dlgManualProtect: arguments("oo"); break;
+	case COMMAND_fileCheckDVD: arguments("oeeov"); break;
+	case COMMAND_sysReset: expect(':'); break;
 
 	default:
 		goto unknown_command;

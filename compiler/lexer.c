@@ -320,6 +320,19 @@ static int lower_case_command(const char *s, int len) {
 	LCCMD(menuReturnGoto);
 	LCCMD(menuFreeShelterDIB);
 	LCCMD(msgFreeShelterDIB);
+	LCCMD(dataSetPointer);
+	LCCMD(dataGetWORD);
+	LCCMD(dataGetString);
+	LCCMD(dataSkipWORD);
+	LCCMD(dataSkipString);
+	LCCMD(varGetNumof);
+	LCCMD(patchG0);
+	LCCMD(regReadString);
+	LCCMD(fileCheckExist);
+	LCCMD(timeCheckCurDate);
+	LCCMD(dlgManualProtect);
+	LCCMD(fileCheckDVD);
+	LCCMD(sysReset);
 	return 0;
 #undef LCCMD
 }
