@@ -44,6 +44,7 @@ typedef struct {
 	int indent;
 
 	bool disable_ain_message;
+	bool old_SR;
 } Decompiler;
 
 static Decompiler dc;
@@ -1048,7 +1049,14 @@ static void decompile_page(int page) {
 		case CMD2('S', 'O'): arguments("v"); break;
 		case CMD2('S', 'P'): arguments("ee"); break;
 		case CMD2('S', 'Q'): arguments("eee"); break;
-		case CMD2('S', 'R'): arguments(*dc.p < 0x40 ? "nv" : "ev"); break;
+		case CMD2('S', 'R'):
+			if (*dc.p < 0x40) {
+				arguments("nv");
+			} else {
+				dc.old_SR = true;
+				arguments("ev");
+			}
+			break;
 		case CMD2('S', 'S'): arguments("e"); break;
 		case CMD2('S', 'T'): arguments("e"); break;
 		case CMD2('S', 'U'): arguments("vv"); break;
@@ -1331,6 +1339,8 @@ static void write_config(const char *path) {
 	fputs("hed = xsys35dc.hed\n", fp);
 	fputs("variables = variables.txt\n", fp);
 	fputs("disable_else = true\n", fp);
+	if (dc.old_SR)
+		fputs("old_SR = true\n", fp);
 
 	if (dc.ain) {
 		fputs("sys_ver = 3.9\n", fp);

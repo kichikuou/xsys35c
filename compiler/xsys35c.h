@@ -31,8 +31,10 @@ typedef struct {
 	ScoVer sco_ver;
 	const char *hed;
 	const char *var_list;
+
 	bool disable_else;
 	bool disable_ain_message;
+	bool old_SR;
 } Config;
 extern Config config;
 

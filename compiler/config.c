@@ -81,6 +81,8 @@ void load_config(const char *path) {
 			config.disable_else = to_bool(val);
 		} else if (sscanf(line, "disable_ain_message = %s", val)) {
 			config.disable_ain_message = to_bool(val);
+		} else if (sscanf(line, "old_SR = %s", val)) {
+			config.old_SR = to_bool(val);
 		}
 	}
 }

@@ -1009,7 +1009,7 @@ static bool command(void) {
 	case CMD2('S', 'O'): arguments("v"); break;
 	case CMD2('S', 'P'): arguments("ee"); break;
 	case CMD2('S', 'Q'): arguments("eee"); break;
-	case CMD2('S', 'R'): arguments(config.sys_ver == SYSTEM35 ? "ev" : "nv"); break;
+	case CMD2('S', 'R'): arguments(config.sys_ver == SYSTEM35 || config.old_SR ? "ev" : "nv"); break;
 	case CMD2('S', 'S'): arguments("e"); break;
 	case CMD2('S', 'T'): arguments("e"); break;
 	case CMD2('S', 'U'): arguments("vv"); break;
