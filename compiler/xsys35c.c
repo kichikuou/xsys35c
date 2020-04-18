@@ -99,27 +99,58 @@ static Vector *read_var_list(const char *path) {
 	return vars;
 }
 
-// Read a list of source files from `path`, in the "comp.hed" format of System3.x SDK.
-static Vector *read_source_list(const char *path) {
+static void read_hed(const char *path, Vector *sources, Map *dlls) {
 	FILE *fp = fopen(path, "r");
 	if (!fp)
 		error("%s: %s", path, strerror(errno));
 	char *dir = dirname(path);
-	Vector *files = new_vec();
+	enum { INITIAL, SYSTEM35, DLLHeader } section = INITIAL;
+
 	char line[256];
 	while (fgets(line, sizeof(line), fp)) {
-		if (line[0] == '#' || line[0] == '\x1a')
+		if (line[0] == '\x1a')  // DOS EOF
+			break;
+		if (line[0] == '#') {  // Section header
+			trim_right(line);
+			if (!strcmp("#SYSTEM35", line))
+				section = SYSTEM35;
+			else if (!strcmp("#DLLHeader", line))
+				section = DLLHeader;
+			else
+				error("%s: unknown section %s", path, line);
 			continue;
+		}
 		char *sc = strchr(line, ';');
 		if (sc)
 			*sc = '\0';
 		trim_right(line);
 		if (!line[0])
 			continue;
-		vec_push(files, path_join(dir, sjis2utf(line)));
+		switch (section) {
+		case INITIAL:
+			error("%s: syntax error", path);
+			break;
+		case SYSTEM35:
+			vec_push(sources, path_join(dir, sjis2utf(line)));
+			break;
+		case DLLHeader:
+			{
+				char *dot = strchr(line, '.');
+				if (dot && !strcasecmp(dot + 1, "dll")) {
+					*dot = '\0';
+					map_put(dlls, line, new_vec());
+				} else {
+					char *hel_text = read_file(path_join(dir, sjis2utf(line)));
+					Vector *funcs = parse_hel(hel_text, line);
+					if (dot)
+						*dot = '\0';
+					map_put(dlls, strdup(line), funcs);
+				}
+			}
+			break;
+		}
 	}
 	fclose(fp);
-	return files;
 }
 
 static char *sconame(const char *advname) {
@@ -265,7 +296,11 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	Vector *srcs = source_list ? read_source_list(source_list) : new_vec();
+	Vector *srcs = new_vec();
+	Map *dlls = new_map();
+	if (source_list)
+		read_hed(source_list, srcs, dlls);
+
 	for (int i = 0; i < argc; i++)
 		vec_push(srcs, argv[i]);
 
