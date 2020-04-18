@@ -1342,7 +1342,12 @@ void decompile(Vector *scos, Ain *ain, const char *outdir) {
 	dc.ain = ain;
 	dc.variables = (ain && ain->variables) ? ain->variables : new_vec();
 
-	// TODO: mark FUNC_TOP using dc.ain->functions
+	if (ain && ain->functions) {
+		for (int i = 0; i < ain->functions->vals->len; i++) {
+			Function *f = ain->functions->vals->data[i];
+			*mark_at(f->page - 1, f->addr) |= FUNC_TOP;
+		}
+	}
 
 	// Preprocess
 	bool done = false;
