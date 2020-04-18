@@ -17,13 +17,27 @@
 */
 #include "xsys35c.h"
 
-static void ain_emit_HEL0(Buffer *out) {
+static void ain_emit_HEL0(Buffer *out, Map *dlls) {
 	emit(out, 'H');
 	emit(out, 'E');
 	emit(out, 'L');
 	emit(out, '0');
 	emit_dword(out, 0);  // reserved
-	emit_dword(out, 0);  // number of DLLs
+	emit_dword(out, dlls->keys->len);
+	for (int i = 0; i < dlls->keys->len; i++) {
+		emit_string(out, dlls->keys->data[i]);
+		emit(out, 0);
+		Vector *funcs = dlls->vals->data[i];
+		emit_dword(out, funcs->len);
+		for (int j = 0; j < funcs->len; j++) {
+			DLLFunc *f = funcs->data[j];
+			emit_string(out, f->name);
+			emit(out, 0);
+			emit_dword(out, f->argc);
+			for (int k = 0; k < f->argc; k++)
+				emit_dword(out, f->argtypes[k]);
+		}
+	}
 }
 
 static void ain_emit_FUNC(Buffer *out, Map *functions) {
@@ -74,7 +88,7 @@ void ain_write(Compiler *compiler, FILE *fp) {
 	fputs("AINI", fp);
 	Buffer *out = new_buf();
 	emit_dword(out, 4);  // number of sections
-	ain_emit_HEL0(out);
+	ain_emit_HEL0(out, compiler->dlls);
 	ain_emit_FUNC(out, compiler->functions);
 	ain_emit_VARI(out, compiler->variables);
 	ain_emit_MSGI_head(out, compiler->msg_count);
