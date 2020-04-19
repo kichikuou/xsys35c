@@ -374,14 +374,16 @@ static void number_array(void) {
 }
 
 static void dll_arguments(DLLFunc *f) {
+	bool need_comma = false;
 	for (int i = 0; i < f->argc; i++) {
-		if (i > 0)
-			expect(',');
 		switch (f->argtypes[i]) {
 		case HEL_pword:
 		case HEL_int:
 		case HEL_IString:
+			if (need_comma)
+				expect(',');
 			expr();
+			need_comma = true;
 			break;
 		case HEL_ISurface:
 		case HEL_IWinMsg:
