@@ -492,7 +492,7 @@ static void arguments(const char *sig) {
 			emit(out, 0);
 			expect('"');
 			for (; *input && *input != '"'; input++)
-				emit(out, *input >> 4 | *input << 4);
+				emit(out, (uint8_t)*input >> 4 | (uint8_t)*input << 4);
 			expect('"');
 			emit(out, 0);
 			break;
