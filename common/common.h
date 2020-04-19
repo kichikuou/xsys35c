@@ -290,5 +290,5 @@ enum {
 	COMMAND_sysReset = CMD2F(0x8c),
 	// Pseudo commands
 	COMMAND_IF = 0x80,
-	COMMAND_LXW = 0x81,
+	COMMAND_LXWx = 0x81,
 };

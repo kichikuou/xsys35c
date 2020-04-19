@@ -368,11 +368,11 @@ static int replace_command(int cmd) {
 	case 'F': return COMMAND_newF;
 	case 'H': return use_ain_message() ? COMMAND_ainH : cmd;
 	case CMD3('M', 'H', 'H'): return COMMAND_MHH;
-	case CMD2(COMMAND_LXW, 'T'): return COMMAND_LXWT;
-	case CMD2(COMMAND_LXW, 'S'): return COMMAND_LXWS;
-	case CMD2(COMMAND_LXW, 'E'): return COMMAND_LXWE;
-	case CMD2(COMMAND_LXW, 'H'): return COMMAND_LXWH;
-	case CMD3(COMMAND_LXW, 'H', 'H'): return COMMAND_LXWHH;
+	case CMD2(COMMAND_LXWx, 'T'): return COMMAND_LXWT;
+	case CMD2(COMMAND_LXWx, 'S'): return COMMAND_LXWS;
+	case CMD2(COMMAND_LXWx, 'E'): return COMMAND_LXWE;
+	case CMD2(COMMAND_LXWx, 'H'): return COMMAND_LXWH;
+	case CMD3(COMMAND_LXWx, 'H', 'H'): return COMMAND_LXWHH;
 	case CMD3('L', 'X', 'F'): return COMMAND_LXF;
 	case 'X': return use_ain_message() ? COMMAND_ainX : cmd;
 	default: return cmd;
@@ -404,10 +404,8 @@ int get_command(Buffer *b) {
 		if (isupper(*input))
 			cmd |= *input++ << 16;
 
-		if (cmd == CMD3('L', 'X', 'W')) {
-			cmd = COMMAND_LXW;
-			if (isupper(*input))
-				cmd |= *input++ << 8;
+		if (cmd == CMD3('L', 'X', 'W') && isupper(*input)) {
+			cmd = COMMAND_LXWx | *input++ << 8;
 			if (isupper(*input))
 				cmd |= *input++ << 16;
 		}
