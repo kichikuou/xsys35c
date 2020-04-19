@@ -1,5 +1,7 @@
-CFLAGS = -std=c11 -Wall -O2 -Icommon
-LDFLAGS = -liconv
+CFLAGS = -Wall -O2 -Icommon
+ifeq ($(shell uname), Darwin)
+	LDFLAGS = -liconv
+endif
 
 COMMON_SRCS := \
 	common/ald.c \

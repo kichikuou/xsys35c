@@ -18,6 +18,7 @@
 #include "xsys35c.h"
 #undef NDEBUG
 #include <assert.h>
+#include <string.h>
 
 int main() {
 	Vector *hel;
