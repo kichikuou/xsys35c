@@ -1,5 +1,6 @@
 *.o
 *~
-xsys35c
+compiler/xsys35c
+decompiler/xsys35dc
+tools/ald
 *_test
-testdata/actual.ald

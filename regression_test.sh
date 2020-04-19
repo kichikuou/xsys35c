@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
-compiler/xsys35c --timestamp 0 -s 3.8 testdata/cmd2f.adv -o testdata/cmd2f_actual.ald
-cmp testdata/cmd2f.ald testdata/cmd2f_actual.ald
-rm testdata/cmd2f_actual.ald
+compiler/xsys35c --timestamp 0 -p testdata/source/xsys35c.cfg -o testdata/actual.ald
+cmp testdata/regression_test.ald testdata/actual.ald
+rm -rf testdata/decompiled
+mkdir -p testdata/decompiled
+decompiler/xsys35dc -o testdata/decompiled testdata/actual.ald
+diff -uN testdata/source testdata/decompiled
