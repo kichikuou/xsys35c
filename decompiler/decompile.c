@@ -1334,6 +1334,23 @@ static void decompile_page(int page) {
 		dc_printf("*L_%05x:\n", sco->filesize);
 }
 
+// Scan the SCO and annotate locations that look like data blocks.
+static void scan_for_data_tables(Sco *sco) {
+	const uint8_t *p = sco->data + sco->hdrsize;
+	const uint8_t *end = sco->data + sco->filesize - 4;  // -4 for address
+
+	while (p < end && (p = memchr(p, '#', end - p)) != NULL) {
+		uint32_t ptr_addr = le32(++p);
+		if (ptr_addr >= sco->hdrsize && ptr_addr <= sco->filesize - 4) {
+			uint32_t data_addr = le32(sco->data + ptr_addr);
+			if (data_addr >= sco->hdrsize && data_addr < sco->filesize) {
+				sco->mark[ptr_addr] |= DATA;
+				sco->mark[data_addr] |= DATA;
+			}
+		}
+	}
+}
+
 static void write_config(const char *path) {
 	if (dc.scos->len == 0)
 		return;
@@ -1422,6 +1439,11 @@ void decompile(Vector *scos, Ain *ain, const char *outdir) {
 			Function *f = ain->functions->vals->data[i];
 			*mark_at(f->page - 1, f->addr) |= FUNC_TOP;
 		}
+	}
+
+	for (int i = 0; i < scos->len; i++) {
+		Sco *sco = scos->data[i];
+		scan_for_data_tables(sco);
 	}
 
 	// Preprocess
