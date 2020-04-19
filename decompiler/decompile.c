@@ -158,6 +158,8 @@ static void data_block(const uint8_t *p, const uint8_t *end) {
 				if (conv_half_to_full && c == ' ') {
 					dc_puts("\x81\x40"); // full-width space
 				} else if (isprint(c)) {
+					if (c == '"' || c == '\\')
+						dc_putc('\\');
 					dc_putc(c);
 				} else if (conv_half_to_full && is_sjis_half_kana(c)) {
 					uint16_t full = from_sjis_half_kana(c);

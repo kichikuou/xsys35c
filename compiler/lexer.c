@@ -183,6 +183,8 @@ int get_number(void) {
 void compile_string(Buffer *b, char terminator) {
 	const char *top = input;
 	while (*input != terminator) {
+		if (*input == '\\')
+			input++;
 		if (!*input)
 			error_at(top, "unfinished message");
 		if (isprint(*input)) {
