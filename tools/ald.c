@@ -204,8 +204,10 @@ static int do_compare(int argc, char *argv[]) {
 		help_compare();
 		return 1;
 	}
-	Vector *ald1 = ald_read(NULL, argv[0]);
-	Vector *ald2 = ald_read(NULL, argv[1]);
+	const char *aldfile1 = argv[0];
+	const char *aldfile2 = argv[1];
+	Vector *ald1 = ald_read(NULL, aldfile1);
+	Vector *ald2 = ald_read(NULL, aldfile2);
 
 	bool differs = false;
 	for (int i = 0; i < ald1->len && i < ald2->len; i++) {
@@ -213,23 +215,23 @@ static int do_compare(int argc, char *argv[]) {
 			differs |= compare_entry(i, ald1->data[i], ald2->data[i]);
 		} else if (ald1->data[i]) {
 			AldEntry *e = ald1->data[i];
-			printf("%s (%d) only exists in %s\n", sjis2utf(e->name), i, argv[1]);
+			printf("%s (%d) only exists in %s\n", sjis2utf(e->name), i, aldfile1);
 			differs = true;
 		} else if (ald2->data[i]) {
 			AldEntry *e = ald2->data[i];
-			printf("%s (%d) only exists in %s\n", sjis2utf(e->name), i, argv[2]);
+			printf("%s (%d) only exists in %s\n", sjis2utf(e->name), i, aldfile2);
 			differs = true;
 		}
 	}
 
 	for (int i = ald2->len; i < ald1->len; i++) {
 		AldEntry *e = ald1->data[i];
-		printf("%s (%d) only exists in %s\n", sjis2utf(e->name), i, argv[1]);
+		printf("%s (%d) only exists in %s\n", sjis2utf(e->name), i, aldfile1);
 		differs = true;
 	}
 	for (int i = ald1->len; i < ald2->len; i++) {
 		AldEntry *e = ald2->data[i];
-		printf("%s (%d) only exists in %s\n", sjis2utf(e->name), i, argv[2]);
+		printf("%s (%d) only exists in %s\n", sjis2utf(e->name), i, aldfile2);
 		differs = true;
 	}
 	return differs ? 1 : 0;
