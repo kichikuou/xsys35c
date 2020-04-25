@@ -31,6 +31,7 @@ enum {
 	  WHILE_START = 1 << 4,
 	  FOR_START   = 1 << 5,
 	  DATA_TABLE  = 1 << 6,
+	  ELSE        = 1 << 7,
 };
 
 typedef struct {
@@ -43,6 +44,7 @@ typedef struct {
 	const uint8_t *p;  // Points inside scos->data[page]->data
 	int indent;
 
+	bool disable_else;
 	bool disable_ain_message;
 	bool old_SR;
 } Decompiler;
@@ -51,6 +53,15 @@ static Decompiler dc;
 
 static inline int dc_addr(void) {
 	return dc.p - ((Sco *)dc.scos->data[dc.page])->data;
+}
+
+static const uint8_t *code_at(int page, int addr) {
+	if (page >= dc.scos->len)
+		error("page out of range (%x:%x)", page, addr);
+	Sco *sco = dc.scos->data[page];
+	if (addr >= sco->filesize)
+		error("address out of range (%x:%x)", page, addr);
+	return &sco->data[addr];
 }
 
 static uint8_t *mark_at(int page, int addr) {
@@ -210,6 +221,25 @@ static void conditional(Vector *branch_end_stack) {
 	dc.p += 4;
 
 	*mark_at(dc.page, endaddr) |= CODE;
+	const uint8_t *epilogue = code_at(dc.page, endaddr - 5);
+	switch (*epilogue) {
+	case '@':
+		if (!dc.disable_else) {
+			uint32_t addr = le32(epilogue + 1);
+			if (endaddr <= addr && addr <= ((Sco *)dc.scos->data[dc.page])->filesize) {
+				*mark_at(dc.page, endaddr - 5) |= ELSE;
+				endaddr = addr;
+			} else {
+				dc.disable_else = true;
+			}
+		}
+		break;
+	case '>':
+		break;
+	default:
+		dc.disable_else = true;
+		break;
+	}
 	stack_push(branch_end_stack, endaddr);
 }
 
@@ -713,6 +743,17 @@ static void decompile_page(int page) {
 			}
 			data_block(dc.p, data_end);
 			dc.p = data_end;
+			continue;
+		}
+		if (mark & ELSE && !dc.disable_else) {
+			assert(*dc.p == '@');
+			dc.p += 5;
+			if (le32(dc.p - 4) != dc_addr()) {
+				dc.indent--;
+				indent();
+				dc_puts("} else {\n");
+				dc.indent++;
+			}
 			continue;
 		}
 		if (*dc.p == '>')
@@ -1357,7 +1398,8 @@ static void write_config(const char *path) {
 	FILE *fp = fopen(path, "w");
 	fputs("hed = xsys35dc.hed\n", fp);
 	fputs("variables = variables.txt\n", fp);
-	fputs("disable_else = true\n", fp);
+	if (dc.disable_else)
+		fputs("disable_else = true\n", fp);
 	if (dc.old_SR)
 		fputs("old_SR = true\n", fp);
 

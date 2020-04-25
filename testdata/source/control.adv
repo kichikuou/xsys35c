@@ -12,6 +12,12 @@
 			A
 		}
 	}
+	'If-else'
+	{0:
+		A
+	} else {
+		R
+	}
 	'Label jump'
 	@L_00020:
 	'Label call / return'
