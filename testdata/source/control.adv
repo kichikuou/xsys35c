@@ -1,0 +1,56 @@
+**F_1_00020:
+*L_00020:
+	'Control structures test'
+	A
+	'Branch'
+	{0:
+		A
+	}
+	'Nested Branch'
+	{0:
+		{1:
+			A
+		}
+	}
+	'Label jump'
+	@L_00020:
+	'Label call / return'
+	\L_00020:
+	\0:
+	'Page jump'
+	&1:
+	'Page call / return'
+	%1:
+	%0:
+	'Function call / return'
+	~F_1_00020:
+	~0,1:
+	'For loop'
+	<VAR0,0,10,1,2:
+		A
+	>
+	'While loop'
+	<@0:
+		A
+	>
+	'Nested loop'
+	<VAR0,0,10,1,2:
+		<VAR0,1,10,1,2:
+			A
+		>
+	>
+	<@0:
+		<@1:
+			A
+		>
+	>
+	<VAR0,0,10,1,2:
+		<@0:
+			A
+		>
+	>
+	<@0:
+		<VAR0,0,10,1,2:
+			A
+		>
+	>
