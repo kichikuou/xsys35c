@@ -283,7 +283,7 @@ static void func_label(uint16_t page, uint32_t addr) {
 
 	uint8_t *mark = mark_at(page, addr);
 	*mark |= FUNC_TOP;
-	if (!(*mark & CODE))
+	if (!(*mark & (CODE | DATA)))
 		((Sco *)dc.scos->data[page])->preprocessed = false;
 }
 
@@ -1345,7 +1345,7 @@ static void decompile_page(int page) {
 		case COMMAND_ainH: ain_msg("H", "ne"); break;
 		case COMMAND_ainHH: ain_msg("HH", "ne"); break;
 		case COMMAND_ainX: ain_msg("X", "e"); break;
-		case COMMAND_dataSetPointer: goto unknown_command;
+		case COMMAND_dataSetPointer: arguments("F"); break;
 		case COMMAND_dataGetWORD: arguments("ve"); break;
 		case COMMAND_dataGetString: arguments("ee"); break;
 		case COMMAND_dataSkipWORD: arguments("e"); break;
@@ -1380,15 +1380,38 @@ static void scan_for_data_tables(Sco *sco) {
 	const uint8_t *p = sco->data + sco->hdrsize;
 	const uint8_t *end = sco->data + sco->filesize - 4;  // -4 for address
 
+	// Scan for '#' command
 	while (p < end && (p = memchr(p, '#', end - p)) != NULL) {
 		uint32_t ptr_addr = le32(++p);
 		if (ptr_addr >= sco->hdrsize && ptr_addr <= sco->filesize - 4) {
+			sco->mark[ptr_addr] |= DATA;
 			uint32_t data_addr = le32(sco->data + ptr_addr);
 			if (data_addr >= sco->hdrsize && data_addr < sco->filesize) {
-				sco->mark[ptr_addr] |= DATA;
 				sco->mark[data_addr] |= DATA;
 			}
 		}
+	}
+
+	// Scan for dataSetPointer (0x2f 0x80) command
+	if (!dc.ain)
+		return;  // dataSetPointer is only in system 3.9
+	p = sco->data + sco->hdrsize;
+	end = sco->data + sco->filesize - 7;
+	while (p < end && (p = memchr(p, 0x2f, end - p)) != NULL) {
+		if (*++p != 0x80)
+			continue;
+		p++;
+		uint16_t page = (p[0] | p[1] << 8) - 1;
+		uint32_t addr = le32(p + 2);
+		if (page >= dc.scos->len)
+			continue;
+		Sco *sco = dc.scos->data[page];
+		if (addr >= sco->filesize)
+			continue;
+		// Must be adready marked using ain->functions
+		if (!(sco->mark[addr] & FUNC_TOP))
+			continue;
+		sco->mark[addr] |= DATA;
 	}
 }
 

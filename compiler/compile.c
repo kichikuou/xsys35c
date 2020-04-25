@@ -1273,7 +1273,7 @@ static bool command(void) {
 			emit(compiler->msg_buf, 0);
 		}
 		break;
-	case COMMAND_dataSetPointer: goto unknown_command;
+	case COMMAND_dataSetPointer: arguments("F"); break;
 	case COMMAND_dataGetWORD: arguments("ve"); break;
 	case COMMAND_dataGetString: arguments("ee"); break;
 	case COMMAND_dataSkipWORD: arguments("e"); break;
