@@ -451,8 +451,6 @@ static void arguments(const char *sig) {
 		emit(out, get_number());
 		if (*++sig)
 			consume(',');  // comma between subcommand num and next argument is optional
-		else
-			expect(':');
 	}
 
 	while (*sig) {
@@ -525,12 +523,11 @@ static void arguments(const char *sig) {
 			if (consume(':'))
 				error_at(input - 1, "too few arguments");
 			expect(',');
-		} else {
-			if (consume(','))
-				error_at(input - 1, "too many arguments");
-			expect(':');
 		}
 	}
+	if (consume(','))
+		error_at(input - 1, "too many arguments");
+	expect(':');
 }
 
 // assign ::= '!' var [+-*/%&|^]? ':' expr '!'
@@ -874,7 +871,7 @@ static bool command(void) {
 		case 3:
 			arguments("ee"); break;
 		case 4:
-			expect(':'); break;
+			arguments(""); break;
 		default:
 			goto unknown_command;
 		}
@@ -950,7 +947,7 @@ static bool command(void) {
 	case CMD3('N', 'D', 'D'): arguments("ve"); break;
 	case CMD3('N', 'D', 'H'): arguments("ee"); break;
 	case CMD3('N', 'D', 'M'): arguments("ee"); break;
-	case 'O': expect(':'); break;
+	case 'O': arguments(""); break;
 	case CMD2('P', 'C'): arguments("e"); break;
 	case CMD2('P', 'D'): arguments("e"); break;
 	case CMD2('P', 'F'): // fall through
@@ -1053,7 +1050,7 @@ static bool command(void) {
 	case CMD2('V', 'B'): arguments("eeeeeee"); break;
 	case CMD2('V', 'C'): arguments("eeeeeee"); break;
 	case CMD2('V', 'E'): arguments("eeeeee"); break;
-	case CMD2('V', 'F'): expect(':'); break;
+	case CMD2('V', 'F'): arguments(""); break;
 	case CMD2('V', 'G'): arguments("eeee"); break;
 	case CMD2('V', 'H'): arguments("eeeeee"); break;
 	case CMD3('V', 'I', 'C'): arguments("eeee"); break;
@@ -1115,12 +1112,12 @@ static bool command(void) {
 		conditional();
 		break;
 
-	case COMMAND_TOC: expect(':'); break;
-	case COMMAND_TOS: expect(':'); break;
+	case COMMAND_TOC: arguments(""); break;
+	case COMMAND_TOS: arguments(""); break;
 	case COMMAND_TPC: arguments("e"); break;
 	case COMMAND_TPS: arguments("e"); break;
-	case COMMAND_TOP: expect(':'); break;
-	case COMMAND_TPP: expect(':'); break;
+	case COMMAND_TOP: arguments(""); break;
+	case COMMAND_TPP: arguments(""); break;
 	case COMMAND_inc: arguments("v"); break;
 	case COMMAND_dec: arguments("v"); break;
 	case COMMAND_TAA: arguments("e"); break;
@@ -1135,7 +1132,7 @@ static bool command(void) {
 	case COMMAND_wavStopFade: arguments("e"); break;
 	case COMMAND_trace: arguments("z"); break;
 	case COMMAND_wav3DSetPos: arguments("eeee"); break;
-	case COMMAND_wav3DCommit: expect(':'); break;
+	case COMMAND_wav3DCommit: arguments(""); break;
 	case COMMAND_wav3DGetPos: arguments("evvv"); break;
 	case COMMAND_wav3DSetPosL: arguments("eee"); break;
 	case COMMAND_wav3DGetPosL: arguments("vvv"); break;
@@ -1144,9 +1141,9 @@ static bool command(void) {
 	case COMMAND_wav3DStopFadePos: arguments("e"); break;
 	case COMMAND_wav3DFadePosL: arguments("eeee"); break;
 	case COMMAND_wav3DIsFadePosL: arguments("v"); break;
-	case COMMAND_wav3DStopFadePosL: expect(':'); break;
+	case COMMAND_wav3DStopFadePosL: arguments(""); break;
 	case COMMAND_sndPlay: arguments("ee"); break;
-	case COMMAND_sndStop: expect(':'); break;
+	case COMMAND_sndStop: arguments(""); break;
 	case COMMAND_sndIsPlay: arguments("v"); break;
 	case COMMAND_msg: arguments("z"); break;
 	case COMMAND_newHH: arguments("ne"); break;
@@ -1178,26 +1175,26 @@ static bool command(void) {
 	case COMMAND_wavGetWaveTime: arguments("ev"); break;
 	case COMMAND_menuSetCbkSelect: arguments("F"); break;
 	case COMMAND_menuSetCbkCancel: arguments("F"); break;
-	case COMMAND_menuClearCbkSelect: expect(':'); break;
-	case COMMAND_menuClearCbkCancel: expect(':'); break;
+	case COMMAND_menuClearCbkSelect: arguments(""); break;
+	case COMMAND_menuClearCbkCancel: arguments(""); break;
 	case COMMAND_wav3DSetMode: arguments("ee"); break;
 	case COMMAND_grCopyStretch: arguments("eeeeeeeee"); break;
 	case COMMAND_grFilterRect: arguments("eeeee"); break;
-	case COMMAND_iptClearWheelCount: expect(':'); break;
+	case COMMAND_iptClearWheelCount: arguments(""); break;
 	case COMMAND_iptGetWheelCount: arguments("vv"); break;
 	case COMMAND_menuGetFontSize: arguments("v"); break;
 	case COMMAND_msgGetFontSize: arguments("v"); break;
 	case COMMAND_strGetCharType: arguments("eev"); break;
 	case COMMAND_strGetLengthASCII: arguments("ev"); break;
-	case COMMAND_sysWinMsgLock: expect(':'); break;
-	case COMMAND_sysWinMsgUnlock: expect(':'); break;
+	case COMMAND_sysWinMsgLock: arguments(""); break;
+	case COMMAND_sysWinMsgUnlock: arguments(""); break;
 	case COMMAND_aryCmpCount: arguments("veev"); break;
 	case COMMAND_aryCmpTrans: arguments("veeeev"); break;
 	case COMMAND_grBlendColorRect: arguments("eeeeeeeee"); break;
 	case COMMAND_grDrawFillCircle: arguments("eeee"); break;
 	case COMMAND_MHH: arguments("eee"); break;
 	case COMMAND_menuSetCbkInit: arguments("F"); break;
-	case COMMAND_menuClearCbkInit: expect(':'); break;
+	case COMMAND_menuClearCbkInit: arguments(""); break;
 	case COMMAND_sysOpenShell: arguments("z"); break;
 	case COMMAND_sysAddWebMenu: arguments("zz"); break;
 	case COMMAND_iptSetMoveCursorTime: arguments("e"); break;
@@ -1224,7 +1221,7 @@ static bool command(void) {
 	case COMMAND_cgSetCacheSize: arguments("e"); break;
 	case COMMAND_dllCall: dll_call(); break;
 	case COMMAND_gaijiSet: arguments("ee"); break;
-	case COMMAND_gaijiClearAll: expect(':'); break;
+	case COMMAND_gaijiClearAll: arguments(""); break;
 	case COMMAND_menuGetLatestSelect: arguments("v"); break;
 	case COMMAND_lnkIsLink: arguments("eev"); break;
 	case COMMAND_lnkIsData: arguments("eev"); break;
@@ -1248,8 +1245,8 @@ static bool command(void) {
 	case COMMAND_menuGetText: arguments("ee"); break;
 	case COMMAND_menuGoto: arguments("ee"); break;
 	case COMMAND_menuReturnGoto: arguments("ee"); break;
-	case COMMAND_menuFreeShelterDIB: expect(':'); break;
-	case COMMAND_msgFreeShelterDIB: expect(':'); break;
+	case COMMAND_menuFreeShelterDIB: arguments(""); break;
+	case COMMAND_msgFreeShelterDIB: arguments(""); break;
 	case COMMAND_ainH: // fall through
 	case COMMAND_ainHH:
 		emit_dword(out, compiler->msg_count++);
@@ -1285,7 +1282,7 @@ static bool command(void) {
 	case COMMAND_timeCheckCurDate: arguments("eeev"); break;
 	case COMMAND_dlgManualProtect: arguments("oo"); break;
 	case COMMAND_fileCheckDVD: arguments("oeeov"); break;
-	case COMMAND_sysReset: expect(':'); break;
+	case COMMAND_sysReset: arguments(""); break;
 
 	default:
 		goto unknown_command;
