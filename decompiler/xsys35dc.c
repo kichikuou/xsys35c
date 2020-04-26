@@ -16,9 +16,11 @@
  *
 */
 #include "xsys35dc.h"
+#include <errno.h>
 #include <getopt.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 static const char short_options[] = "ho:v";
 static const struct option long_options[] = {
@@ -106,6 +108,9 @@ int main(int argc, char *argv[]) {
 	Ain *ain = NULL;
 	if (argc >= 2)
 		ain = ain_read(argv[1]);
+
+	if (outdir && mkdir(outdir, 0777) != 0 && errno != EEXIST)
+		error("cannot create directory %s: %s", outdir, strerror(errno));
 
 	decompile(scos, ain, outdir);
 

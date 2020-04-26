@@ -9,6 +9,5 @@ else
     cp testdata/actual.ald testdata/regression_test.ald
 fi
 rm -rf testdata/decompiled
-mkdir -p testdata/decompiled
 decompiler/xsys35dc -o testdata/decompiled testdata/actual.ald
 diff -uN testdata/source testdata/decompiled
