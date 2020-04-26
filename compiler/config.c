@@ -16,7 +16,6 @@
  *
 */
 #include "xsys35c.h"
-#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -64,9 +63,7 @@ void set_sys_ver(const char *ver) {
 }
 
 void load_config(const char *path) {
-	FILE *fp = fopen(path, "r");
-	if (!fp)
-		error("%s: %s", path, strerror(errno));
+	FILE *fp = checked_fopen(path, "r");
 	const char *cfg_dir = dirname(path);
 	char line[256];
 	while (fgets(line, sizeof(line), fp)) {

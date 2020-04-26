@@ -65,9 +65,7 @@ static void version(void) {
 }
 
 static char *read_file(const char *path) {
-	FILE *fp = fopen(path, "rb");
-	if (!fp)
-		error("%s: %s", path, strerror(errno));
+	FILE *fp = checked_fopen(path, "rb");
 	if (fseek(fp, 0, SEEK_END) != 0)
 		error("%s: %s", path, strerror(errno));
 	long size = ftell(fp);
@@ -90,9 +88,7 @@ static char *trim_right(char *str) {
 }
 
 static Vector *read_var_list(const char *path) {
-	FILE *fp = fopen(path, "r");
-	if (!fp)
-		error("%s: %s", path, strerror(errno));
+	FILE *fp = checked_fopen(path, "r");
 	Vector *vars = new_vec();
 	char line[256];
 	while (fgets(line, sizeof(line), fp))
@@ -102,9 +98,7 @@ static Vector *read_var_list(const char *path) {
 }
 
 static void read_hed(const char *path, Vector *sources, Map *dlls) {
-	FILE *fp = fopen(path, "r");
-	if (!fp)
-		error("%s: %s", path, strerror(errno));
+	FILE *fp = checked_fopen(path, "r");
 	char *dir = dirname(path);
 	enum { INITIAL, SYSTEM35, DLLHeader } section = INITIAL;
 
@@ -195,9 +189,7 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *o
 
 	if (objdir) {
 		char *tblpath = path_join(objdir, "variables.tbl");
-		FILE *fp = fopen(tblpath, "w");
-		if (!fp)
-			error("%s: %s", tblpath, strerror(errno));
+		FILE *fp = checked_fopen(tblpath, "w");
 		for (int i = 0; i < compiler.variables->len; i++)
 			fprintf(fp, "%s\n", compiler.variables->data[i]);
 		fclose(fp);
@@ -222,26 +214,20 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *o
 		for (int i = 0; i < ald->len; i++) {
 			AldEntry *e = ald->data[i];
 			char *objpath = path_join(objdir, sjis2utf(e->name));
-			FILE *fp = fopen(objpath, "wb");
-			if (!fp)
-				error("%s: %s", objpath, strerror(errno));
+			FILE *fp = checked_fopen(objpath, "wb");
 			fwrite(e->data, e->size, 1, fp);
 			fclose(fp);
 		}
 	}
 
 	if (config.sys_ver == SYSTEM39) {
-		FILE *fp = fopen(ain_path, "wb");
-		if (!fp)
-			error("%s: %s", ain_path, strerror(errno));
+		FILE *fp = checked_fopen(ain_path, "wb");
 		ain_write(&compiler, fp);
 		fclose(fp);
 	}
 
 
-	FILE *fp = fopen(ald_path, "wb");
-	if (!fp)
-		error("%s: %s", ald_path, strerror(errno));
+	FILE *fp = checked_fopen(ald_path, "wb");
 	ald_write(ald, 1, fp);
 	fclose(fp);
 }

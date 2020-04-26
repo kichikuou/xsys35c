@@ -98,6 +98,13 @@ noreturn void error(char *fmt, ...) {
 	exit(1);
 }
 
+FILE *checked_fopen(const char *path, const char *mode) {
+	FILE *fp = fopen(path, mode);
+	if (!fp)
+		error("cannot open %s: %s", path, strerror(errno));
+	return fp;
+}
+
 char *sjis2utf(const char *str) {
 	if (iconv_s2u == (iconv_t)-1) {
 		iconv_s2u = iconv_open("utf8", "CP932");

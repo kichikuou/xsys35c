@@ -17,7 +17,6 @@
 */
 #include "common.h"
 #include <assert.h>
-#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #undef NDEBUG
@@ -60,9 +59,7 @@ static void test_write(void) {
 	vec_push(es, &e1);
 	vec_push(es, &e2);
 	const char outfile[] = "testdata/actual.ald";
-	FILE *fp = fopen(outfile, "wb");
-	if (!fp)
-		error("%s: %s", outfile, strerror(errno));
+	FILE *fp = checked_fopen(outfile, "wb");
 	ald_write(es, 1, fp);
 	fclose(fp);
 }
@@ -102,9 +99,7 @@ static void test_multidisk_write(void) {
 		"testdata/actual_b.ald",
 	};
 	for (int disk = 0; disk < 2; disk++) {
-		FILE *fp = fopen(aldname[disk], "wb");
-		if (!fp)
-			error("%s: %s", aldname[disk], strerror(errno));
+		FILE *fp = checked_fopen(aldname[disk], "wb");
 		ald_write(es, disk + 1, fp);
 		fclose(fp);
 	}

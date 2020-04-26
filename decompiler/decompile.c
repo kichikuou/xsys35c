@@ -1418,7 +1418,7 @@ static void scan_for_data_tables(Sco *sco) {
 static void write_config(const char *path) {
 	if (dc.scos->len == 0)
 		return;
-	FILE *fp = fopen(path, "w");
+	FILE *fp = checked_fopen(path, "w");
 	fputs("hed = xsys35dc.hed\n", fp);
 	fputs("variables = variables.txt\n", fp);
 	if (dc.disable_else)
@@ -1444,7 +1444,7 @@ static void write_config(const char *path) {
 }
 
 static void write_hed(const char *path, Map *dlls) {
-	FILE *fp = fopen(path, "w");
+	FILE *fp = checked_fopen(path, "w");
 	fputs("#SYSTEM35\n", fp);
 	for (int i = 0; i < dc.scos->len; i++) {
 		Sco *sco = dc.scos->data[i];
@@ -1462,7 +1462,7 @@ static void write_hed(const char *path, Map *dlls) {
 }
 
 static void write_variables(const char *path) {
-	FILE *fp = fopen(path, "w");
+	FILE *fp = checked_fopen(path, "w");
 	for (int i = 0; i < dc.variables->len; i++) {
 		const char *s = dc.variables->data[i];
 		fprintf(fp, "%s\n", s ? s : "");
@@ -1528,7 +1528,7 @@ void decompile(Vector *scos, Ain *ain, const char *outdir) {
 	// Decompile
 	for (int i = 0; i < scos->len; i++) {
 		Sco *sco = scos->data[i];
-		dc.out = fopen(path_join(outdir, sjis2utf(sco->src_name)), "w");
+		dc.out = checked_fopen(path_join(outdir, sjis2utf(sco->src_name)), "w");
 		decompile_page(i);
 		fclose(dc.out);
 	}

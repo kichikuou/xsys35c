@@ -38,6 +38,7 @@ typedef enum {
 // util.c
 
 noreturn void error(char *fmt, ...);
+FILE *checked_fopen(const char *path, const char *mode);
 char *sjis2utf(const char *str);
 char *utf2sjis(const char *str);
 uint8_t to_sjis_half_kana(uint8_t c1, uint8_t c2);

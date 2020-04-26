@@ -75,9 +75,7 @@ static int do_extract(int argc, char *argv[]) {
 		AldEntry *e = ald->data[i];
 		if (!e)
 			continue;
-		FILE *fp = fopen(sjis2utf(e->name), "wb");
-		if (!fp)
-			error("%s: %s", sjis2utf(e->name), strerror(errno));
+		FILE *fp = checked_fopen(sjis2utf(e->name), "wb");
 		if (fwrite(e->data, e->size, 1, fp) != 1)
 			error("%s: %s", sjis2utf(e->name), strerror(errno));
 		fclose(fp);

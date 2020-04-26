@@ -88,9 +88,7 @@ static Vector *read_strings_section(void) {
 }
 
 Ain *ain_read(const char *path) {
-	FILE *fp = fopen(path, "rb");
-	if (!fp)
-		error("%s: %s", path, strerror(errno));
+	FILE *fp = checked_fopen(path, "rb");
 	if (fseek(fp, 0, SEEK_END) != 0)
 		error("%s: %s", path, strerror(errno));
 	long size = ftell(fp);
@@ -138,9 +136,7 @@ void write_hels(Map *dlls, const char *dir) {
 		char hel_name[100];
 		snprintf(hel_name, sizeof(hel_name), "%s.HEL", dlls->keys->data[i]);
 		char *hel_path = path_join(dir, hel_name);
-		FILE *fp = fopen(hel_path, "w");
-		if (!fp)
-			error("%s: %s", hel_path, strerror(errno));
+		FILE *fp = checked_fopen(hel_path, "w");
 
 		for (int j = 0; j < funcs->len; j++) {
 			DLLFunc *func = funcs->data[j];
