@@ -48,9 +48,19 @@ void write_hels(Map *dlls, const char *dir);
 
 // cali.c
 
-struct Cali;
-struct Cali *parse_cali(const uint8_t **code, bool is_lhs);
-void print_cali(struct Cali *node, Vector *variables, FILE *out);
+typedef struct Cali {
+	enum {
+		NODE_NUMBER,
+		NODE_VARIABLE,
+		NODE_OP,
+		NODE_AREF,
+	} type;
+	int val;
+	struct Cali *lhs, *rhs;
+} Cali;
+
+Cali *parse_cali(const uint8_t **code, bool is_lhs);
+void print_cali(Cali *node, Vector *variables, FILE *out);
 
 // decompile.c
 

@@ -24,9 +24,9 @@
 	\L_00020:
 	\0:
 	'Page jump'
-	&1:
+	&#control.adv:
 	'Page call / return'
-	%1:
+	%#control.adv:
 	%0:
 	'Function call / return'
 	~F_1_00020:

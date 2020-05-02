@@ -19,17 +19,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct Cali {
-	enum {
-		NODE_NUMBER,
-		NODE_VARIABLE,
-		NODE_OP,
-		NODE_AREF,
-	} type;
-	int val;
-	struct Cali *lhs, *rhs;
-} Cali;
-
 static Cali *new_node(int type, int val, Cali *lhs, Cali *rhs) {
 	Cali *n = calloc(1, sizeof(Cali));
 	n->type = type;

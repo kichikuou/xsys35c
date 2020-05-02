@@ -120,6 +120,21 @@ static void cali(bool is_lhs) {
 		print_cali(node, dc.variables, dc.out);
 }
 
+static void page_name(int cmd) {
+	struct Cali *node = parse_cali(&dc.p, false);
+	if (!dc.out)
+		return;
+	if (node->type == NODE_NUMBER) {
+		int page = node->val;
+		if ((cmd != '%' || page != 0) && page < dc.scos->len) {
+			Sco *sco = dc.scos->data[page];
+			fprintf(dc.out, "#%s", sco->src_name);
+			return;
+		}
+	}
+	print_cali(node, dc.variables, dc.out);
+}
+
 static int subcommand_num(void) {
 	int c = *dc.p++;
 	dc_printf("%d", c);
@@ -831,12 +846,12 @@ static void decompile_page(int page) {
 			break;
 
 		case '&':  // Page jump
-			cali(false);
+			page_name(cmd);
 			dc_putc(':');
 			break;
 
 		case '%':  // Page call / return
-			cali(false);
+			page_name(cmd);
 			dc_putc(':');
 			break;
 
