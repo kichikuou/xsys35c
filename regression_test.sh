@@ -2,7 +2,7 @@
 # To update testdata/regression_test.ald, remove it and run this script
 set -e
 
-compiler/xsys35c --timestamp 0 -p testdata/source/xsys35c.cfg -o testdata/actual.ald
+compiler/xsys35c -p testdata/source/xsys35c.cfg -o testdata/actual.ald
 if [ -f testdata/regression_test.ald ]; then
     ./tools/ald compare testdata/regression_test.ald testdata/actual.ald
 else

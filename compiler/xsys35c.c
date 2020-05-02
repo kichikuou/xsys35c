@@ -25,7 +25,6 @@
 
 enum {
 	LOPT_OBJDIR = 256,
-	LOPT_TIMESTAMP,
 };
 
 static const char short_options[] = "a:hi:o:p:s:V:v";
@@ -37,13 +36,10 @@ static const struct option long_options[] = {
 	{ "objdir",    required_argument, NULL, LOPT_OBJDIR },
 	{ "project",   required_argument, NULL, 'p' },
 	{ "sys-ver",   required_argument, NULL, 's' },
-	{ "timestamp", required_argument, NULL, LOPT_TIMESTAMP },
 	{ "variables", required_argument, NULL, 'V' },
 	{ "version",   no_argument,       NULL, 'v' },
 	{ 0, 0, 0, 0 }
 };
-
-static time_t timestamp = (time_t)-1;
 
 static void usage(void) {
 	puts("Usage: xsys35c [options] file...");
@@ -55,7 +51,6 @@ static void usage(void) {
 	puts("    -o, --output <file>       Write output to <file> (default: adisk.ald)");
 	puts("    -p, --project <file>      Read project configuration from <file>");
 	puts("    -s, --sys-ver <ver>       Target System version (3.5|3.6|3.8(default)|3.9)");
-	puts("        --timestamp <time>    Set timestamp of ALD entries, in UNIX timestamp");
 	puts("    -V, --variables <file>    Read list of variables from <file>");
 	puts("    -v, --version             Print version information and exit");
 }
@@ -204,7 +199,7 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *o
 		AldEntry *e = calloc(1, sizeof(AldEntry));
 		e->disk = 1;
 		e->name = sconame(srcs->keys->data[i]);
-		e->timestamp = (timestamp == (time_t)-1) ? time(NULL) : timestamp;
+		e->timestamp = time(NULL);
 		e->data = sco->buf;
 		e->size = sco->len;
 		vec_push(ald, e);
@@ -269,9 +264,6 @@ int main(int argc, char *argv[]) {
 			return 0;
 		case LOPT_OBJDIR:
 			objdir = optarg;
-			break;
-		case LOPT_TIMESTAMP:
-			timestamp = atol(optarg);
 			break;
 		case '?':
 			usage();
