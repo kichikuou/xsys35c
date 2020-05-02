@@ -273,17 +273,24 @@ int main(int argc, char *argv[]) {
 	argc -= optind;
 	argv += optind;
 
-	if (project)
-		load_config(project);
+	if (project) {
+		FILE *fp = checked_fopen(project, "r");
+		load_config(fp, dirname(project));
+		fclose(fp);
+	} else if (!hed && argc == 0) {
+		FILE *fp = fopen("xsys35c.cfg", "r");
+		if (fp) {
+			load_config(fp, NULL);
+			fclose(fp);
+		} else {
+			usage();
+			return 1;
+		}
+	}
 	if (!hed && config.hed)
 		hed = config.hed;
 	if (!var_list && config.var_list)
 		var_list = config.var_list;
-
-	if (!hed && argc < 1) {
-		usage();
-		return 1;
-	}
 
 	Vector *srcs = new_vec();
 	Map *dlls = new_map();

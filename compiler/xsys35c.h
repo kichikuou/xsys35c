@@ -39,7 +39,7 @@ typedef struct {
 extern Config config;
 
 void set_sys_ver(const char *ver);
-void load_config(const char *path);
+void load_config(FILE *fp, const char *cfg_dir);
 static inline bool use_ain_message(void) {
 	return config.sys_ver == SYSTEM39 && !config.disable_ain_message;
 }

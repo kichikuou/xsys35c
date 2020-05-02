@@ -162,9 +162,9 @@ char *dirname(const char *path) {
 	return strndup(path, p - path);
 }
 
-char *path_join(const char *dir, char *path) {
+char *path_join(const char *dir, const char *path) {
 	if (!dir || path[0] == PATH_SEPARATOR)
-		return path;
+		return strdup(path);
 	char *buf = malloc(strlen(dir) + strlen(path) + 2);
 	sprintf(buf, "%s%c%s", dir, PATH_SEPARATOR, path);
 	return buf;

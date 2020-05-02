@@ -62,9 +62,7 @@ void set_sys_ver(const char *ver) {
 	error("Unknown system version '%s'", ver);
 }
 
-void load_config(const char *path) {
-	FILE *fp = checked_fopen(path, "r");
-	const char *cfg_dir = dirname(path);
+void load_config(FILE *fp, const char *cfg_dir) {
 	char line[256];
 	while (fgets(line, sizeof(line), fp)) {
 		char val[256];

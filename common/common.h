@@ -59,7 +59,7 @@ static inline bool is_sjis_byte2(uint8_t c) {
 #define PATH_SEPARATOR '/'
 const char *basename(const char *path);
 char *dirname(const char *path);
-char *path_join(const char *dir, char *path);
+char *path_join(const char *dir, const char *path);
 
 typedef struct {
 	void **data;
