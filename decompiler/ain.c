@@ -134,7 +134,7 @@ void write_hels(Map *dlls, const char *dir) {
 			continue;
 
 		char hel_name[100];
-		snprintf(hel_name, sizeof(hel_name), "%s.HEL", dlls->keys->data[i]);
+		snprintf(hel_name, sizeof(hel_name), "%s.HEL", (char *)dlls->keys->data[i]);
 		char *hel_path = path_join(dir, hel_name);
 		FILE *fp = checked_fopen(hel_path, "w");
 

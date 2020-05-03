@@ -186,7 +186,7 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *o
 		char *tblpath = path_join(objdir, "variables.tbl");
 		FILE *fp = checked_fopen(tblpath, "w");
 		for (int i = 0; i < compiler.variables->len; i++)
-			fprintf(fp, "%s\n", compiler.variables->data[i]);
+			fprintf(fp, "%s\n", (char *)compiler.variables->data[i]);
 		fclose(fp);
 	}
 

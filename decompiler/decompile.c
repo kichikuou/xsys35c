@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -73,7 +74,7 @@ static uint8_t *mark_at(int page, int addr) {
 	return &sco->mark[addr];
 }
 
-static void stack_push(Vector *stack, uint32_t n) {
+static void stack_push(Vector *stack, ptrdiff_t n) {
 	vec_push(stack, (void *)n);
 }
 
@@ -83,10 +84,10 @@ static void stack_pop(Vector *stack) {
 	stack->len--;
 }
 
-static uint32_t stack_top(Vector *stack) {
+static ptrdiff_t stack_top(Vector *stack) {
 	if (stack->len == 0)
 		error("stack_top: empty stack");
-	return (uint32_t)stack->data[stack->len - 1];
+	return (ptrdiff_t)stack->data[stack->len - 1];
 }
 
 static void indent(void) {
@@ -1470,7 +1471,7 @@ static void write_hed(const char *path, Map *dlls) {
 		fputs("\n#DLLHeader\n", fp);
 		for (int i = 0; i < dlls->keys->len; i++) {
 			Vector *funcs = dlls->vals->data[i];
-			fprintf(fp, "%s.%s\n", dlls->keys->data[i], funcs->len ? "HEL" : "DLL");
+			fprintf(fp, "%s.%s\n", (char *)dlls->keys->data[i], funcs->len ? "HEL" : "DLL");
 		}
 	}
 	fclose(fp);
