@@ -1,44 +1,78 @@
-# xsys35c: System 3.x Compiler
-xsys35c is a compiler for AliceSoft's System 3.x game engine.
+# System 3.x Compiler and Decompiler
+This is an open-source toolchain for AliceSoft's System 3.x game engine.
 
-This is still a work-in-progress project, but this can compile the System3.5-ported games that comes with the System 3.5 SDK (Rance 1-3, Toushin Toshi, DALK, and Dr.STOP). Generated binaries match the output of the official SDK.
+Currently, the following games can be decompiled and compiled (and the compiled files match the original):
+- Rance
+- Rance III
+- Rance IV
+- 鬼畜王ランス
+- Rance5D
+- 闘神都市
+- Dr.STOP!
+- DALK
+- 零式
+- いけないかつみ先生
+- 戦巫女
+- AmbivalenZ
+- DiaboLiQuE
+- ぱすてるチャイム
+- ぷろすちゅーでんとGood
+- HUSHABY BABY
+- 守り神様
+- ママトト
+- DARCROWS
+- 隠れ月
+- SeeIn青
+- 大悪司
+- 超昂天使エスカレイヤー
+- Only You -リ・クルス-
 
-Currently, xsys35c supports most of the features of System 3.5 / 3.6 / 3.8. System 3.9 support is in progress.
+The following games cannot be (de)compiled yet.
+- Rance II
+- 闘神都市II
+- アトラク＝ナクア
+- 王道勇者
+- かえるにょ・ぱにょ〜ん
+- PERSIOM
+- 夜が来る!
 
-## Build
-To build `xsys35c`, run `make` command:
+## Build & Install
+To build the executables, run `make` command:
 ```
 make
 ```
-Run `make test` to run unit tests.
+This creates three executables, `compiler/xsys35c`, `decompiler/xsys35dc` and `tools/ald`.
 
-## Usage
+`make install` will install them to `/usr/local/bin`:
 ```
-./xsys35c source_file... -o ald_file
+sudo make install
 ```
-Or
+If you want to install them in a custom directory, specify `PREFIX=`. For example, this will install the commands under `$HOME/bin`:
 ```
-./xsys35c -i comp.hed -o ald_file
+PREFIX=$HOME make install
 ```
-where `comp.hed` is a text file that lists source files, one per line.
 
-For example, the following command will compile `examples/sample.adv` and generates `sample_sa.ald`:
+## Basic Workflow
+Here are the steps for decompiling a game, editing the source, and compiling back to the scenario file.
+
+First, decompile the game by giving the scenario file (`*SA.ALD`) to `xsys35dc`.
 ```
-./xsys35c examples/sample.adv -o sample_sa.ald
+xsys35dc -o decompiled fooSA.ALD
 ```
-The generated `.ald` file can be executed using [xsystem35](https://github.com/kichikuou/xsystem35-sdl2) or original `system35.exe`.
+If the game has a `System39.ain` file, provide it too to the command line:
+```
+xsys35dc -o decompiled fooSA.ALD System39.ain
+```
 
-Run `xsys35c --help` to see full options.
+The decompiled source files will be generated in the `decompiled` directory. Edit them as you like.
 
-## Character Encoding
-Currently `xsys35c` assumes that:
-- Source files are Shift_JIS encoding.
-- Filesystem paths and console output are UTF-8 encoding. This could be problematic in Windows.
+Once you've finished editing the source files, you can compile them back to the .ALD (and .ain if any) using the following command:
+```
+xsys35c -p decompiled/xsys35c.cfg -o out.ALD -a out.ain
+```
 
-## Implementation notes
-
-### Compiration process
-`xsys35c` scans each source file twice. The first pass only collects information about variables and function definitions (names and parameters). The second pass directly generates bytecode while parsing the input; `xsys35c` does not use any intermediate representations such as AST.
-
-### Memory management
-No memory management is the memory management policy. `malloc()`ed memory regions are never freed until `xsys35c` terminates. This should be fine as `xsys35c` is a short-lived program, and it doesn't allocate a lot.
+## Command Documentations
+Here are the manuals for the commands:
+- [docs/xsys35c.md](docs/xsys35c.md)
+- [docs/xsys35dc.md](docs/xsys35dc.md)
+- [docs/ald.md](docs/ald.md)
