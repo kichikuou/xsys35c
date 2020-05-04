@@ -21,9 +21,11 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#ifdef _POSIX_MAPPED_FILES
+#include <sys/mman.h>
+#endif
 
 #define ALD_SIGNATURE  0x14c4e
 #define ALD_SIGNATURE2 0x12020
@@ -157,10 +159,21 @@ Vector *ald_read(Vector *entries, const char *path) {
 	if (fstat(fd, &sbuf) < 0)
 		error("%s: %s", path, strerror(errno));
 
+#ifdef _POSIX_MAPPED_FILES
 	uint8_t *p = mmap(NULL, sbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	close(fd);
 	if (p == MAP_FAILED)
 		error("%s: %s", path, strerror(errno));
+#else
+	uint8_t *p = malloc(sbuf.st_size);
+	size_t bytes = 0;
+	while (bytes < sbuf.st_size) {
+		ssize_t ret = read(fd, p + bytes, sbuf.st_size - bytes);
+		if (ret <= 0)
+			error("%s: %s", path, strerror(errno));
+		bytes += ret;
+	}
+#endif
+	close(fd);
 
 	if ((sbuf.st_size & 0xff) != 16)
 		error("%s: unexpected file size (not an ald file?)", path);
