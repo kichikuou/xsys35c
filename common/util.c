@@ -22,9 +22,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-static iconv_t iconv_s2u = (iconv_t)-1;
-static iconv_t iconv_u2s = (iconv_t)-1;
-
 static const uint8_t hankaku81[] = {
 	0x20, 0xa4, 0xa1, 0x00, 0x00, 0xa5, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -113,6 +110,10 @@ FILE *checked_fopen(const char *path, const char *mode) {
 }
 
 char *sjis2utf(const char *str) {
+#ifdef SJIS_NATIVE
+	return strdup(str);
+#else
+	static iconv_t iconv_s2u = (iconv_t)-1;
 	if (iconv_s2u == (iconv_t)-1) {
 		iconv_s2u = iconv_open("UTF-8", "CP932");
 		if (iconv_s2u == (iconv_t)-1)
@@ -127,9 +128,14 @@ char *sjis2utf(const char *str) {
 		error("iconv: %s", strerror(errno));
 	*op = '\0';
 	return obuf;
+#endif
 }
 
 char *utf2sjis(const char *str) {
+#ifdef SJIS_NATIVE
+	return strdup(str);
+#else
+	static iconv_t iconv_u2s = (iconv_t)-1;
 	if (iconv_u2s == (iconv_t)-1) {
 		iconv_u2s = iconv_open("CP932", "UTF-8");
 		if (iconv_u2s == (iconv_t)-1)
@@ -144,6 +150,7 @@ char *utf2sjis(const char *str) {
 		error("iconv: %s", strerror(errno));
 	*op = '\0';
 	return obuf;
+#endif
 }
 
 uint8_t to_sjis_half_kana(uint8_t c1, uint8_t c2) {
