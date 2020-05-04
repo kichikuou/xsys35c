@@ -90,6 +90,13 @@ static const uint16_t kanatbl[] = {
 	0x82e8, 0x82e9, 0x82ea, 0x82eb, 0x82ed, 0x82f1, 0x814a, 0x814b
 };
 
+char *strndup_(const char *s, size_t n) {
+	char *buf = malloc(n + 1);
+	strncpy(buf, s, n);
+	buf[n] = '\0';
+	return buf;
+}
+
 noreturn void error(char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
@@ -159,7 +166,7 @@ char *dirname(const char *path) {
 	char *p = strrchr(path, PATH_SEPARATOR);
 	if (!p)
 		return ".";
-	return strndup(path, p - path);
+	return strndup_(path, p - path);
 }
 
 char *path_join(const char *dir, const char *path) {

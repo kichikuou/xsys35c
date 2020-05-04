@@ -65,7 +65,7 @@ Sco *sco_new(const char *name, const uint8_t *data, int len) {
 	sco->filesize = le32(data + 8);
 	sco->page = le32(data + 12);
 	int namelen = data[16] | data[17] << 8;
-	sco->src_name = strndup((char *)data + 18, namelen);
+	sco->src_name = strndup_((char *)data + 18, namelen);
 
 	if (len != sco->filesize) {
 		error("%s: unexpected file size in SCO header (expected %d, got %d)",

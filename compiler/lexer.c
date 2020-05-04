@@ -39,7 +39,7 @@ noreturn void error_at(const char *pos, char *fmt, ...) {
 			va_start(args, fmt);
 			vfprintf(stderr, fmt, args);
 			fputc('\n', stderr);
-			fprintf(stderr, "%s\n", sjis2utf(strndup(begin, end - begin)));
+			fprintf(stderr, "%s\n", sjis2utf(strndup_(begin, end - begin)));
 			for (const char *p = begin; p < pos; p++)
 				fputc(*p == '\t' ? '\t' : ' ', stderr);
 			fprintf(stderr, "^\n");
@@ -132,7 +132,7 @@ char *get_identifier(void) {
 			input++;
 		input++;
 	}
-	return strndup(top, input - top);
+	return strndup_(top, input - top);
 }
 
 char *get_label(void) {
@@ -146,7 +146,7 @@ char *get_label(void) {
 	}
 	if (input == top)
 		error_at(top, "label expected");
-	return strndup(top, input - top);
+	return strndup_(top, input - top);
 }
 
 char *get_filename(void) {
@@ -159,7 +159,7 @@ char *get_filename(void) {
 	if (input == top)
 		error_at(top, "file name expected");
 
-	return strndup(top, input - top);
+	return strndup_(top, input - top);
 }
 
 // number ::= [0-9]+ | '0' [xX] [0-9a-fA-F]+ | '0' [bB] [01]+

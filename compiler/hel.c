@@ -29,7 +29,7 @@ static char *identifier(void) {
 		error_at(top, "identifier expected");
 	while (isalnum(*input) || *input == '_')
 		input++;
-	return strndup(top, input - top);
+	return strndup_(top, input - top);
 }
 
 typedef struct {

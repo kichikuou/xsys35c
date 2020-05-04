@@ -37,6 +37,7 @@ typedef enum {
 
 // util.c
 
+char *strndup_(const char *s, size_t n);
 noreturn void error(char *fmt, ...);
 FILE *checked_fopen(const char *path, const char *mode);
 char *sjis2utf(const char *str);

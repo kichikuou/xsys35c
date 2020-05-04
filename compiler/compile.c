@@ -419,7 +419,7 @@ static int hel_index(const char *dllname) {
 static void dll_call(void) {
 	const char *dot = strchr(input, '.');
 	assert(dot);
-	const char *dllname = strndup(input, dot - input);
+	const char *dllname = strndup_(input, dot - input);
 	int dll_index = hel_index(dllname);
 	if (dll_index < 0)
 		error_at(input, "unknown DLL name '%s'", dllname);
