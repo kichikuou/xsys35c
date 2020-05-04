@@ -10,4 +10,4 @@ else
 fi
 rm -rf testdata/decompiled
 decompiler/xsys35dc -o testdata/decompiled testdata/actual.ald
-diff -uN testdata/source testdata/decompiled
+diff -uN --strip-trailing-cr testdata/source testdata/decompiled

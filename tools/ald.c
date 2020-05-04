@@ -55,7 +55,7 @@ static int do_list(int argc, char *argv[]) {
 			continue;
 		}
 		struct tm *t = localtime(&e->timestamp);
-		strftime(buf, sizeof(buf), "%F %H:%M:%S", t);
+		strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", t);
 		printf("%4d  %d  %s  %8d  %s\n", i, e->disk, buf, e->size, sjis2utf(e->name));
 	}
 	return 0;
@@ -90,9 +90,9 @@ static void help_dump(void) {
 static void print_sjis_2byte(uint8_t c1, uint8_t c2) {
 	static iconv_t iconv_s2u = (iconv_t)-1;
 	if (iconv_s2u == (iconv_t)-1) {
-		iconv_s2u = iconv_open("utf8", "CP932");
+		iconv_s2u = iconv_open("UTF-8", "CP932");
 		if (iconv_s2u == (iconv_t)-1)
-			error("iconv_open(utf8, CP932): %s", strerror(errno));
+			error("iconv_open(UTF-8, CP932): %s", strerror(errno));
 	}
 
 	char in[2] = {c1, c2};

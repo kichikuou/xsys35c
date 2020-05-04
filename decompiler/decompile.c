@@ -1490,7 +1490,7 @@ noreturn void error_at(const uint8_t *pos, char *fmt, ...) {
 	Sco *sco = dc.scos->data[dc.page];
 	assert(sco->data <= pos);
 	assert(pos < sco->data + sco->filesize);;
-	fprintf(stderr, "%s:%lx: ", sjis2utf(sco->sco_name), pos - sco->data);
+	fprintf(stderr, "%s:%x: ", sjis2utf(sco->sco_name), (unsigned)(pos - sco->data));
 	va_list args;
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
@@ -1502,7 +1502,7 @@ void warning_at(const uint8_t *pos, char *fmt, ...) {
 	Sco *sco = dc.scos->data[dc.page];
 	assert(sco->data <= pos);
 	assert(pos < sco->data + sco->filesize);;
-	fprintf(stderr, "Waring: %s:%lx: ", sjis2utf(sco->sco_name), pos - sco->data);
+	fprintf(stderr, "Waring: %s:%x: ", sjis2utf(sco->sco_name), (unsigned)(pos - sco->data));
 	va_list args;
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);

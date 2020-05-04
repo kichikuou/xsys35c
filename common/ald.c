@@ -26,6 +26,9 @@
 #ifdef _POSIX_MAPPED_FILES
 #include <sys/mman.h>
 #endif
+#ifndef _O_BINARY
+#define _O_BINARY 0
+#endif
 
 #define ALD_SIGNATURE  0x14c4e
 #define ALD_SIGNATURE2 0x12020
@@ -151,7 +154,7 @@ Vector *ald_read(Vector *entries, const char *path) {
 	if (!entries)
 		entries = new_vec();
 
-	int fd = open(path, O_RDONLY);
+	int fd = open(path, O_RDONLY | _O_BINARY);
 	if (fd == -1)
 		error("%s: %s", path, strerror(errno));
 

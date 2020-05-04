@@ -114,9 +114,9 @@ FILE *checked_fopen(const char *path, const char *mode) {
 
 char *sjis2utf(const char *str) {
 	if (iconv_s2u == (iconv_t)-1) {
-		iconv_s2u = iconv_open("utf8", "CP932");
+		iconv_s2u = iconv_open("UTF-8", "CP932");
 		if (iconv_s2u == (iconv_t)-1)
-			error("iconv_open(utf8, CP932): %s", strerror(errno));
+			error("iconv_open(UTF-8, CP932): %s", strerror(errno));
 	}
 	size_t ilen = strlen(str);
 	char *ip = (char *)str;
@@ -131,9 +131,9 @@ char *sjis2utf(const char *str) {
 
 char *utf2sjis(const char *str) {
 	if (iconv_u2s == (iconv_t)-1) {
-		iconv_u2s = iconv_open("CP932", "utf8");
+		iconv_u2s = iconv_open("CP932", "UTF-8");
 		if (iconv_u2s == (iconv_t)-1)
-			error("iconv_open(CP932, utf8): %s", strerror(errno));
+			error("iconv_open(CP932, UTF-8): %s", strerror(errno));
 	}
 	size_t ilen = strlen(str);
 	char *ip = (char *)str;

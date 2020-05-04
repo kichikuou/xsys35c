@@ -1,6 +1,6 @@
 CFLAGS = -Wall -O2 -Icommon
-ifeq ($(shell uname), Darwin)
-	LDFLAGS = -liconv
+ifneq ($(shell uname), Linux)
+	LDLIBS = -liconv
 endif
 
 PREFIX ?= /usr/local
