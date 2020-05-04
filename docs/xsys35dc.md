@@ -15,6 +15,10 @@ The following options are available:
   <br/><code>--outdir <var>directory</var></code></dt>
   <dd>Generate output files under <var>directory</var>. By default, output files are generated in current directory.</dd>
 
+  <dt><code>-s</code>
+  <br/><code>--seq</code></dt>
+  <dd>Output ADV files with sequential filenames (<code>0.adv</code>, <code>1.adv</code>, ...) instead of their original names.</dd>
+
   <dt><code>-v</code>
   <br/><code>--version</code></dt>
   <dd>Display the <code>xsys35dc</code> version number and exit.</dd>

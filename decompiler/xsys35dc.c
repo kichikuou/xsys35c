@@ -22,10 +22,11 @@
 #include <string.h>
 #include <sys/stat.h>
 
-static const char short_options[] = "ho:v";
+static const char short_options[] = "ho:sv";
 static const struct option long_options[] = {
 	{ "help",    no_argument,       NULL, 'h' },
 	{ "outdir",  required_argument, NULL, 'o' },
+	{ "seq",     no_argument,       NULL, 's' },
 	{ "version", no_argument,       NULL, 'v' },
 	{ 0, 0, 0, 0 }
 };
@@ -35,6 +36,7 @@ static void usage(void) {
 	puts("Options:");
 	puts("    -h, --help                Display this message and exit");
 	puts("    -o, --outdir <directory>  Write output into <directory>");
+	puts("    -s, --seq                 Output with sequential filenames (0.adv, 1.adv, ...)");
 	puts("    -v, --version             Print version information and exit");
 }
 
@@ -74,6 +76,7 @@ Sco *sco_new(const char *name, const uint8_t *data, int len) {
 
 int main(int argc, char *argv[]) {
 	const char *outdir = NULL;
+	bool seq = false;
 
 	int opt;
 	while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
@@ -83,6 +86,9 @@ int main(int argc, char *argv[]) {
 			return 0;
 		case 'o':
 			outdir = optarg;
+			break;
+		case 's':
+			seq = true;
 			break;
 		case 'v':
 			version();
@@ -103,7 +109,13 @@ int main(int argc, char *argv[]) {
 	Vector *scos = ald_read(NULL, argv[0]);
 	for (int i = 0; i < scos->len; i++) {
 		AldEntry *e = scos->data[i];
-		scos->data[i] = sco_new(e->name, e->data, e->size);
+		Sco *sco = sco_new(e->name, e->data, e->size);
+		scos->data[i] = sco;
+		if (seq) {
+			char buf[16];
+			sprintf(buf, "%d.adv", i);
+			sco->src_name = strdup(buf);
+		}
 	}
 	Ain *ain = NULL;
 	if (argc >= 2)
