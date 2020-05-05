@@ -24,16 +24,26 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Sco.mark[i] stores annotation for Sco.data[i].
+// An annotation consists of a 3-bit type field and flags.
 enum {
-	  CODE        = 1 << 0,
-	  DATA        = 1 << 1,
-	  LABEL       = 1 << 2,
-	  FUNC_TOP    = 1 << 3,
-	  WHILE_START = 1 << 4,
-	  FOR_START   = 1 << 5,
-	  DATA_TABLE  = 1 << 6,
-	  ELSE        = 1 << 7,
+	  // Type field
+	  WHILE_START = 1,  // on '{'
+	  FOR_START,        // on '!'
+	  ELSE,             // on '@'
+	  DATA_TABLE,
+	  TYPE_MASK   = 0x7,
+
+	  // Flags
+	  CODE        = 1 << 4,
+	  DATA        = 1 << 5,
+	  LABEL       = 1 << 6,
+	  FUNC_TOP    = 1 << 7,
 };
+
+static inline void annotate(uint8_t* mark, int type) {
+	*mark = (*mark & ~TYPE_MASK) | type;
+}
 
 typedef struct {
 	Vector *scos;
@@ -226,7 +236,7 @@ static void data_table_addr(void) {
 	cali(false);
 	dc_putc(':');
 
-	*mark_at(dc.page, addr) |= DATA_TABLE | LABEL;
+	annotate(mark_at(dc.page, addr), DATA_TABLE | LABEL);
 }
 
 static void conditional(Vector *branch_end_stack) {
@@ -243,7 +253,7 @@ static void conditional(Vector *branch_end_stack) {
 		if (!dc.disable_else) {
 			uint32_t addr = le32(epilogue + 1);
 			if (endaddr <= addr && addr <= ((Sco *)dc.scos->data[dc.page])->filesize) {
-				*mark_at(dc.page, endaddr - 5) |= ELSE;
+				annotate(mark_at(dc.page, endaddr - 5), ELSE);
 				endaddr = addr;
 			} else {
 				dc.disable_else = true;
@@ -331,7 +341,7 @@ static void for_loop(void) {
 	uint8_t *mark = mark_at(dc.page, dc_addr()) - 2;
 	while (!(*mark & CODE))
 		mark--;
-	*mark |= FOR_START;
+	annotate(mark, FOR_START);
 	if (*dc.p++ != 0)
 		error("for_loop: 0 expected, got 0x%02x", *--dc.p);
 	if (*dc.p++ != '<')
@@ -357,7 +367,7 @@ static void loop_end(Vector *branch_end_stack) {
 	Sco *sco = dc.scos->data[dc.page];
 	switch (sco->data[addr]) {
 	case '{':
-		*mark |= WHILE_START;
+		annotate(mark, WHILE_START);
 		if (stack_top(branch_end_stack) != dc_addr())
 			error("while-loop: unexpected address (%d != %d)", stack_top(branch_end_stack), dc_addr());
 		stack_pop(branch_end_stack);
@@ -738,7 +748,7 @@ static void decompile_page(int page) {
 			func_labels(page, dc.p - sco->data);
 		if (mark & LABEL)
 			dc_printf("*L_%05x:\n", dc.p - sco->data);
-		if (mark & DATA_TABLE) {
+		if ((mark & TYPE_MASK) == DATA_TABLE) {
 			uint32_t addr = le32(dc.p);
 			if (dc_addr() < addr && addr < sco->filesize) {
 				indent();
@@ -746,7 +756,7 @@ static void decompile_page(int page) {
 				sco->mark[addr] |= DATA | LABEL;
 				dc.p += 4;
 				if (!(sco->mark[dc.p - sco->data] & DATA))
-					sco->mark[dc.p - sco->data] |= DATA_TABLE;
+					annotate(sco->mark + (dc.p - sco->data), DATA_TABLE);
 				continue;
 			}
 			mark |= DATA;
@@ -761,7 +771,7 @@ static void decompile_page(int page) {
 			dc.p = data_end;
 			continue;
 		}
-		if (mark & ELSE && !dc.disable_else) {
+		if ((mark & TYPE_MASK) == ELSE && !dc.disable_else) {
 			assert(*dc.p == '@');
 			dc.p += 5;
 			if (le32(dc.p - 4) != dc_addr()) {
@@ -797,7 +807,7 @@ static void decompile_page(int page) {
 			dc_puts("'\n");
 			continue;
 		}
-		if (mark & FOR_START) {
+		if ((mark & TYPE_MASK) == FOR_START) {
 			assert(*dc.p == '!');
 			dc.p++;
 			dc_putc('<');
@@ -811,7 +821,7 @@ static void decompile_page(int page) {
 			dc_putc('\n');
 			continue;
 		}
-		if (mark & WHILE_START) {
+		if ((mark & TYPE_MASK) == WHILE_START) {
 			assert(*dc.p == '{');
 			dc.p++;
 			dc_puts("<@");
