@@ -26,7 +26,7 @@ typedef struct {
 	uint32_t page;
 	const char *src_name;
 	const char *sco_name;
-	bool preprocessed;
+	bool analyzed;
 } Sco;
 
 // ain.c
@@ -66,6 +66,7 @@ void print_cali(Cali *node, Vector *variables, FILE *out);
 
 typedef struct {
 	bool address;
+	bool verbose;
 } Config;
 
 extern Config config;

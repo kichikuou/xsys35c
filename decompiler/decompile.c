@@ -341,7 +341,7 @@ static void func_label(uint16_t page, uint32_t addr) {
 	uint8_t *mark = mark_at(page, addr);
 	*mark |= FUNC_TOP;
 	if (!(*mark & (CODE | DATA)))
-		((Sco *)dc.scos->data[page])->preprocessed = false;
+		((Sco *)dc.scos->data[page])->analyzed = false;
 }
 
 static void funcall(void) {
@@ -1578,36 +1578,50 @@ void decompile(Vector *scos, Ain *ain, const char *outdir) {
 		}
 	}
 
+	// Preprocess
+	if (config.verbose)
+		puts("Preprocessing...");
+
 	for (int i = 0; i < scos->len; i++) {
 		Sco *sco = scos->data[i];
 		scan_for_data_tables(sco);
 	}
 
-	// Preprocess
+	// Analyze
 	bool done = false;
 	while (!done) {
 		done = true;
 		for (int i = 0; i < scos->len; i++) {
 			Sco *sco = scos->data[i];
-			if (sco->preprocessed)
+			if (sco->analyzed)
 				continue;
+			if (config.verbose)
+				printf("Analyzing %s (page %d)...\n", sjis2utf(sco->sco_name), i);
 			done = false;
 			decompile_page(i);
-			sco->preprocessed = true;
+			sco->analyzed = true;
 		}
 	}
 
 	// Decompile
 	for (int i = 0; i < scos->len; i++) {
 		Sco *sco = scos->data[i];
+		if (config.verbose)
+			printf("Decompiling %s (page %d)...\n", sjis2utf(sco->sco_name), i);
 		dc.out = checked_fopen(path_join(outdir, sjis2utf(sco->src_name)), "w");
 		decompile_page(i);
 		fclose(dc.out);
 	}
+
+	if (config.verbose)
+		puts("Generating config files...");
 
 	write_config(path_join(outdir, "xsys35c.cfg"));
 	write_hed(path_join(outdir, "xsys35dc.hed"), ain ? ain->dlls : NULL);
 	write_variables(path_join(outdir, "variables.txt"));
 	if (ain && ain->dlls)
 		write_hels(ain->dlls, outdir);
+
+	if (config.verbose)
+		puts("Done!");
 }

@@ -29,12 +29,13 @@
 #define make_dir(path, mode) mkdir(path, mode)
 #endif
 
-static const char short_options[] = "aho:sv";
+static const char short_options[] = "aho:sVv";
 static const struct option long_options[] = {
 	{ "address", no_argument,       NULL, 'a' },
 	{ "help",    no_argument,       NULL, 'h' },
 	{ "outdir",  required_argument, NULL, 'o' },
 	{ "seq",     no_argument,       NULL, 's' },
+	{ "verbose", no_argument,       NULL, 'V' },
 	{ "version", no_argument,       NULL, 'v' },
 	{ 0, 0, 0, 0 }
 };
@@ -46,6 +47,7 @@ static void usage(void) {
 	puts("    -h, --help                Display this message and exit");
 	puts("    -o, --outdir <directory>  Write output into <directory>");
 	puts("    -s, --seq                 Output with sequential filenames (0.adv, 1.adv, ...)");
+	puts("    -V, --verbose             Be verbose");
 	puts("    -v, --version             Print version information and exit");
 }
 
@@ -101,6 +103,9 @@ int main(int argc, char *argv[]) {
 			break;
 		case 's':
 			seq = true;
+			break;
+		case 'V':
+			config.verbose = true;
 			break;
 		case 'v':
 			version();
