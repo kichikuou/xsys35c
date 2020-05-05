@@ -31,6 +31,7 @@ enum {
 	  WHILE_START = 1,  // on '{'
 	  FOR_START,        // on '!'
 	  ELSE,             // on '@'
+	  ELSE_IF,          // on '@'
 	  DATA_TABLE,
 	  TYPE_MASK   = 0x7,
 
@@ -96,7 +97,7 @@ static void stack_pop(Vector *stack) {
 
 static ptrdiff_t stack_top(Vector *stack) {
 	if (stack->len == 0)
-		error("stack_top: empty stack");
+		error("BUG: stack underflow while compiling page %d", dc.page);
 	return (ptrdiff_t)stack->data[stack->len - 1];
 }
 
@@ -239,7 +240,21 @@ static void data_table_addr(void) {
 	annotate(mark_at(dc.page, addr), DATA_TABLE | LABEL);
 }
 
+static uint8_t *get_surrounding_else(Vector *branch_end_stack) {
+	if (branch_end_stack->len == 0)
+		return NULL;
+	uint8_t *mark = mark_at(dc.page, dc_addr() - 6);
+	if ((*mark & TYPE_MASK) != ELSE)
+		return NULL;
+	uint32_t addr = le32(dc.p - 5);
+	if (addr != stack_top(branch_end_stack))
+		return NULL;
+	return mark;
+}
+
 static void conditional(Vector *branch_end_stack) {
+	uint8_t *surrounding_else = get_surrounding_else(branch_end_stack);
+
 	dc.indent++;
 	cali(false);
 	dc_putc(':');
@@ -253,7 +268,13 @@ static void conditional(Vector *branch_end_stack) {
 		if (!dc.disable_else) {
 			uint32_t addr = le32(epilogue + 1);
 			if (endaddr <= addr && addr <= ((Sco *)dc.scos->data[dc.page])->filesize) {
-				annotate(mark_at(dc.page, endaddr - 5), ELSE);
+				if (surrounding_else && stack_top(branch_end_stack) == addr) {
+					stack_pop(branch_end_stack);
+					annotate(surrounding_else, ELSE_IF);
+				}
+				uint8_t *m = mark_at(dc.page, endaddr - 5);
+				if ((*m & TYPE_MASK) != ELSE_IF)
+					annotate(m, ELSE);
 				endaddr = addr;
 			} else {
 				dc.disable_else = true;
@@ -769,6 +790,18 @@ static void decompile_page(int page) {
 			}
 			data_block(dc.p, data_end);
 			dc.p = data_end;
+			continue;
+		}
+		if ((mark & TYPE_MASK) == ELSE_IF && !dc.disable_else) {
+			assert(*dc.p == '@');
+			assert(dc.p[5] == '{');
+			dc.p += 6;
+			dc.indent--;
+			stack_pop(branch_end_stack);
+			indent();
+			dc_puts("} else if {");
+			conditional(branch_end_stack);
+			dc_putc('\n');
 			continue;
 		}
 		if ((mark & TYPE_MASK) == ELSE && !dc.disable_else) {

@@ -12,11 +12,39 @@
 			A
 		}
 	}
+	'Branch Sequence'
+	{0:
+		A
+	}
+	{1:
+		R
+	}
 	'If-else'
 	{0:
 		A
 	} else {
 		R
+	}
+	'If-else-if'
+	{0:
+		A
+	} else if {1:
+		R
+	} else if {2:
+		A
+	} else {
+		R
+	}
+	'Non-else-if'
+	{0:
+		A
+	} else {
+		{0:
+			A
+		}
+		{1:
+			A
+		}
 	}
 	'Label jump'
 	@L_00020:
