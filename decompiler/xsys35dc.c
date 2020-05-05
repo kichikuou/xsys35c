@@ -29,8 +29,9 @@
 #define make_dir(path, mode) mkdir(path, mode)
 #endif
 
-static const char short_options[] = "ho:sv";
+static const char short_options[] = "aho:sv";
 static const struct option long_options[] = {
+	{ "address", no_argument,       NULL, 'a' },
 	{ "help",    no_argument,       NULL, 'h' },
 	{ "outdir",  required_argument, NULL, 'o' },
 	{ "seq",     no_argument,       NULL, 's' },
@@ -41,6 +42,7 @@ static const struct option long_options[] = {
 static void usage(void) {
 	puts("Usage: xsys35dc [options] aldfile [ainfile]");
 	puts("Options:");
+	puts("    -a, --address             Prefix each line with address");
 	puts("    -h, --help                Display this message and exit");
 	puts("    -o, --outdir <directory>  Write output into <directory>");
 	puts("    -s, --seq                 Output with sequential filenames (0.adv, 1.adv, ...)");
@@ -88,6 +90,9 @@ int main(int argc, char *argv[]) {
 	int opt;
 	while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
 		switch (opt) {
+		case 'a':
+			config.address = true;
+			break;
 		case 'h':
 			usage();
 			return 0;

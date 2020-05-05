@@ -64,6 +64,12 @@ void print_cali(Cali *node, Vector *variables, FILE *out);
 
 // decompile.c
 
+typedef struct {
+	bool address;
+} Config;
+
+extern Config config;
+
 void decompile(Vector *scos, Ain *ain, const char *outdir);
 noreturn void error_at(const uint8_t *pos, char *fmt, ...);
 void warning_at(const uint8_t *pos, char *fmt, ...);

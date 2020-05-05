@@ -10,7 +10,7 @@
 set -e
 
 rm -rf rtt_adv
-./decompiler/xsys35dc -o rtt_adv $1 $2
+./decompiler/xsys35dc -a -o rtt_adv $1 $2
 ./compiler/xsys35c -p rtt_adv/xsys35c.cfg -o rtt_adv/out.ald -a rtt_adv/out.ain
 ./tools/ald compare $1 rtt_adv/out.ald
 if [ -n "$2" ]; then

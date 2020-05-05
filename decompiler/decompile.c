@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+Config config;
+
 // Sco.mark[i] stores annotation for Sco.data[i].
 // An annotation consists of a 3-bit type field and flags.
 enum {
@@ -101,13 +103,6 @@ static ptrdiff_t stack_top(Vector *stack) {
 	return (ptrdiff_t)stack->data[stack->len - 1];
 }
 
-static void indent(void) {
-	if (!dc.out)
-		return;
-	for (int i = 0; i < dc.indent; i++)
-		fputc('\t', dc.out);
-}
-
 static void dc_putc(int c) {
 	if (dc.out)
 		fputc(c, dc.out);
@@ -124,6 +119,19 @@ static void dc_printf(const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
 	vfprintf(dc.out, fmt, args);
+}
+
+static void print_address(void) {
+	if (config.address)
+		dc_printf("/* %05x */\t", dc_addr());
+}
+
+static void indent(void) {
+	if (!dc.out)
+		return;
+	print_address();
+	for (int i = 0; i < dc.indent; i++)
+		fputc('\t', dc.out);
 }
 
 static void cali(bool is_lhs) {
@@ -297,6 +305,7 @@ static void func_labels(uint16_t page, uint32_t addr) {
 		for (int i = 0; i < functions->vals->len; i++) {
 			Function *f = functions->vals->data[i];
 			if (f->page - 1 == page && f->addr == addr) {
+				print_address();
 				dc_puts("**");
 				dc_puts(functions->keys->data[i]);
 				dc_puts(":\n");
@@ -307,6 +316,7 @@ static void func_labels(uint16_t page, uint32_t addr) {
 			return;
 		warning_at(dc.p, "function %d:%d is not found in System39.ain", page, addr);
 	}
+	print_address();
 	dc_printf("**F_%d_%05x:\n", page, addr);
 }
 
@@ -767,8 +777,11 @@ static void decompile_page(int page) {
 		}
 		if (mark & FUNC_TOP)
 			func_labels(page, dc.p - sco->data);
-		if (mark & LABEL)
+		if (mark & LABEL) {
+			print_address();
 			dc_printf("*L_%05x:\n", dc.p - sco->data);
+		}
+
 		if ((mark & TYPE_MASK) == DATA_TABLE) {
 			uint32_t addr = le32(dc.p);
 			if (dc_addr() < addr && addr < sco->filesize) {
