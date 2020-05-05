@@ -7,6 +7,10 @@ xsys35dc [options] aldfile [ainfile]
 ```
 The following options are available:
 <dl>
+  <dt><code>-a</code>
+  <br/><code>--address</code></dt>
+  <dd>Prefix each line with address.</dd>
+
   <dt><code>-h</code>
   <br/><code>--help</code></dt>
   <dd>Display help message about <code>xsys35dc</code> and exit.</dd>
@@ -18,6 +22,10 @@ The following options are available:
   <dt><code>-s</code>
   <br/><code>--seq</code></dt>
   <dd>Output ADV files with sequential filenames (<code>0.adv</code>, <code>1.adv</code>, ...) instead of their original names.</dd>
+
+  <dt><code>-V</code>
+  <br/><code>--verbose</code></dt>
+  <dd>Turn on verbose output.</dd>
 
   <dt><code>-v</code>
   <br/><code>--version</code></dt>
