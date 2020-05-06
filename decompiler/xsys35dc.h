@@ -32,8 +32,11 @@ typedef struct {
 // ain.c
 
 typedef struct {
+	const char *name;
 	uint16_t page;  // one-based numbering
 	uint32_t addr;
+	int argc;  // -1 for unknown
+	uint16_t *argv;
 } Function;
 
 typedef struct {

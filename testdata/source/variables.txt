@@ -1,1 +1,3 @@
 VAR0
+VAR1
+VAR2

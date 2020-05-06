@@ -71,8 +71,10 @@ static Map *read_FUNC(void) {
 	for (uint32_t i = 0; i < count; i++) {
 		const char *name = read_string();
 		Function *func = calloc(1, sizeof(Function));
+		func->name = name;
 		func->page = read_le16();
 		func->addr = read_le32();
+		func->argc = -1;
 		map_put(functions, name, func);
 	}
 	return functions;

@@ -34,6 +34,7 @@ enum {
 	  FOR_START,        // on '!'
 	  ELSE,             // on '@'
 	  ELSE_IF,          // on '@'
+	  FUNCALL_TOP,      // on '!'
 	  DATA_TABLE,
 	  TYPE_MASK   = 0x7,
 
@@ -52,6 +53,7 @@ typedef struct {
 	Vector *scos;
 	Ain *ain;
 	Vector *variables;
+	Map *functions;    // funcname -> Function
 	FILE *out;
 
 	int page;
@@ -134,14 +136,15 @@ static void indent(void) {
 		fputc('\t', dc.out);
 }
 
-static void cali(bool is_lhs) {
-	struct Cali *node = parse_cali(&dc.p, is_lhs);
+static Cali *cali(bool is_lhs) {
+	Cali *node = parse_cali(&dc.p, is_lhs);
 	if (dc.out)
 		print_cali(node, dc.variables, dc.out);
+	return node;
 }
 
 static void page_name(int cmd) {
-	struct Cali *node = parse_cali(&dc.p, false);
+	Cali *node = parse_cali(&dc.p, false);
 	if (!dc.out)
 		return;
 	if (node->type == NODE_NUMBER) {
@@ -299,52 +302,204 @@ static void conditional(Vector *branch_end_stack) {
 }
 
 static void func_labels(uint16_t page, uint32_t addr) {
-	if (dc.ain && dc.ain->functions) {
-		Map *functions = dc.ain->functions;
-		bool found = false;
-		for (int i = 0; i < functions->vals->len; i++) {
-			Function *f = functions->vals->data[i];
-			if (f->page - 1 == page && f->addr == addr) {
-				print_address();
-				dc_puts("**");
-				dc_puts(functions->keys->data[i]);
-				dc_puts(":\n");
-				found = true;
+	if (!dc.out)
+		return;
+	bool found = false;
+	for (int i = 0; i < dc.functions->vals->len; i++) {
+		Function *f = dc.functions->vals->data[i];
+		if (f->page - 1 == page && f->addr == addr) {
+			print_address();
+			dc_puts("**");
+			dc_puts(dc.functions->keys->data[i]);
+			for (int i = 0; i < f->argc; i++) {
+				dc_putc(',');
+				Cali node = {.type = NODE_VARIABLE, .val = f->argv[i]};
+				print_cali(&node, dc.variables, dc.out);
 			}
+			dc_puts(":\n");
+			found = true;
 		}
-		if (found)
-			return;
-		warning_at(dc.p, "function %d:%d is not found in System39.ain", page, addr);
 	}
-	print_address();
-	dc_printf("**F_%d_%05x:\n", page, addr);
+	if (!found)
+		error("BUG: function record for (%d:%x) not found", page, addr);
 }
 
-static void func_name(uint16_t page, uint32_t addr) {
-	if (dc.ain && dc.ain->functions) {
-		Map *functions = dc.ain->functions;
-		for (int i = 0; i < functions->vals->len; i++) {
-			Function *f = functions->vals->data[i];
-			if (f->page - 1 == page && f->addr == addr) {
-				dc_puts(functions->keys->data[i]);
-				return;
-			}
-		}
-		warning_at(dc.p, "function %d:%d is not found in System39.ain", page, addr);
+static Function *get_function(uint16_t page, uint32_t addr) {
+	for (int i = 0; i < dc.functions->vals->len; i++) {
+		Function *f = dc.functions->vals->data[i];
+		if (f->page - 1 == page && f->addr == addr)
+			return f;
 	}
-	dc_printf("F_%d_%05x", page, addr);
+	if (dc.ain && dc.ain->functions)
+		warning_at(dc.p, "function %d:%d is not found in System39.ain", page, addr);
+
+	Function *f = calloc(1, sizeof(Function));
+	char name[16];
+	sprintf(name, "F_%d_%05x", page, addr);
+	f->name = strdup(name);
+	f->page = page + 1;
+	f->addr = addr;
+	f->argc = -1;
+	map_put(dc.functions, f->name, f);
+	return f;
 }
 
-static void func_label(uint16_t page, uint32_t addr) {
-	func_name(page, addr);
+static Function *func_label(uint16_t page, uint32_t addr) {
+	Function *f = get_function(page, addr);
+	dc_puts(f->name);
 
 	uint8_t *mark = mark_at(page, addr);
 	*mark |= FUNC_TOP;
 	if (!(*mark & (CODE | DATA)))
 		((Sco *)dc.scos->data[page])->analyzed = false;
+	return f;
 }
 
-static void funcall(void) {
+static uint16_t get_next_assignment_var(Sco *sco, uint32_t *addr) {
+	assert(sco->data[*addr] == '!');
+	const uint8_t *p = sco->data + *addr + 1;
+	Cali *node = parse_cali(&p, true);
+	assert(node->type == NODE_VARIABLE);
+	// skip to next arg
+	do
+		(*addr)++;
+	while (!sco->mark[*addr]);
+	return node->val;
+}
+
+// When a function Func is defined as "**Func,var1,...,varn:", a call to this
+// function "~func,arg1,...,argn:" is compiled to this command sequence:
+//  !var1:arg1!
+//      ...
+//  !varn:argn!
+//  ~func:
+//
+// Since parameter information is lost in SCO, we infer the parameters by
+// examining preceding variable assignments that are common to all calls to the
+// function.
+static void analyze_args(Function *func, uint32_t topaddr_candidate, uint32_t funcall_addr) {
+	if (!topaddr_candidate) {
+		func->argc = 0;
+		return;
+	}
+	Sco *sco = dc.scos->data[dc.page];
+
+	// Count the number of preceding variable assignments
+	int argc = 0;
+	for (int addr = topaddr_candidate; addr < funcall_addr; addr++) {
+		if (sco->mark[addr]) {
+			assert(sco->data[addr] == '!');
+			argc++;
+		}
+	}
+
+	if (func->argc == -1) {
+		// This is the first callsite we've found.
+		uint16_t *argv = malloc(argc * sizeof(uint16_t));
+		int argi = 0;
+		for (uint32_t addr = topaddr_candidate; addr < funcall_addr;)
+			argv[argi++] = get_next_assignment_var(sco, &addr);
+		assert(argi == argc);
+		func->argc = argc;
+		func->argv = argv;
+	} else {
+		// Find the longest common suffix of the variable assignments here and
+		// the parameter candidates in `func`, and update `func`.
+		if (argc < func->argc) {
+			func->argv += func->argc - argc;
+			func->argc = argc;
+		}
+		for (; argc > func->argc; argc--) {
+			do
+				topaddr_candidate++;
+			while (!sco->mark[topaddr_candidate]);
+		}
+		assert(argc == func->argc);
+		int argi = 0;
+		int last_mismatch = 0;
+		for (uint32_t addr = topaddr_candidate; addr < funcall_addr;) {
+			if (func->argv[argi++] != get_next_assignment_var(sco, &addr)) {
+				topaddr_candidate = addr;
+				last_mismatch = argi;
+			}
+		}
+		func->argc -= last_mismatch;
+		func->argv += last_mismatch;
+	}
+	if (topaddr_candidate < funcall_addr) {
+		// From next time, this funcall will be handled by funcall_with_args().
+		annotate(sco->mark + topaddr_candidate, FUNCALL_TOP);
+	}
+}
+
+static bool funcall_with_args(void) {
+	Sco *sco = dc.scos->data[dc.page];
+
+	// Count the number of preceding variable assignments
+	int argc = 0;
+	int addr = dc.p - sco->data;
+	bool was_not_funcall = false;
+	while (sco->data[addr] == '!') {
+		argc++;
+		// skip to next arg
+		do
+			addr++;
+		while (!sco->mark[addr]);
+		if (sco->mark[addr] != CODE) {
+			// This happens when a label was inserted in the middle of variable
+			// assignments sequence, after the FUNCALL_TOP annotation was added.
+			annotate(sco->mark + (dc.p - sco->data), 0);  // Remove FUNCALL_TOP annotation
+			if (sco->data[addr] == '!')
+				annotate(sco->mark + addr, FUNCALL_TOP);
+			was_not_funcall = true;
+			argc = 0;
+		}
+	}
+	assert(sco->data[addr] == '~');
+
+	uint16_t page = (sco->data[addr + 1] | sco->data[addr + 2] << 8) - 1;
+	uint32_t funcaddr = le32(sco->data + addr + 3);
+	Function *func = get_function(page, funcaddr);
+	if (was_not_funcall) {
+		if (argc < func->argc) {
+			func->argv += func->argc - argc;
+			func->argc = argc;
+		}
+		return false;
+	}
+
+	if (func->argc < argc) {
+		// func->argc has been decremented since this FUNCALL_TOP was added.
+		addr = dc.p - sco->data;
+		annotate(sco->mark + addr, 0);  // Remove the FUNCALL_TOP annotation
+		if (!func->argc)
+			return false;
+		while (func->argc < argc--) {
+			// skip to next arg
+			do
+				addr++;
+			while (!sco->mark[addr]);
+		}
+		annotate(sco->mark + addr, FUNCALL_TOP);
+		return false;
+	}
+	assert(argc == func->argc);
+	dc_putc('~');
+	dc_puts(func->name);
+	while (argc-- > 0) {
+		dc.p++;  // skip '!'
+		parse_cali(&dc.p, true);  // skip varname
+		dc_putc(',');
+		cali(false);
+	}
+	dc_putc(':');
+	assert(dc.p == sco->data + addr);
+	dc.p += 7;  // skip '~', page, funcaddr
+	return true;
+}
+
+static void funcall(uint32_t topaddr_candidate) {
+	uint32_t calladdr = dc_addr() - 1;
 	uint16_t page = dc.p[0] | dc.p[1] << 8;
 	dc.p += 2;
 	switch (page) {
@@ -361,7 +516,8 @@ static void funcall(void) {
 			page -= 1;
 			uint32_t addr = le32(dc.p);
 			dc.p += 4;
-			func_label(page, addr);
+			Function *func = func_label(page, addr);
+			analyze_args(func, topaddr_candidate, calladdr);
 			break;
 		}
 	}
@@ -400,7 +556,7 @@ static void loop_end(Vector *branch_end_stack) {
 	case '{':
 		annotate(mark, WHILE_START);
 		if (stack_top(branch_end_stack) != dc_addr())
-			error("while-loop: unexpected address (%d != %d)", stack_top(branch_end_stack), dc_addr());
+			error("while-loop: unexpected address (%x != %x)", stack_top(branch_end_stack), dc_addr());
 		stack_pop(branch_end_stack);
 		break;
 	case '<':
@@ -764,6 +920,7 @@ static void decompile_page(int page) {
 	dc.indent = 1;
 	bool in_menu_item = false;
 	Vector *branch_end_stack = new_vec();
+	uint32_t next_funcall_top_candidate = 0;
 
 	while (dc.p < sco->data + sco->filesize) {
 		int topaddr = dc.p - sco->data;
@@ -774,7 +931,10 @@ static void decompile_page(int page) {
 			assert(dc.indent > 0);
 			indent();
 			dc_puts("}\n");
+			next_funcall_top_candidate = 0;
 		}
+		uint32_t funcall_top_candidate = (mark & ~CODE) ? 0 : next_funcall_top_candidate;
+		next_funcall_top_candidate = 0;
 		if (mark & FUNC_TOP)
 			func_labels(page, dc.p - sco->data);
 		if (mark & LABEL) {
@@ -875,17 +1035,30 @@ static void decompile_page(int page) {
 			dc_putc('\n');
 			continue;
 		}
+		if ((mark & TYPE_MASK) == FUNCALL_TOP) {
+			if (funcall_with_args()) {
+				dc_putc('\n');
+				continue;
+			}
+		}
 		int cmd = get_command();
 		switch (cmd) {
 		case '!':  // Assign
+			next_funcall_top_candidate = funcall_top_candidate ? funcall_top_candidate : dc_addr() - 1;
+			// fall through
 		case 0x10: case 0x11: case 0x12: case 0x13:
 		case 0x14: case 0x15: case 0x16: case 0x17:
-			cali(true);
-			if (cmd != '!')
-				dc_putc("+-*/%&|^"[cmd - 0x10]);
-			dc_putc(':');
-			cali(false);
-			dc_putc('!');
+			{
+				Cali *node = cali(true);
+				// Array reference cannot be a function argument.
+				if (node->type == NODE_AREF)
+					next_funcall_top_candidate = 0;
+				if (cmd != '!')
+					dc_putc("+-*/%&|^"[cmd - 0x10]);
+				dc_putc(':');
+				cali(false);
+				dc_putc('!');
+			}
 			break;
 
 		case '{':  // Branch
@@ -938,7 +1111,7 @@ static void decompile_page(int page) {
 			break;
 
 		case '~':  // Function call
-			funcall();
+			funcall(funcall_top_candidate);
 			break;
 
 		case 'A': break;
@@ -1570,12 +1743,11 @@ void decompile(Vector *scos, Ain *ain, const char *outdir) {
 	dc.scos = scos;
 	dc.ain = ain;
 	dc.variables = (ain && ain->variables) ? ain->variables : new_vec();
+	dc.functions = (ain && ain->functions) ? ain->functions : new_map();
 
-	if (ain && ain->functions) {
-		for (int i = 0; i < ain->functions->vals->len; i++) {
-			Function *f = ain->functions->vals->data[i];
-			*mark_at(f->page - 1, f->addr) |= FUNC_TOP;
-		}
+	for (int i = 0; i < dc.functions->vals->len; i++) {
+		Function *f = dc.functions->vals->data[i];
+		*mark_at(f->page - 1, f->addr) |= FUNC_TOP;
 	}
 
 	// Preprocess
