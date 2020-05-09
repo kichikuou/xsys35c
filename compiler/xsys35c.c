@@ -23,10 +23,6 @@
 #include <string.h>
 #include <time.h>
 
-enum {
-	LOPT_OBJDIR = 256,
-};
-
 static const char short_options[] = "a:E:hi:o:p:s:V:v";
 static const struct option long_options[] = {
 	{ "ain",       required_argument, NULL, 'a' },
@@ -34,7 +30,6 @@ static const struct option long_options[] = {
 	{ "hed",       required_argument, NULL, 'i' },
 	{ "help",      no_argument,       NULL, 'h' },
 	{ "output",    required_argument, NULL, 'o' },
-	{ "objdir",    required_argument, NULL, LOPT_OBJDIR },
 	{ "project",   required_argument, NULL, 'p' },
 	{ "sys-ver",   required_argument, NULL, 's' },
 	{ "variables", required_argument, NULL, 'V' },
@@ -50,7 +45,6 @@ static void usage(void) {
 	puts("    -Eu, --encoding=utf8      Set input coding system to UTF-8");
 	puts("    -i, --hed <file>          Read compile header (.hed) from <file>");
 	puts("    -h, --help                Display this message and exit");
-	puts("        --objdir <directory>  Write object (.sco) files into <directory>");
 	puts("    -o, --output <file>       Write output to <file> (default: adisk.ald)");
 	puts("    -p, --project <file>      Read project configuration from <file>");
 	puts("    -s, --sys-ver <ver>       Target System version (3.5|3.6|3.8(default)|3.9)");
@@ -176,7 +170,7 @@ static char *sconame(const char *advname) {
 	return s;
 }
 
-static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *objdir, const char *ald_path, const char *ain_path) {
+static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *ald_path, const char *ain_path) {
 	Map *srcs = new_map();
 	for (int i = 0; i < src_paths->len; i++) {
 		char *path = src_paths->data[i];
@@ -190,14 +184,6 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *o
 	for (int i = 0; i < srcs->keys->len; i++) {
 		const char *source = srcs->vals->data[i];
 		preprocess(&compiler, source, i);
-	}
-
-	if (objdir) {
-		char *tblpath = path_join(objdir, "variables.tbl");
-		FILE *fp = checked_fopen(tblpath, "w");
-		for (int i = 0; i < compiler.variables->len; i++)
-			fprintf(fp, "%s\n", (char *)compiler.variables->data[i]);
-		fclose(fp);
 	}
 
 	preprocess_done(&compiler);
@@ -215,22 +201,11 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *o
 		vec_push(ald, e);
 	}
 
-	if (objdir) {
-		for (int i = 0; i < ald->len; i++) {
-			AldEntry *e = ald->data[i];
-			char *objpath = path_join(objdir, sjis2utf(e->name));
-			FILE *fp = checked_fopen(objpath, "wb");
-			fwrite(e->data, e->size, 1, fp);
-			fclose(fp);
-		}
-	}
-
 	if (config.sys_ver == SYSTEM39) {
 		FILE *fp = checked_fopen(ain_path, "wb");
 		ain_write(&compiler, fp);
 		fclose(fp);
 	}
-
 
 	FILE *fp = checked_fopen(ald_path, "wb");
 	ald_write(ald, 1, fp);
@@ -239,7 +214,6 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *o
 
 int main(int argc, char *argv[]) {
 	const char *project = NULL;
-	const char *objdir = NULL;
 	const char *output = "adisk.ald";
 	const char *output_ain = "System39.ain";
 	const char *hed = NULL;
@@ -279,9 +253,6 @@ int main(int argc, char *argv[]) {
 		case 'v':
 			version();
 			return 0;
-		case LOPT_OBJDIR:
-			objdir = optarg;
-			break;
 		case '?':
 			usage();
 			return 1;
@@ -319,5 +290,5 @@ int main(int argc, char *argv[]) {
 
 	Vector *vars = var_list ? read_var_list(var_list) : NULL;
 
-	build(srcs, vars, dlls, objdir, output, output_ain);
+	build(srcs, vars, dlls, output, output_ain);
 }

@@ -35,9 +35,6 @@ The following options are available:
   <br/><code>--help</code></dt>
   <dd>Display help message about <code>xsys35c</code> and exit.</dd>
 
-  <dt><code>--objdir <var>directory</var></code></dt>
-  <dd>Write intermediate (<code>.sco</code>) files into <var>directory</var>.</dd>
-
   <dt><code>-o <var>file</var></code>
   <br/><code>--output <var>file</var></code></dt>
   <dd>Write <code>.ald</code> output to <var>file</var>. (default: <code>adisk.ald</code>)</dd>
