@@ -234,7 +234,7 @@ static void defun(void) {
 
 	if (!compiling) {
 		// First pass - create a function record and store parameter info
-		if (map_get(compiler->functions, name))
+		if (hash_get(compiler->functions, name))
 			error_at(top, "function '%s' redefined", name);
 		Function *func = calloc(1, sizeof(Function));
 		func->params = new_vec();
@@ -248,12 +248,12 @@ static void defun(void) {
 			needs_comma = true;
 			vec_push(func->params, get_identifier());
 		}
-		map_put(compiler->functions, name, func);
+		hash_put(compiler->functions, name, func);
 		return;
 	}
 
 	// Second pass - resolve function address
-	Function *func = map_get(compiler->functions, name);
+	Function *func = hash_get(compiler->functions, name);
 	assert(func);
 	assert(!func->resolved);
 
@@ -329,7 +329,7 @@ static void funcall(void) {
 	}
 
 	// Second pass
-	Function *func = map_get(compiler->functions, name);
+	Function *func = hash_get(compiler->functions, name);
 	if (!func)
 		error_at(top, "undefined function '%s'", name);
 	for (int i = 0; i < func->params->len; i++) {
@@ -504,7 +504,7 @@ static void arguments(const char *sig) {
 			{
 				char *name = get_label();
 				if (compiling) {
-					Function *func = map_get(compiler->functions, name);
+					Function *func = hash_get(compiler->functions, name);
 					if (!func)
 						error_at(top, "undefined function '%s'", name);
 					emit_word(out, func->page);
@@ -1302,7 +1302,7 @@ void compiler_init(Compiler *comp, Vector *src_names, Vector *variables, Map *dl
 	memset(comp, 0, sizeof(Compiler));
 	comp->src_names = src_names;
 	comp->variables = variables ? variables : new_vec();
-	comp->functions = new_map();
+	comp->functions = new_hash();
 	comp->dlls = dlls ? dlls : new_map();
 	comp->scos = calloc(src_names->len, sizeof(Buffer*));
 }

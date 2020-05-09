@@ -24,6 +24,7 @@ TESTS := \
 
 COMMON_SRCS := \
 	common/ald.c \
+	common/container.c \
 	common/util.c
 
 COMMON_OBJS = $(COMMON_SRCS:.c=.o)

@@ -62,6 +62,8 @@ const char *basename(const char *path);
 char *dirname(const char *path);
 char *path_join(const char *dir, const char *path);
 
+// container.c
+
 typedef struct {
 	void **data;
 	int len;
@@ -80,6 +82,22 @@ typedef struct {
 Map *new_map(void);
 void map_put(Map *m, const char *key, void *val);
 void *map_get(Map *m, const char *key);
+
+typedef struct {
+	const char *key;
+	void *val;
+} HashItem;
+
+typedef struct {
+	HashItem *table;
+	uint32_t size;
+	uint32_t occupied;
+} HashMap;
+
+HashMap *new_hash(void);
+void hash_put(HashMap *m, const char *key, void *val);
+void *hash_get(HashMap *m, const char *key);
+HashItem *hash_iterate(HashMap *m, HashItem *item);
 
 // ald.c
 

@@ -103,7 +103,7 @@ typedef struct {
 typedef struct {
 	Vector *src_names;
 	Vector *variables;
-	Map *functions;
+	HashMap *functions;
 	Map *dlls;
 	Buffer *msg_buf;
 	int msg_count;

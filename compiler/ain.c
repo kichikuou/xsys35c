@@ -46,23 +46,25 @@ static int func_compare(const void *a, const void *b) {
 	return strcmp(*(const char **)a, *(const char **)b);
 }
 
-static void ain_emit_FUNC(Buffer *out, Map *functions) {
+static void ain_emit_FUNC(Buffer *out, HashMap *functions) {
 	emit(out, 'F');
 	emit(out, 'U');
 	emit(out, 'N');
 	emit(out, 'C');
 	emit_dword(out, 0);  // reserved
 
-	int nfunc = functions->keys->len;
+	int nfunc = functions->occupied;
 	const char **sorted_keys = malloc(nfunc * sizeof(const char *));
-	memcpy(sorted_keys, functions->keys->data, nfunc * sizeof(const char *));
+	const char **p = sorted_keys;
+	for (HashItem *i = hash_iterate(functions, NULL); i; i = hash_iterate(functions, i))
+		*p++ = i->key;
 	qsort(sorted_keys, nfunc, sizeof(const char *), func_compare);
 
 	emit_dword(out, nfunc);
 	for (int i = 0; i < nfunc; i++) {
 		emit_string(out, sorted_keys[i]);
 		emit(out, 0);
-		Function *f = map_get(functions, sorted_keys[i]);
+		Function *f = hash_get(functions, sorted_keys[i]);
 		emit_word(out, f->page);
 		emit_dword(out, f->addr);
 	}
