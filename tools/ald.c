@@ -18,6 +18,7 @@
 #include "common.h"
 #include <ctype.h>
 #include <errno.h>
+#include <getopt.h>
 #include <iconv.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,13 +41,13 @@ static void help_list(void) {
 }
 
 static int do_list(int argc, char *argv[]) {
-	if (argc == 0) {
+	if (argc == 1) {
 		help_list();
 		return 1;
 	}
 	Vector *ald = new_vec();
-	for (int i = 0; i < argc; i++)
-		ald_read(ald, argv[0]);
+	for (int i = 1; i < argc; i++)
+		ald_read(ald, argv[i]);
 	char buf[30];
 	for (int i = 0; i < ald->len; i++) {
 		AldEntry *e = ald->data[i];
@@ -61,21 +62,48 @@ static int do_list(int argc, char *argv[]) {
 	return 0;
 }
 
+static const char extract_short_options[] = "d:";
+static const struct option extract_long_options[] = {
+	{ "directory", required_argument, NULL, 'd' },
+	{ 0, 0, 0, 0 }
+};
+
 static void help_extract(void) {
-	puts("Usage: ald extract <aldfile>");
+	puts("Usage: ald extract [options] <aldfile>");
+	puts("Options:");
+	puts("    -d, --directory <dir>    Extract files into <dir>");
 }
 
 static int do_extract(int argc, char *argv[]) {
+	const char *directory = NULL;
+	int opt;
+	while ((opt = getopt_long(argc, argv, extract_short_options, extract_long_options, NULL)) != -1) {
+		switch (opt) {
+		case 'd':
+			directory = optarg;
+			break;
+		default:
+			help_extract();
+			return 1;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+
 	if (argc == 0) {
 		help_extract();
 		return 1;
 	}
+
+	if (directory && make_dir(directory) != 0 && errno != EEXIST)
+		error("cannot create directory %s: %s", directory, strerror(errno));
+
 	Vector *ald = ald_read(NULL, argv[0]);
 	for (int i = 0; i < ald->len; i++) {
 		AldEntry *e = ald->data[i];
 		if (!e)
 			continue;
-		FILE *fp = checked_fopen(sjis2utf(e->name), "wb");
+		FILE *fp = checked_fopen(path_join(directory, sjis2utf(e->name)), "wb");
 		if (fwrite(e->data, e->size, 1, fp) != 1)
 			error("%s: %s", sjis2utf(e->name), strerror(errno));
 		fclose(fp);
@@ -151,14 +179,14 @@ static void dump_entry(AldEntry *entry) {
 }
 
 static int do_dump(int argc, char *argv[]) {
-	if (argc != 2) {
+	if (argc != 3) {
 		help_dump();
 		return 1;
 	}
-	Vector *ald = ald_read(NULL, argv[0]);
+	Vector *ald = ald_read(NULL, argv[1]);
 
 	char *endptr;
-	unsigned long n = strtoul(argv[1], &endptr, 0);
+	unsigned long n = strtoul(argv[2], &endptr, 0);
 	if (!*endptr) {
 		if (n >= ald->len || !ald->data[n])
 			error("Page %d is out of range", n);
@@ -168,12 +196,12 @@ static int do_dump(int argc, char *argv[]) {
 
 	for (int i = 0; i < ald->len; i++) {
 		AldEntry *e = ald->data[i];
-		if (e && !strcasecmp(argv[1], sjis2utf(e->name))) {
+		if (e && !strcasecmp(argv[2], sjis2utf(e->name))) {
 			dump_entry(e);
 			return 0;
 		}
 	}
-	error("%s: no entry for '%s'", argv[0], argv[1]);
+	error("%s: no entry for '%s'", argv[1], argv[2]);
 }
 
 static void help_compare(void) {
@@ -198,12 +226,12 @@ static bool compare_entry(int page, AldEntry *e1, AldEntry *e2) {
 }
 
 static int do_compare(int argc, char *argv[]) {
-	if (argc != 2) {
+	if (argc != 3) {
 		help_compare();
 		return 1;
 	}
-	const char *aldfile1 = argv[0];
-	const char *aldfile2 = argv[1];
+	const char *aldfile1 = argv[1];
+	const char *aldfile2 = argv[2];
 	Vector *ald1 = ald_read(NULL, aldfile1);
 	Vector *ald2 = ald_read(NULL, aldfile2);
 
@@ -257,17 +285,17 @@ Command commands[] = {
 };
 
 static int do_help(int argc, char *argv[]) {
-	if (argc == 0) {
+	if (argc == 1) {
 		help_help();
 		return 1;
 	}
 	for (Command *cmd = commands; cmd->name; cmd++) {
-		if (!strcmp(argv[0], cmd->name)) {
+		if (!strcmp(argv[1], cmd->name)) {
 			cmd->help();
 			return 0;
 		}
 	}
-	error("ald help: Invalid subcommand '%s'", argv[0]);
+	error("ald help: Invalid subcommand '%s'", argv[1]);
 }
 
 int main(int argc, char *argv[]) {
@@ -277,7 +305,7 @@ int main(int argc, char *argv[]) {
 	}
 	for (Command *cmd = commands; cmd->name; cmd++) {
 		if (!strcmp(argv[1], cmd->name))
-			return cmd->func(argc - 2, argv + 2);
+			return cmd->func(argc - 1, argv + 1);
 	}
 	error("ald: Invalid subcommand '%s'", argv[1]);
 }

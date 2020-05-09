@@ -22,13 +22,6 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#if defined(_WIN32)
-#include <direct.h>
-#define make_dir(path, mode) _mkdir(path)
-#else
-#define make_dir(path, mode) mkdir(path, mode)
-#endif
-
 static const char short_options[] = "aE:ho:sVv";
 static const struct option long_options[] = {
 	{ "address",  no_argument,       NULL, 'a' },
@@ -161,7 +154,7 @@ int main(int argc, char *argv[]) {
 	if (argc >= 2)
 		ain = ain_read(argv[1]);
 
-	if (outdir && make_dir(outdir, 0777) != 0 && errno != EEXIST)
+	if (outdir && make_dir(outdir) != 0 && errno != EEXIST)
 		error("cannot create directory %s: %s", outdir, strerror(errno));
 
 	decompile(scos, ain, outdir);

@@ -61,6 +61,7 @@ static inline bool is_sjis_byte2(uint8_t c) {
 const char *basename(const char *path);
 char *dirname(const char *path);
 char *path_join(const char *dir, const char *path);
+int make_dir(const char *path);
 
 // container.c
 

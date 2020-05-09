@@ -21,6 +21,11 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(_WIN32)
+#include <direct.h>
+#else
+#include <sys/stat.h>
+#endif
 
 static const uint8_t hankaku81[] = {
 	0x20, 0xa4, 0xa1, 0x00, 0x00, 0xa5, 0x00, 0x00,
@@ -182,4 +187,12 @@ char *path_join(const char *dir, const char *path) {
 	char *buf = malloc(strlen(dir) + strlen(path) + 2);
 	sprintf(buf, "%s%c%s", dir, PATH_SEPARATOR, path);
 	return buf;
+}
+
+int make_dir(const char *path) {
+#if defined(_WIN32)
+	return _mkdir(path);
+#else
+	return mkdir(path, 0777);
+#endif
 }
