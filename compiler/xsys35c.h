@@ -32,6 +32,7 @@ typedef struct {
 	const char *hed;
 	const char *var_list;
 
+	bool utf8;
 	bool disable_else;
 	bool disable_ain_message;
 	bool old_SR;

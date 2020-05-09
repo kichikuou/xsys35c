@@ -23,6 +23,10 @@ The following options are available:
   <br/><code>--ain <var>file</var></code></dt>
   <dd>Write <code>.ain</code> output to <var>file</var>. (default: <code>System39.ain</code>)</dd>
 
+  <dt><code>-E <var>enc</var></code>
+  <br/><code>--encoding <var>enc</var></code></dt>
+  <dd>Specify text encoding of input files. Possible values are <code>sjis</code> (default), <code>utf8</code>.</dd>
+
   <dt><code>-i <var>file</var></code>
   <br/><code>--hed <var>file</var></code></dt>
   <dd>Read <a href="#compile-header-hed-file">compile header</a> (<code>.hed</code>) from <var>file</var>.</dd>

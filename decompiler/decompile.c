@@ -1685,8 +1685,10 @@ static void write_config(const char *path) {
 		case SCO_S380: fputs("sys_ver = 3.8\n", fp); break;
 		}
 	}
-	if (config.utf8)
+	if (config.utf8) {
+		fputs("encoding = utf8\n", fp);
 		convert_to_utf8(fp);
+	}
 	fclose(fp);
 }
 

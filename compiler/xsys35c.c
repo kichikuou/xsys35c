@@ -27,9 +27,10 @@ enum {
 	LOPT_OBJDIR = 256,
 };
 
-static const char short_options[] = "a:hi:o:p:s:V:v";
+static const char short_options[] = "a:E:hi:o:p:s:V:v";
 static const struct option long_options[] = {
 	{ "ain",       required_argument, NULL, 'a' },
+	{ "encoding",  required_argument, NULL, 'E' },
 	{ "hed",       required_argument, NULL, 'i' },
 	{ "help",      no_argument,       NULL, 'h' },
 	{ "output",    required_argument, NULL, 'o' },
@@ -45,6 +46,8 @@ static void usage(void) {
 	puts("Usage: xsys35c [options] file...");
 	puts("Options:");
 	puts("    -a, --ain <file>          Write .ain output to <file> (default: System39.ain)");
+	puts("    -Es, --encoding=sjis      Set input coding system to SJIS (default)");
+	puts("    -Eu, --encoding=utf8      Set input coding system to UTF-8");
 	puts("    -i, --hed <file>          Read compile header (.hed) from <file>");
 	puts("    -h, --help                Display this message and exit");
 	puts("        --objdir <directory>  Write object (.sco) files into <directory>");
@@ -57,6 +60,13 @@ static void usage(void) {
 
 static void version(void) {
 	puts("xsys35c " VERSION);
+}
+
+static char *read_line(FILE *fp) {
+	char buf[256];
+	if (!fgets(buf, sizeof(buf), fp))
+		return NULL;
+	return config.utf8 ? utf2sjis(buf) : strdup(buf);
 }
 
 static char *read_file(const char *path) {
@@ -73,7 +83,7 @@ static char *read_file(const char *path) {
 		error("%s: read error", path);
 	fclose(fp);
 	buf[size] = '\0';
-	return buf;
+	return config.utf8 ? utf2sjis(buf) : buf;
 }
 
 static char *trim_right(char *str) {
@@ -85,9 +95,9 @@ static char *trim_right(char *str) {
 static Vector *read_var_list(const char *path) {
 	FILE *fp = checked_fopen(path, "r");
 	Vector *vars = new_vec();
-	char line[256];
-	while (fgets(line, sizeof(line), fp))
-		vec_push(vars, strdup(trim_right(line)));
+	char *line;
+	while ((line = read_line(fp)) != NULL)
+		vec_push(vars, trim_right(line));
 	fclose(fp);
 	return vars;
 }
@@ -97,8 +107,8 @@ static void read_hed(const char *path, Vector *sources, Map *dlls) {
 	char *dir = dirname(path);
 	enum { INITIAL, SYSTEM35, DLLHeader } section = INITIAL;
 
-	char line[256];
-	while (fgets(line, sizeof(line), fp)) {
+	char *line;
+	while ((line = read_line(fp)) != NULL) {
 		if (line[0] == '\x1a')  // DOS EOF
 			break;
 		if (line[0] == '#') {  // Section header
@@ -129,13 +139,13 @@ static void read_hed(const char *path, Vector *sources, Map *dlls) {
 				char *dot = strchr(line, '.');
 				if (dot && !strcasecmp(dot + 1, "dll")) {
 					*dot = '\0';
-					map_put(dlls, strdup(line), new_vec());
+					map_put(dlls, line, new_vec());
 				} else {
 					char *hel_text = read_file(path_join(dir, sjis2utf(line)));
 					Vector *funcs = parse_hel(hel_text, line);
 					if (dot)
 						*dot = '\0';
-					map_put(dlls, strdup(line), funcs);
+					map_put(dlls, line, funcs);
 				}
 			}
 			break;
@@ -240,6 +250,13 @@ int main(int argc, char *argv[]) {
 		switch (opt) {
 		case 'a':
 			output_ain = optarg;
+			break;
+		case 'E':
+			switch (optarg[0]) {
+			case 's': case 'S': config.utf8 = false; break;
+			case 'u': case 'U': config.utf8 = true; break;
+			default: error("Unknown encoding %s", optarg);
+			}
 			break;
 		case 'h':
 			usage();

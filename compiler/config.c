@@ -68,6 +68,13 @@ void load_config(FILE *fp, const char *cfg_dir) {
 		char val[256];
 		if (sscanf(line, "sys_ver = %s", val)) {
 			set_sys_ver(val);
+		} else if (sscanf(line, "encoding = %s", val)) {
+			if (!strcasecmp(val, "sjis"))
+				config.utf8 = false;
+			else if (!strcasecmp(val, "utf8"))
+				config.utf8 = true;
+			else
+				error("Unknown encoding %s", val);
 		} else if (sscanf(line, "hed = %s", val)) {
 			config.hed = path_join(cfg_dir, val);
 		} else if (sscanf(line, "variables = %s", val)) {
