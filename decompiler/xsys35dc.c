@@ -29,14 +29,15 @@
 #define make_dir(path, mode) mkdir(path, mode)
 #endif
 
-static const char short_options[] = "aho:sVv";
+static const char short_options[] = "aE:ho:sVv";
 static const struct option long_options[] = {
-	{ "address", no_argument,       NULL, 'a' },
-	{ "help",    no_argument,       NULL, 'h' },
-	{ "outdir",  required_argument, NULL, 'o' },
-	{ "seq",     no_argument,       NULL, 's' },
-	{ "verbose", no_argument,       NULL, 'V' },
-	{ "version", no_argument,       NULL, 'v' },
+	{ "address",  no_argument,       NULL, 'a' },
+	{ "encoding", required_argument, NULL, 'E' },
+	{ "help",     no_argument,       NULL, 'h' },
+	{ "outdir",   required_argument, NULL, 'o' },
+	{ "seq",      no_argument,       NULL, 's' },
+	{ "verbose",  no_argument,       NULL, 'V' },
+	{ "version",  no_argument,       NULL, 'v' },
 	{ 0, 0, 0, 0 }
 };
 
@@ -44,6 +45,8 @@ static void usage(void) {
 	puts("Usage: xsys35dc [options] aldfile [ainfile]");
 	puts("Options:");
 	puts("    -a, --address             Prefix each line with address");
+	puts("    -Es, --encoding=sjis      Output files in SJIS encoding (default)");
+	puts("    -Eu, --encoding=utf8      Output files in UTF-8 encoding");
 	puts("    -h, --help                Display this message and exit");
 	puts("    -o, --outdir <directory>  Write output into <directory>");
 	puts("    -s, --seq                 Output with sequential filenames (0.adv, 1.adv, ...)");
@@ -85,6 +88,19 @@ Sco *sco_new(const char *name, const uint8_t *data, int len) {
 	return sco;
 }
 
+void convert_to_utf8(FILE *fp) {
+	fseek(fp, 0, SEEK_SET);
+	Vector *lines = new_vec();
+	char buf[2048];
+	while (fgets(buf, sizeof(buf), fp))
+		vec_push(lines, sjis2utf(buf));
+
+	fseek(fp, 0, SEEK_SET);
+	for (int i = 0; i < lines->len; i++)
+		fputs(lines->data[i], fp);
+	// No truncation needed because UTF-8 encoding is no shorter than SJIS.
+}
+
 int main(int argc, char *argv[]) {
 	const char *outdir = NULL;
 	bool seq = false;
@@ -94,6 +110,13 @@ int main(int argc, char *argv[]) {
 		switch (opt) {
 		case 'a':
 			config.address = true;
+			break;
+		case 'E':
+			switch (optarg[0]) {
+			case 's': case 'S': config.utf8 = false; break;
+			case 'u': case 'U': config.utf8 = true; break;
+			default: error("Unknown encoding %s", optarg);
+			}
 			break;
 		case 'h':
 			usage();

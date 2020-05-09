@@ -69,6 +69,7 @@ void print_cali(Cali *node, Vector *variables, FILE *out);
 
 typedef struct {
 	bool address;
+	bool utf8;
 	bool verbose;
 } Config;
 
@@ -77,3 +78,6 @@ extern Config config;
 void decompile(Vector *scos, Ain *ain, const char *outdir);
 noreturn void error_at(const uint8_t *pos, char *fmt, ...);
 void warning_at(const uint8_t *pos, char *fmt, ...);
+
+// xsys35dc.c
+void convert_to_utf8(FILE *fp);

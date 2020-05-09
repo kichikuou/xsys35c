@@ -11,6 +11,10 @@ The following options are available:
   <br/><code>--address</code></dt>
   <dd>Prefix each line with address.</dd>
 
+  <dt><code>-E <var>enc</var></code>
+  <br/><code>--encoding <var>enc</var></code></dt>
+  <dd>Specify text encoding of output files. Possible values are <code>sjis</code> (default), <code>utf8</code>.</dd>
+
   <dt><code>-h</code>
   <br/><code>--help</code></dt>
   <dd>Display help message about <code>xsys35dc</code> and exit.</dd>
