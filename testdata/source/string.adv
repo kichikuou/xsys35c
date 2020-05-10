@@ -2,4 +2,4 @@
 	R
 	'\\\'\"\<'
 	R
-	'These characters have issues with SJIS-UTF8 conversion: Ⅱ－～'
+	'These characters have issues with SJIS-UTF8 conversion: <0x8755>－～'

@@ -129,10 +129,17 @@ static void maybe_escape(char c) {
 }
 
 static void dc_puts_escaped(const char *s) {
+	if (!dc.out)
+		return;
 	while (*s) {
 		if (is_valid_sjis(s[0], s[1])) {
-			dc_putc(*s++);
-			dc_putc(*s++);
+			if (config.utf8 && !is_unicode_safe(s[0], s[1])) {
+				dc_printf("<0x%04X>", (uint8_t)s[0] << 8 | (uint8_t)s[1]);
+				s += 2;
+			} else {
+				dc_putc(*s++);
+				dc_putc(*s++);
+			}
 		} else {
 			maybe_escape(*s);
 			dc_putc(*s++);
@@ -232,8 +239,13 @@ static void data_block(const uint8_t *p, const uint8_t *end) {
 					dc_putc(full & 0xff);
 				} else {
 					assert(is_sjis_byte1(c));
-					dc_putc(c);
-					dc_putc(*p++);
+					uint8_t c2 = *p++;
+					if (config.utf8 && !is_unicode_safe(c, c2)) {
+						dc_printf("<0x%04X>", c << 8 | c2);
+					} else {
+						dc_putc(c);
+						dc_putc(c2);
+					}
 				}
 			}
 			dc_puts("\"\n");
@@ -1019,9 +1031,13 @@ static void decompile_page(int page) {
 					dc_putc(full >> 8);
 					dc_putc(full & 0xff);
 				} else {
-					dc_putc(c);
-					if (is_sjis_byte1(c))
-						dc_putc(*dc.p++);
+					if (config.utf8 && !is_unicode_safe(c, *dc.p)) {
+						dc_printf("<0x%04X>", c << 8 | *dc.p++);
+					} else {
+						dc_putc(c);
+						if (is_sjis_byte1(c))
+							dc_putc(*dc.p++);
+					}
 				}
 				if (*mark_at(dc.page, dc_addr()) != 0)
 					break;

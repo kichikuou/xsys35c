@@ -56,6 +56,7 @@ char *utf2sjis_sub(const char *str, int substitution_char);
 uint8_t to_sjis_half_kana(uint8_t c1, uint8_t c2);
 uint16_t from_sjis_half_kana(uint8_t c);
 bool is_valid_sjis(uint8_t c1, uint8_t c2);
+bool is_unicode_safe(uint8_t c1, uint8_t c2);
 
 static inline bool is_sjis_half_kana(uint8_t c) {
 	return 0xa1 <= c && c <= 0xdf;
