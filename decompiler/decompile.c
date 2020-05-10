@@ -123,6 +123,23 @@ static void dc_printf(const char *fmt, ...) {
 	vfprintf(dc.out, fmt, args);
 }
 
+static void maybe_escape(char c) {
+	if (c == '\\' || c == '\'' || c == '"' || c == '<')
+		dc_putc('\\');
+}
+
+static void dc_puts_escaped(const char *s) {
+	while (*s) {
+		if (is_valid_sjis(s[0], s[1])) {
+			dc_putc(*s++);
+			dc_putc(*s++);
+		} else {
+			maybe_escape(*s);
+			dc_putc(*s++);
+		}
+	}
+}
+
 static void print_address(void) {
 	if (config.address)
 		dc_printf("/* %05x */\t", dc_addr());
@@ -207,8 +224,7 @@ static void data_block(const uint8_t *p, const uint8_t *end) {
 				if (conv_half_to_full && c == ' ') {
 					dc_puts("\x81\x40"); // full-width space
 				} else if (isprint(c)) {
-					if (c == '"' || c == '\\')
-						dc_putc('\\');
+					maybe_escape(c);
 					dc_putc(c);
 				} else if (conv_half_to_full && is_sjis_half_kana(c)) {
 					uint16_t full = from_sjis_half_kana(c);
@@ -859,7 +875,7 @@ static void ain_msg(const char *cmd, const char *args) {
 	}
 
 	dc_putc('\'');
-	dc_puts(dc.ain->messages->data[id]);
+	dc_puts_escaped(dc.ain->messages->data[id]);
 	dc_putc('\'');
 }
 
@@ -1479,9 +1495,8 @@ static void decompile_page(int page) {
 		case COMMAND_msg:
 			dc.disable_ain_message = true;
 			dc_putc('\'');
-			while (*dc.p)
-				dc_putc(*dc.p++);
-			dc.p++;  // skip '\0'
+			dc_puts_escaped((const char *)dc.p);
+			dc.p += strlen((const char *)dc.p) + 1;
 			dc_putc('\'');
 			break;
 		case COMMAND_newHH: arguments("ne"); break;
