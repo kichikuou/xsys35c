@@ -62,7 +62,7 @@ static inline bool is_sjis_half_kana(uint8_t c) {
 }
 
 static inline bool is_sjis_byte1(uint8_t c) {
-	return (0x81 <= c && c <= 0x9f) || (0xe0 <= c && c <= 0xef);
+	return (0x81 <= c && c <= 0x9f) || (0xe0 <= c && c <= 0xfc);
 }
 
 static inline bool is_sjis_byte2(uint8_t c) {
