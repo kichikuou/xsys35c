@@ -49,6 +49,7 @@ all: $(COMMANDS)
 $(COMMON_OBJS): common/common.h
 $(COMPILER_OBJS): compiler/xsys35c.h common/common.h
 $(DECOMPILER_OBJS): decompiler/xsys35dc.h common/common.h
+common/sjisutf.o: common/s2utbl.h
 
 compiler/xsys35c: compiler/xsys35c.o $(COMPILER_OBJS) $(COMMON_OBJS)
 decompiler/xsys35dc: decompiler/xsys35dc.o $(DECOMPILER_OBJS) $(COMMON_OBJS)

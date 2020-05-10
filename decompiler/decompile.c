@@ -181,7 +181,7 @@ static bool is_string_data(const uint8_t *begin, const uint8_t *end, bool conv_h
 	for (const uint8_t *p = begin; p < end;) {
 		if (*p == '\0')
 			return p - begin >= 2;
-		if (is_sjis_byte1(p[0]) && is_sjis_byte2(p[1]))
+		if (is_valid_sjis(p[0], p[1]))
 			p += 2;
 		else if (isprint(*p) || (conv_half_to_full && is_sjis_half_kana(*p)))
 			p++;

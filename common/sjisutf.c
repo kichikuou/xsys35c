@@ -98,6 +98,10 @@ static int unicode_to_sjis(int u) {
 	return 0;
 }
 
+bool is_valid_sjis(uint8_t c1, uint8_t c2) {
+	return is_sjis_byte1(c1) && is_sjis_byte2(c2) && s2u[c1 - 0x80][c2 - 0x40];
+}
+
 char *sjis2utf_sub(const char *str, int substitution_char) {
 #ifdef SJIS_NATIVE
 	return strdup(str);
@@ -116,11 +120,10 @@ char *sjis2utf_sub(const char *str, int substitution_char) {
 		if (*src >= 0xa0 && *src <= 0xdf) {
 			c = 0xff60 + *src - 0xa0;
 			src++;
-		} else if (is_sjis_byte2(src[1])) {
+		} else if (is_valid_sjis(src[0], src[1])) {
 			c = s2u[src[0] - 0x80][src[1] - 0x40];
 			src += 2;
 		} else {
-			// invalid byte sequence
 			if (substitution_char < 0)
 				error("Invalid SJIS byte sequence %02x %02x", src[0], src[1]);
 			c = substitution_char;
@@ -181,7 +184,7 @@ char *utf2sjis_sub(const char *str, int substitution_char) {
 				*dstp++ = c & 0xff;
 			} else {
 				if (substitution_char < 0)
-					error("Codepoint U+04X cannot be converted to Shift_JIS", u);
+					error("Codepoint U+%04X cannot be converted to Shift_JIS", u);
 				*dstp++ = substitution_char;
 			}
 		}
