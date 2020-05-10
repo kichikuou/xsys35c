@@ -24,7 +24,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-Config config;
+Config config = {
+	.utf8 = true,
+};
 
 // Sco.mark[i] stores annotation for Sco.data[i].
 // An annotation consists of a 3-bit type field and flags.

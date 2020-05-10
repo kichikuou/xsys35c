@@ -25,7 +25,7 @@ The following options are available:
 
   <dt><code>-E <var>enc</var></code>
   <br/><code>--encoding <var>enc</var></code></dt>
-  <dd>Specify text encoding of input files. Possible values are <code>sjis</code> (default), <code>utf8</code>.</dd>
+  <dd>Specify text encoding of input files. Possible values are <code>sjis</code>, <code>utf8 (default)</code>.</dd>
 
   <dt><code>-i <var>file</var></code>
   <br/><code>--hed <var>file</var></code></dt>
@@ -93,7 +93,6 @@ Explaining the System 3.x language is beyond the scope of this document; please 
 ## DLL function declaration (`.hel`) file
 A `.hel` file contains a list of functions (and their argument types) exported by a DLL, in a format similar to a C function declaration. You probably won't need to modify this file, or create your own.
 
-## Character Encoding
-Currently `xsys35c` assumes that:
-- Source files are Shift_JIS encoding.
-- Filesystem paths and console output are UTF-8 encoding. This could be problematic in Windows.
+## Bugs
+- Although `xsys35c` accepts source files in UTF-8 encoding, characters outside the Shift_JIS character set cannot be used, even in comments.
+- `xsys35c` uses UTF-8 encoding for filesystem paths and console output. This could be problematic in Windows.

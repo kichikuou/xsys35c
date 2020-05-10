@@ -38,8 +38,8 @@ static void usage(void) {
 	puts("Usage: xsys35dc [options] aldfile [ainfile]");
 	puts("Options:");
 	puts("    -a, --address             Prefix each line with address");
-	puts("    -Es, --encoding=sjis      Output files in SJIS encoding (default)");
-	puts("    -Eu, --encoding=utf8      Output files in UTF-8 encoding");
+	puts("    -Es, --encoding=sjis      Output files in SJIS encoding");
+	puts("    -Eu, --encoding=utf8      Output files in UTF-8 encoding (default)");
 	puts("    -h, --help                Display this message and exit");
 	puts("    -o, --outdir <directory>  Write output into <directory>");
 	puts("    -s, --seq                 Output with sequential filenames (0.adv, 1.adv, ...)");

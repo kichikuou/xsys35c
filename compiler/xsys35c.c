@@ -41,8 +41,8 @@ static void usage(void) {
 	puts("Usage: xsys35c [options] file...");
 	puts("Options:");
 	puts("    -a, --ain <file>          Write .ain output to <file> (default: System39.ain)");
-	puts("    -Es, --encoding=sjis      Set input coding system to SJIS (default)");
-	puts("    -Eu, --encoding=utf8      Set input coding system to UTF-8");
+	puts("    -Es, --encoding=sjis      Set input coding system to SJIS");
+	puts("    -Eu, --encoding=utf8      Set input coding system to UTF-8 (default)");
 	puts("    -i, --hed <file>          Read compile header (.hed) from <file>");
 	puts("    -h, --help                Display this message and exit");
 	puts("    -o, --output <file>       Write output to <file> (default: adisk.ald)");
