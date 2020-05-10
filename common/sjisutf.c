@@ -135,6 +135,8 @@ bool is_unicode_safe(uint8_t c1, uint8_t c2) {
 	int cp = s2u[c1 - 0x80][c2 - 0x40];
 	if (!cp)
 		return false;
+	if ((cp & 0xf000) == 0xe000)
+		return false;  // Gaijis should be escaped
 	const int nelem = sizeof(ambigious_unicodes) / sizeof(uint16_t);
 	return !bsearch(&cp, ambigious_unicodes, nelem, sizeof(uint16_t), uint16_compare);
 }
