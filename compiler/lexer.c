@@ -183,6 +183,12 @@ int get_number(void) {
 void compile_string(Buffer *b, char terminator) {
 	const char *top = input;
 	while (*input != terminator) {
+		if (*input == '<') {
+			input++;
+			emit_word_be(b, get_number());
+			expect('>');
+			continue;
+		}
 		if (*input == '\\')
 			input++;
 		if (!*input)
@@ -209,8 +215,13 @@ void compile_string(Buffer *b, char terminator) {
 }
 
 void compile_message(Buffer *b) {
-	// TODO: Support data embedding ("<0x...>")
 	while (*input && *input != '\'') {
+		if (*input == '<') {
+			input++;
+			emit_word_be(b, get_number());
+			expect('>');
+			continue;
+		}
 		if (*input == '\\')
 			input++;
 		if (is_sjis_byte1(*input) && is_sjis_byte2(*(input+1)))

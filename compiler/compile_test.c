@@ -110,6 +110,9 @@ int main() {
 	TEST("message-conv",
 		 "'\x81\x40\x81\x75\x82\xCD\x82\xA2\x81\x76'",  // '　「はい」' in SJIS
 		 "\x20\xa2\xca\xb2\xa3");
+	TEST("message-cp",
+		 "'<0x8148>'",
+		 "\x81\x48");
 
 	TEST("menu-item",
 		 "$l$\x83\x56\x83\x42\x83\x8B$ *l:",
@@ -218,6 +221,9 @@ int main() {
 	TEST("msg-nonescape",
 		 "'\x95\x5C'",    // '表' in SJIS, where the second byte is '\'
 		 "/!\x95\x5C\0");
+	TEST("msg-codepoint",
+		 "'<0x8148>'",
+		 "/!\x81\x48\0");
 
 	TEST("if-keyword",
 		 "if{0:}",
