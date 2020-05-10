@@ -40,6 +40,15 @@ typedef enum {
 char *strndup_(const char *s, size_t n);
 noreturn void error(char *fmt, ...);
 FILE *checked_fopen(const char *path, const char *mode);
+
+#define PATH_SEPARATOR '/'
+const char *basename(const char *path);
+char *dirname(const char *path);
+char *path_join(const char *dir, const char *path);
+int make_dir(const char *path);
+
+// sjisutf.c
+
 char *sjis2utf(const char *str);
 char *utf2sjis(const char *str);
 uint8_t to_sjis_half_kana(uint8_t c1, uint8_t c2);
@@ -56,12 +65,6 @@ static inline bool is_sjis_byte1(uint8_t c) {
 static inline bool is_sjis_byte2(uint8_t c) {
 	return 0x40 <= c && c <= 0xfc && c != 0x7f;
 }
-
-#define PATH_SEPARATOR '/'
-const char *basename(const char *path);
-char *dirname(const char *path);
-char *path_join(const char *dir, const char *path);
-int make_dir(const char *path);
 
 // container.c
 
