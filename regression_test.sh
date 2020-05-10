@@ -9,5 +9,5 @@ else
     cp testdata/actual.ald testdata/regression_test.ald
 fi
 rm -rf testdata/decompiled
-decompiler/xsys35dc -o testdata/decompiled testdata/actual.ald
+decompiler/xsys35dc -Eu -o testdata/decompiled testdata/actual.ald
 diff -uN --strip-trailing-cr testdata/source testdata/decompiled

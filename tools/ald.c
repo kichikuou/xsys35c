@@ -19,7 +19,6 @@
 #include <ctype.h>
 #include <errno.h>
 #include <getopt.h>
-#include <iconv.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -116,26 +115,8 @@ static void help_dump(void) {
 }
 
 static void print_sjis_2byte(uint8_t c1, uint8_t c2) {
-	static iconv_t iconv_s2u = (iconv_t)-1;
-	if (iconv_s2u == (iconv_t)-1) {
-		iconv_s2u = iconv_open("UTF-8", "CP932");
-		if (iconv_s2u == (iconv_t)-1)
-			error("iconv_open(UTF-8, CP932): %s", strerror(errno));
-	}
-
-	char in[2] = {c1, c2};
-	char out[8];
-	char *ip = in;
-	size_t ilen = c2 ? 2 : 1;
-	char *op = out;
-	size_t olen = 8;
-	if (iconv(iconv_s2u, &ip, &ilen, &op, &olen) == (size_t)-1) {
-		putchar('.');
-		if (c2)
-			putchar('.');
-		return;
-	}
-	*op = '\0';
+	char in[3] = {c1, c2, 0};
+	char *out = sjis2utf_sub(in, '.');
 	fputs(out, stdout);
 }
 

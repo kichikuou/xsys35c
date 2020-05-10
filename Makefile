@@ -1,7 +1,4 @@
 CFLAGS = -Wall -O2 -Icommon
-ifneq ($(shell uname), Linux)
-	LDLIBS = -liconv
-endif
 
 # `make SJIS_NATIVE=1` will disable SJIS<->UTF8 conversion.
 # This is useful if system charset is SJIS.

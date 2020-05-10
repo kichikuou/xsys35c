@@ -16,8 +16,8 @@
  *
 */
 #include "common.h"
+#include "s2utbl.h"
 #include <errno.h>
-#include <iconv.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -86,47 +86,108 @@ static const uint16_t kanatbl[] = {
 	0x82e8, 0x82e9, 0x82ea, 0x82eb, 0x82ed, 0x82f1, 0x814a, 0x814b
 };
 
-char *sjis2utf(const char *str) {
+static int unicode_to_sjis(int u) {
+	for (int b1 = 0x81; b1 <= 0xff; b1++) {
+		if (b1 >= 0xa0 && b1 <= 0xdf)
+			continue;
+		for (int b2 = 0x40; b2 <= 0xff; b2++) {
+			if (u == s2u[b1 - 0x80][b2 - 0x40])
+				return b1 << 8 | b2;
+		}
+	}
+	return 0;
+}
+
+char *sjis2utf_sub(const char *str, int substitution_char) {
 #ifdef SJIS_NATIVE
 	return strdup(str);
 #else
-	static iconv_t iconv_s2u = (iconv_t)-1;
-	if (iconv_s2u == (iconv_t)-1) {
-		iconv_s2u = iconv_open("UTF-8", "CP932");
-		if (iconv_s2u == (iconv_t)-1)
-			error("iconv_open(UTF-8, CP932): %s", strerror(errno));
+	const uint8_t *src = (uint8_t *)str;
+	uint8_t *dst = malloc(strlen(str) * 3 + 1);
+	uint8_t *dstp = dst;
+
+	while (*src) {
+		if (*src <= 0x7f) {
+			*dstp++ = *src++;
+			continue;
+		}
+
+		int c;
+		if (*src >= 0xa0 && *src <= 0xdf) {
+			c = 0xff60 + *src - 0xa0;
+			src++;
+		} else if (is_sjis_byte2(src[1])) {
+			c = s2u[src[0] - 0x80][src[1] - 0x40];
+			src += 2;
+		} else {
+			// invalid byte sequence
+			if (substitution_char < 0)
+				error("Invalid SJIS byte sequence %02x %02x", src[0], src[1]);
+			c = substitution_char;
+			src++;
+		}
+
+		if (c <= 0x7f) {
+			*dstp++ = c;
+		} else if (c <= 0x7ff) {
+			*dstp++ = 0xc0 | c >> 6;
+			*dstp++ = 0x80 | (c & 0x3f);
+		} else {
+			*dstp++ = 0xe0 | c >> 12;
+			*dstp++ = 0x80 | (c >> 6 & 0x3f);
+			*dstp++ = 0x80 | (c & 0x3f);
+		}
 	}
-	size_t ilen = strlen(str);
-	char *ip = (char *)str;
-	size_t olen = ilen * 3 + 1;
-	char *obuf = malloc(olen);
-	char *op = obuf;
-	if (iconv(iconv_s2u, &ip, &ilen, &op, &olen) == (size_t)-1)
-		error("iconv: %s", strerror(errno));
-	*op = '\0';
-	return obuf;
+	*dstp = '\0';
+	return (char *)dst;
 #endif
 }
 
-char *utf2sjis(const char *str) {
+char *utf2sjis_sub(const char *str, int substitution_char) {
 #ifdef SJIS_NATIVE
 	return strdup(str);
 #else
-	static iconv_t iconv_u2s = (iconv_t)-1;
-	if (iconv_u2s == (iconv_t)-1) {
-		iconv_u2s = iconv_open("CP932", "UTF-8");
-		if (iconv_u2s == (iconv_t)-1)
-			error("iconv_open(CP932, UTF-8): %s", strerror(errno));
+	const uint8_t *src = (uint8_t *)str;
+	uint8_t *dst = malloc(strlen(str) + 1);
+	uint8_t *dstp = dst;
+
+	while (*src) {
+		if (*src <= 0x7f) {
+			*dstp++ = *src++;
+			continue;
+		}
+
+		int u;
+		if (*src <= 0xdf) {
+			u = (src[0] & 0x1f) << 6 | (src[1] & 0x3f);
+			src += 2;
+		} else if (*src <= 0xef) {
+			u = (src[0] & 0xf) << 12 | (src[1] & 0x3f) << 6 | (src[2] & 0x3f);
+			src += 3;
+		} else {
+			if (substitution_char < 0)
+				error("Unsupported UTF-8 sequence");
+			*dstp++ = substitution_char;
+			do src++; while ((*src & 0xc0) == 0x80);
+			continue;
+		}
+
+		if (u > 0xff60 && u <= 0xff9f) {
+			*dstp++ = u - 0xff60 + 0xa0;
+		} else {
+			int c = unicode_to_sjis(u);
+			if (c) {
+				*dstp++ = c >> 8;
+				*dstp++ = c & 0xff;
+			} else {
+				if (substitution_char < 0)
+					error("Codepoint U+04X cannot be converted to Shift_JIS", u);
+				*dstp++ = substitution_char;
+			}
+		}
 	}
-	size_t ilen = strlen(str);
-	char *ip = (char *)str;
-	size_t olen = ilen + 1;
-	char *obuf = malloc(olen);
-	char *op = obuf;
-	if (iconv(iconv_u2s, &ip, &ilen, &op, &olen) == (size_t)-1)
-		error("iconv: %s", strerror(errno));
-	*op = '\0';
-	return obuf;
+	*dstp = '\0';
+	return (char*)dst;
 #endif
 }
 

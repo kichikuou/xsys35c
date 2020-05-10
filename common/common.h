@@ -49,8 +49,10 @@ int make_dir(const char *path);
 
 // sjisutf.c
 
-char *sjis2utf(const char *str);
-char *utf2sjis(const char *str);
+#define sjis2utf(s) sjis2utf_sub((s), -1)
+#define utf2sjis(s) utf2sjis_sub((s), -1)
+char *sjis2utf_sub(const char *str, int substitution_char);
+char *utf2sjis_sub(const char *str, int substitution_char);
 uint8_t to_sjis_half_kana(uint8_t c1, uint8_t c2);
 uint16_t from_sjis_half_kana(uint8_t c);
 
