@@ -1718,10 +1718,11 @@ static void write_config(const char *path) {
 		case SCO_S380: fputs("sys_ver = 3.8\n", fp); break;
 		}
 	}
-	if (config.utf8) {
-		fputs("encoding = utf8\n", fp);
+
+	fprintf(fp, "encoding = %s\n", config.utf8 ? "utf8" : "sjis");
+	if (config.utf8)
 		convert_to_utf8(fp);
-	}
+
 	fclose(fp);
 }
 
