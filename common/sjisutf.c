@@ -142,15 +142,26 @@ bool is_unicode_safe(uint8_t c1, uint8_t c2) {
 }
 
 static int unicode_to_sjis(int u) {
-	for (int b1 = 0x81; b1 <= 0xff; b1++) {
-		if (b1 >= 0xa0 && b1 <= 0xdf)
-			continue;
-		for (int b2 = 0x40; b2 <= 0xff; b2++) {
-			if (u == s2u[b1 - 0x80][b2 - 0x40])
-				return b1 << 8 | b2;
+	if (u < 128)
+		return u;
+	if (u > 0xffff)
+		return 0;
+
+	static uint16_t *u2s = NULL;
+	if (!u2s) {
+		// Create a reverse lookup table from s2u.
+		u2s = calloc(0x10000, sizeof(uint16_t));
+		for (int b1 = 0x81; b1 <= 0xfc; b1++) {
+			if (b1 >= 0xa0 && b1 <= 0xdf)
+				continue;
+			for (int b2 = 0x40; b2 <= 0xfc; b2++) {
+				uint16_t u = s2u[b1 - 0x80][b2 - 0x40];
+				if (u && !u2s[u])
+					u2s[u] = b1 << 8 | b2;
+			}
 		}
 	}
-	return 0;
+	return u2s[u];
 }
 
 bool is_valid_sjis(uint8_t c1, uint8_t c2) {
