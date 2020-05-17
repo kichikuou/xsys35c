@@ -440,7 +440,6 @@ static void dll_call(void) {
 
 // Compile command arguments. Directives:
 //  e: expression
-//  f: file name
 //  n: number (ascii digits)
 //  s: string (colon-terminated)
 //  v: variable
@@ -462,7 +461,6 @@ static void arguments(const char *sig) {
 		case 'n':
 			emit(out, get_number());
 			break;
-		case 'f':
 		case 's':
 		case 'z':
 			while (isspace(*input))
@@ -470,12 +468,8 @@ static void arguments(const char *sig) {
 			if (*input == '"') {
 				expect('"');
 				compile_string(out, '"', false);
-			} else if (*sig == 'f') {
-				skip_whitespaces();
-				char *filename = get_filename();
-				emit_string(out, filename);
 			} else {
-				while (*input != ':') {
+				while (*input != ',' && *input != ':') {
 					if (!*input)
 						error_at(top, "unfinished string argument");
 					echo(out);
@@ -880,7 +874,7 @@ static bool command(void) {
 	case CMD2('K', 'W'): arguments("ve"); break;
 	case CMD2('L', 'C'): arguments("ees"); break;
 	case CMD2('L', 'D'): arguments("e"); break;
-	case CMD2('L', 'E'): arguments("nfee"); break;
+	case CMD2('L', 'E'): arguments("nsee"); break;
 	case CMD3('L', 'H', 'D'): arguments("ne"); break;
 	case CMD3('L', 'H', 'G'): arguments("ne"); break;
 	case CMD3('L', 'H', 'M'): arguments("ne"); break;
@@ -976,7 +970,7 @@ static bool command(void) {
 		break;
 	case CMD2('Q', 'C'): arguments("ee"); break;
 	case CMD2('Q', 'D'): arguments("e"); break;
-	case CMD2('Q', 'E'): arguments("nfee"); break;
+	case CMD2('Q', 'E'): arguments("nsee"); break;
 	case CMD2('Q', 'P'): arguments("eve"); break;
 	case 'R': break;
 	case CMD2('S', 'C'): arguments("v"); break;

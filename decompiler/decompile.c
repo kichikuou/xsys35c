@@ -600,6 +600,13 @@ static void loop_end(Vector *branch_end_stack) {
 	}
 }
 
+// Decompile command arguments. Directives:
+//  e: expression
+//  n: number (single-byte)
+//  s: string (colon-terminated)
+//  v: variable
+//  z: string (zero-terminated)
+//  F: function name
 static void arguments(const char *sig) {
 	const char *sep = " ";
 	for (; *sig; sig++) {
@@ -615,7 +622,6 @@ static void arguments(const char *sig) {
 			dc_printf("%d", *dc.p++);
 			break;
 		case 's':
-		case 'f':
 		case 'z':
 			{
 				uint8_t terminator = *sig == 'z' ? 0 : ':';
@@ -1256,7 +1262,7 @@ static void decompile_page(int page) {
 		case CMD2('K', 'W'): arguments("ve"); break;
 		case CMD2('L', 'C'): arguments("ees"); break;
 		case CMD2('L', 'D'): arguments("e"); break;
-		case CMD2('L', 'E'): arguments("nfee"); break;
+		case CMD2('L', 'E'): arguments("nsee"); break;
 		case CMD3('L', 'H', 'D'): arguments("ne"); break;
 		case CMD3('L', 'H', 'G'): arguments("ne"); break;
 		case CMD3('L', 'H', 'M'): arguments("ne"); break;
@@ -1352,7 +1358,7 @@ static void decompile_page(int page) {
 			break;
 		case CMD2('Q', 'C'): arguments("ee"); break;
 		case CMD2('Q', 'D'): arguments("e"); break;
-		case CMD2('Q', 'E'): arguments("nfee"); break;
+		case CMD2('Q', 'E'): arguments("nsee"); break;
 		case CMD2('Q', 'P'): arguments("eve"); break;
 		case 'R': break;
 		case CMD2('S', 'C'): arguments("v"); break;
