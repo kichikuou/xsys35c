@@ -44,6 +44,5 @@ xsys35c -p xsys35c.cfg
 If you want to use the official System 3.x SDK, specify the generated `xsys35dc.hed` file in the `DIR.HED` file of your project directory.
 
 ## Bugs
-- `xsys35dc` uses UTF-8 encoding for filesystem paths and console output. This could be problematic in Windows.
 - Scenario files of some games cannot be decompiled. See [README.md](../README.md) for the list of such games.
 - `xsys35dc` tries to extract strings from data area using heuristics, but this sometimes fails.

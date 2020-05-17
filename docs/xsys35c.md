@@ -95,4 +95,3 @@ A `.hel` file contains a list of functions (and their argument types) exported b
 
 ## Bugs
 - Although `xsys35c` accepts source files in UTF-8 encoding, characters outside the Shift_JIS character set cannot be used, even in comments.
-- `xsys35c` uses UTF-8 encoding for filesystem paths and console output. This could be problematic in Windows.

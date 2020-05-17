@@ -39,7 +39,7 @@ typedef enum {
 
 char *strndup_(const char *s, size_t n);
 noreturn void error(char *fmt, ...);
-FILE *checked_fopen(const char *path, const char *mode);
+FILE *checked_fopen(const char *path_utf8, const char *mode);
 
 #define PATH_SEPARATOR '/'
 const char *basename(const char *path);

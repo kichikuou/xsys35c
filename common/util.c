@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #if defined(_WIN32)
+#include <windows.h>
 #include <direct.h>
 #else
 #include <sys/stat.h>
@@ -41,10 +42,19 @@ noreturn void error(char *fmt, ...) {
 	exit(1);
 }
 
-FILE *checked_fopen(const char *path, const char *mode) {
-	FILE *fp = fopen(path, mode);
+FILE *checked_fopen(const char *path_utf8, const char *mode) {
+#ifdef _WIN32
+	wchar_t wpath[PATH_MAX + 1];
+	if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path_utf8, -1, wpath, PATH_MAX + 1))
+		error("MultiByteToWideChar(\"%s\") failed with error code 0x%x", path_utf8, GetLastError());
+	wchar_t wmode[64];
+	mbstowcs(wmode, mode, 64);
+	FILE *fp = _wfopen(wpath, wmode);
+#else
+	FILE *fp = fopen(path_utf8, mode);
+#endif
 	if (!fp)
-		error("cannot open %s: %s", path, strerror(errno));
+		error("cannot open %s: %s", path_utf8, strerror(errno));
 	return fp;
 }
 
