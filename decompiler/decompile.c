@@ -69,8 +69,12 @@ typedef struct {
 
 static Decompiler dc;
 
+static inline Sco *current_sco(void) {
+	return dc.scos->data[dc.page];
+}
+
 static inline int dc_addr(void) {
-	return dc.p - ((Sco *)dc.scos->data[dc.page])->data;
+	return dc.p - current_sco()->data;
 }
 
 static const uint8_t *code_at(int page, int addr) {
@@ -130,10 +134,10 @@ static void maybe_escape(char c) {
 		dc_putc('\\');
 }
 
-static void dc_puts_escaped(const char *s) {
+static void dc_puts_escaped(const char *s, char terminator) {
 	if (!dc.out)
 		return;
-	while (*s) {
+	while (*s != terminator) {
 		if (is_valid_sjis(s[0], s[1])) {
 			if (config.utf8 && !is_unicode_safe(s[0], s[1])) {
 				dc_printf("<0x%04X>", (uint8_t)s[0] << 8 | (uint8_t)s[1]);
@@ -221,7 +225,7 @@ static void data_block(const uint8_t *p, const uint8_t *end) {
 	if (!dc.out)
 		return;
 
-	bool conv_half_to_full = ((Sco *)dc.scos->data[dc.page])->version <= SCO_S351;
+	bool conv_half_to_full = current_sco()->version <= SCO_S351;
 
 	while (p < end) {
 		indent();
@@ -308,7 +312,7 @@ static void conditional(Vector *branch_end_stack) {
 	case '@':
 		if (!dc.disable_else) {
 			uint32_t addr = le32(epilogue + 1);
-			if (endaddr <= addr && addr <= ((Sco *)dc.scos->data[dc.page])->filesize) {
+			if (endaddr <= addr && addr <= current_sco()->filesize) {
 				if (surrounding_else && stack_top(branch_end_stack) == addr) {
 					stack_pop(branch_end_stack);
 					annotate(surrounding_else, ELSE_IF);
@@ -612,16 +616,20 @@ static void arguments(const char *sig) {
 			break;
 		case 's':
 		case 'f':
-			while (*dc.p != ':')
-				dc_putc(*dc.p++);
-			dc.p++;  // skip ':'
-			break;
 		case 'z':
-			dc_putc('"');
-			while (*dc.p)
-				dc_putc(*dc.p++);
-			dc.p++;  // skip '\0'
-			dc_putc('"');
+			{
+				uint8_t terminator = *sig == 'z' ? 0 : ':';
+				if (current_sco()->version <= SCO_S360) {
+					while (*dc.p != terminator)
+						dc_putc(*dc.p++);
+					dc.p++;
+				} else {
+					dc_putc('"');
+					dc_puts_escaped((const char *)dc.p, terminator);
+					dc.p = (const uint8_t *)strchr((const char *)dc.p, terminator) + 1;
+					dc_putc('"');
+				}
+			}
 			break;
 		case 'o':  // obfuscated string
 			if (*dc.p != 0)
@@ -889,7 +897,7 @@ static void ain_msg(const char *cmd, const char *args) {
 	}
 
 	dc_putc('\'');
-	dc_puts_escaped(dc.ain->messages->data[id]);
+	dc_puts_escaped(dc.ain->messages->data[id], '\0');
 	dc_putc('\'');
 }
 
@@ -1513,7 +1521,7 @@ static void decompile_page(int page) {
 		case COMMAND_msg:
 			dc.disable_ain_message = true;
 			dc_putc('\'');
-			dc_puts_escaped((const char *)dc.p);
+			dc_puts_escaped((const char *)dc.p, '\0');
 			dc.p += strlen((const char *)dc.p) + 1;
 			dc_putc('\'');
 			break;

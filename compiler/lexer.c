@@ -180,7 +180,7 @@ int get_number(void) {
 	return n;
 }
 
-void compile_string(Buffer *b, char terminator) {
+void compile_string(Buffer *b, char terminator, bool compact) {
 	const char *top = input;
 	while (*input != terminator) {
 		if (*input == '<') {
@@ -192,7 +192,7 @@ void compile_string(Buffer *b, char terminator) {
 		if (*input == '\\')
 			input++;
 		if (!*input)
-			error_at(top, "unfinished message");
+			error_at(top, "unfinished string");
 		if (isprint(*input)) {
 			emit(b, *input++);
 			continue;
@@ -202,7 +202,7 @@ void compile_string(Buffer *b, char terminator) {
 		if (!is_sjis_byte1(c1) || !is_sjis_byte2(c2))
 			error_at(input - 2, "invalid SJIS character: %02x %02x", c1, c2);
 		uint8_t hk = 0;
-		if (config.sys_ver == SYSTEM35)
+		if (compact)
 			hk = to_sjis_half_kana(c1, c2);
 		if (hk) {
 			emit(b, hk);

@@ -459,26 +459,21 @@ static void arguments(const char *sig) {
 		case 'e':
 			expr();
 			break;
-		case 'f':
-			{
-				skip_whitespaces();
-				char *filename = get_filename();
-				emit_string(out, filename);
-				emit(out, ':');
-			}
-			break;
 		case 'n':
 			emit(out, get_number());
 			break;
+		case 'f':
 		case 's':
 		case 'z':
 			while (isspace(*input))
 				input++;  // Do not consume full-width spaces here
 			if (*input == '"') {
-				input++;
-				while (*input && *input != '"')
-					echo(out);
 				expect('"');
+				compile_string(out, '"', false);
+			} else if (*sig == 'f') {
+				skip_whitespaces();
+				char *filename = get_filename();
+				emit_string(out, filename);
 			} else {
 				while (*input != ':') {
 					if (!*input)
@@ -486,7 +481,7 @@ static void arguments(const char *sig) {
 					echo(out);
 				}
 			}
-			emit(out, *sig == 's' ? ':' : 0);
+			emit(out, *sig == 'z' ? 0 : ':');
 			break;
 		case 'o': // obfuscated string
 			emit(out, 0);
@@ -673,7 +668,7 @@ static bool command(void) {
 			compile_message(out);
 			break;
 		default:
-			compile_string(out, '\'');
+			compile_string(out, '\'', config.sys_ver == SYSTEM35);
 			break;
 		}
 		break;
@@ -750,7 +745,7 @@ static bool command(void) {
 		label();
 		expect('$');
 		if (is_sjis_byte1(*input) || is_sjis_half_kana(*input)) {
-			compile_string(out, '$');
+			compile_string(out, '$', config.sys_ver == SYSTEM35);
 			emit(out, '$');
 		} else {
 			menu_item_start = command_top;
@@ -771,7 +766,7 @@ static bool command(void) {
 		break;
 
 	case '"':  // String data
-		compile_string(out, '"');
+		compile_string(out, '"', config.sys_ver == SYSTEM35);
 		emit(out, 0);
 		break;
 
