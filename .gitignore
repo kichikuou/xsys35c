@@ -1,4 +1,5 @@
 *.o
+*.exe
 *~
 compiler/xsys35c
 decompiler/xsys35dc

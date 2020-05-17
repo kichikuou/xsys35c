@@ -213,6 +213,8 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *a
 }
 
 int main(int argc, char *argv[]) {
+	init();
+
 	const char *project = NULL;
 	const char *output = "adisk.ald";
 	const char *output_ain = "System39.ain";

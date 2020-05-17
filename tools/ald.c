@@ -280,6 +280,8 @@ static int do_help(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
+	init();
+
 	if (argc == 1) {
 		usage();
 		return 1;

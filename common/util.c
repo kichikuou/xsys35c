@@ -20,12 +20,18 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#if defined(_WIN32)
+#ifdef _WIN32
 #include <windows.h>
 #include <direct.h>
 #else
 #include <sys/stat.h>
 #endif
+
+void init(void) {
+#ifdef _WIN32
+	SetConsoleOutputCP(CP_UTF8);
+#endif
+}
 
 char *strndup_(const char *s, size_t n) {
 	char *buf = malloc(n + 1);

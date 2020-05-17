@@ -95,6 +95,8 @@ void convert_to_utf8(FILE *fp) {
 }
 
 int main(int argc, char *argv[]) {
+	init();
+
 	const char *outdir = NULL;
 	bool seq = false;
 
