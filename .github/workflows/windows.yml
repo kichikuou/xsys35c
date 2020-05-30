@@ -1,0 +1,35 @@
+name: Windows CI
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-2019
+    strategy:
+      matrix:
+        mingw: ["MINGW32", "MINGW64"]
+    defaults:
+      run:
+        shell: bash.exe --login -eo pipefail "{0}"
+    env:
+      MSYSTEM: ${{ matrix.mingw }}
+      CHERE_INVOKING: 1
+    name: MSYS2 ${{ matrix.mingw }}
+    steps:
+
+    - name: Set up shell
+      run: echo ::add-path::C:\msys64\usr\bin\
+      shell: pwsh
+
+    - name: Print system version
+      run: |
+        uname
+        echo PATH: $PATH
+
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Build
+      run: make
+
+    - name: Test
+      run: make test
