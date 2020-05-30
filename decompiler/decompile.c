@@ -221,19 +221,21 @@ static bool is_string_data(const uint8_t *begin, const uint8_t *end, bool conv_h
 	return false;
 }
 
-static void data_block(const uint8_t *p, const uint8_t *end) {
-	if (!dc.out)
+static void data_block(const uint8_t *end) {
+	if (!dc.out) {
+		dc.p = end;
 		return;
+	}
 
 	bool conv_half_to_full = current_sco()->version <= SCO_S351;
 
-	while (p < end) {
+	while (dc.p < end) {
 		indent();
-		if (is_string_data(p, end, conv_half_to_full) ||
-			(*p == '\0' && is_string_data(p + 1, end, conv_half_to_full))) {
+		if (is_string_data(dc.p, end, conv_half_to_full) ||
+			(*dc.p == '\0' && is_string_data(dc.p + 1, end, conv_half_to_full))) {
 			dc_putc('"');
-			while (*p) {
-				uint8_t c = *p++;
+			while (*dc.p) {
+				uint8_t c = *dc.p++;
 				if (conv_half_to_full && c == ' ') {
 					dc_puts("\x81\x40"); // full-width space
 				} else if (isprint(c)) {
@@ -245,7 +247,7 @@ static void data_block(const uint8_t *p, const uint8_t *end) {
 					dc_putc(full & 0xff);
 				} else {
 					assert(is_sjis_byte1(c));
-					uint8_t c2 = *p++;
+					uint8_t c2 = *dc.p++;
 					if (config.utf8 && !is_unicode_safe(c, c2)) {
 						dc_printf("<0x%04X>", c << 8 | c2);
 					} else {
@@ -255,18 +257,18 @@ static void data_block(const uint8_t *p, const uint8_t *end) {
 				}
 			}
 			dc_puts("\"\n");
-			p++;
+			dc.p++;
 			continue;
 		}
 
 		dc_putc('[');
 		const char *sep = "";
-		for (; p < end && !is_string_data(p, end, conv_half_to_full); p += 2) {
-			if (p + 1 == end) {
-				warning_at(p, "data block with odd number of bytes");
-				dc_printf("%s%db", sep, p[0]);
+		for (; dc.p < end && !is_string_data(dc.p, end, conv_half_to_full); dc.p += 2) {
+			if (dc.p + 1 == end) {
+				warning_at(dc.p, "data block with odd number of bytes");
+				dc_printf("%s%db", sep, dc.p[0]);
 			} else {
-				dc_printf("%s%d", sep, p[0] | p[1] << 8);
+				dc_printf("%s%d", sep, dc.p[0] | dc.p[1] << 8);
 			}
 			sep = ", ";
 		}
@@ -1005,8 +1007,7 @@ static void decompile_page(int page) {
 				if (sco->mark[data_end - sco->data] & ~DATA)
 					break;
 			}
-			data_block(dc.p, data_end);
-			dc.p = data_end;
+			data_block(data_end);
 			continue;
 		}
 		if ((mark & TYPE_MASK) == ELSE_IF && !dc.disable_else) {
