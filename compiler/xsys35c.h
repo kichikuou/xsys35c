@@ -35,6 +35,7 @@ typedef struct {
 	bool utf8;
 	bool disable_else;
 	bool disable_ain_message;
+	bool disable_ain_variable;
 	bool old_SR;
 } Config;
 extern Config config;
@@ -95,6 +96,7 @@ int get_command(Buffer *b);
 // compile.c
 
 typedef struct {
+	const char *name;
 	bool resolved;
 	uint16_t page;
 	uint32_t addr;

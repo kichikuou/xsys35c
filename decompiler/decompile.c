@@ -64,6 +64,7 @@ typedef struct {
 
 	bool disable_else;
 	bool disable_ain_message;
+	bool disable_ain_variable;
 	bool old_SR;
 } Decompiler;
 
@@ -1723,6 +1724,8 @@ static void write_config(const char *path) {
 		fputs("sys_ver = 3.9\n", fp);
 		if (dc.disable_ain_message)
 			fputs("disable_ain_message = true\n", fp);
+		if (dc.disable_ain_variable)
+			fputs("disable_ain_variable = true\n", fp);
 	} else {
 		Sco *sco = dc.scos->data[0];
 		switch (sco->version) {
@@ -1801,6 +1804,7 @@ void decompile(Vector *scos, Ain *ain, const char *outdir) {
 	dc.ain = ain;
 	dc.variables = (ain && ain->variables) ? ain->variables : new_vec();
 	dc.functions = (ain && ain->functions) ? ain->functions : new_map();
+	dc.disable_ain_variable = ain && !ain->variables;
 
 	for (int i = 0; i < dc.functions->vals->len; i++) {
 		Function *f = dc.functions->vals->data[i];

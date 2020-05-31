@@ -237,6 +237,7 @@ static void defun(void) {
 		if (hash_get(compiler->functions, name))
 			error_at(top, "function '%s' redefined", name);
 		Function *func = calloc(1, sizeof(Function));
+		func->name = name;
 		func->params = new_vec();
 
 		bool needs_comma = false;

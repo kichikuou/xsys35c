@@ -42,8 +42,19 @@ static void ain_emit_HEL0(Buffer *out, Map *dlls) {
 	}
 }
 
-static int func_compare(const void *a, const void *b) {
-	return strcmp(*(const char **)a, *(const char **)b);
+static int func_compare_by_name(const void *a, const void *b) {
+	const Function *fa = *(const Function **)a;
+	const Function *fb = *(const Function **)b;
+	return strcmp(fa->name, fb->name);
+}
+
+static int func_compare_by_addr(const void *a, const void *b) {
+	const Function *fa = *(const Function **)a;
+	const Function *fb = *(const Function **)b;
+	if (fa->page != fb->page)
+		return fa->page - fb->page;
+	else
+		return fa->addr - fb->addr;
 }
 
 static void ain_emit_FUNC(Buffer *out, HashMap *functions) {
@@ -54,19 +65,21 @@ static void ain_emit_FUNC(Buffer *out, HashMap *functions) {
 	emit_dword(out, 0);  // reserved
 
 	int nfunc = functions->occupied;
-	const char **sorted_keys = malloc(nfunc * sizeof(const char *));
-	const char **p = sorted_keys;
+	const Function **items = malloc(nfunc * sizeof(const Function *));
+	const Function **p = items;
 	for (HashItem *i = hash_iterate(functions, NULL); i; i = hash_iterate(functions, i))
-		*p++ = i->key;
-	qsort(sorted_keys, nfunc, sizeof(const char *), func_compare);
+		*p++ = (Function *)i->val;
+	if (config.disable_ain_variable)  // FIXME: Use a dedicated config for this.
+		qsort(items, nfunc, sizeof(const Function *), func_compare_by_addr);
+	else
+		qsort(items, nfunc, sizeof(const Function *), func_compare_by_name);
 
 	emit_dword(out, nfunc);
 	for (int i = 0; i < nfunc; i++) {
-		emit_string(out, sorted_keys[i]);
+		emit_string(out, items[i]->name);
 		emit(out, 0);
-		Function *f = hash_get(functions, sorted_keys[i]);
-		emit_word(out, f->page);
-		emit_dword(out, f->addr);
+		emit_word(out, items[i]->page);
+		emit_dword(out, items[i]->addr);
 	}
 }
 
@@ -104,7 +117,8 @@ void ain_write(Compiler *compiler, FILE *fp) {
 	emit_dword(out, 4);
 	ain_emit_HEL0(out, compiler->dlls);
 	ain_emit_FUNC(out, compiler->functions);
-	ain_emit_VARI(out, compiler->variables);
+	if (!config.disable_ain_variable)
+		ain_emit_VARI(out, compiler->variables);
 	if (compiler->msg_count > 0)
 		ain_emit_MSGI_head(out, compiler->msg_count);
 	ain_write_buf(out, fp);
