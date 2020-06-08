@@ -1037,8 +1037,8 @@ static void decompile_page(int page) {
 		if (*dc.p == '>')
 			dc.indent--;
 		indent();
-		sco->mark[dc.p - sco->data] |= CODE;
 		if (*dc.p == 0x20 || *dc.p > 0x80) {
+			uint8_t *mark_at_string_start = &sco->mark[dc.p - sco->data];
 			dc_putc('\'');
 			while (*dc.p == 0x20 || *dc.p > 0x80) {
 				uint8_t c = *dc.p++;
@@ -1061,8 +1061,17 @@ static void decompile_page(int page) {
 					break;
 			}
 			dc_puts("'\n");
+			if (*dc.p == '\0') {
+				// String data in code area. This happens when the author
+				// accidentally use double quotes instead of single quotes.
+				*mark_at_string_start |= DATA;
+				dc.p++;
+			} else {
+				*mark_at_string_start |= CODE;
+			}
 			continue;
 		}
+		sco->mark[dc.p - sco->data] |= CODE;
 		if ((mark & TYPE_MASK) == FOR_START) {
 			assert(*dc.p == '!');
 			dc.p++;
