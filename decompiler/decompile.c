@@ -1687,7 +1687,11 @@ static void scan_for_data_tables(Sco *sco) {
 	while (p < end && (p = memchr(p, '#', end - p)) != NULL) {
 		uint32_t ptr_addr = le32(++p);
 		if (ptr_addr >= sco->hdrsize && ptr_addr <= sco->filesize - 4) {
-			sco->mark[ptr_addr] |= DATA;
+			// Mark only backward references heuristically. Forward references
+			// will be marked in the analyze phase.
+			if (ptr_addr < p - sco->data)
+				sco->mark[ptr_addr] |= DATA;
+
 			uint32_t data_addr = le32(sco->data + ptr_addr);
 			if (data_addr >= sco->hdrsize && data_addr < sco->filesize) {
 				sco->mark[data_addr] |= DATA;
