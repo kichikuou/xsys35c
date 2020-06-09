@@ -349,7 +349,7 @@ static void func_labels(uint16_t page, uint32_t addr) {
 			dc_puts("**");
 			dc_puts(dc.functions->keys->data[i]);
 			for (int i = 0; i < f->argc; i++) {
-				dc_putc(',');
+				dc_putc(i == 0 ? ' ' : ',');
 				Cali node = {.type = NODE_VARIABLE, .val = f->argv[i]};
 				print_cali(&node, dc.variables, dc.out);
 			}
@@ -404,8 +404,8 @@ static uint16_t get_next_assignment_var(Sco *sco, uint32_t *addr) {
 	return node->val;
 }
 
-// When a function Func is defined as "**Func,var1,...,varn:", a call to this
-// function "~func,arg1,...,argn:" is compiled to this command sequence:
+// When a function Func is defined as "**Func var1,...,varn:", a call to this
+// function "~func arg1,...,argn:" is compiled to this command sequence:
 //  !var1:arg1!
 //      ...
 //  !varn:argn!
@@ -523,10 +523,12 @@ static bool funcall_with_args(void) {
 	assert(argc == func->argc);
 	dc_putc('~');
 	dc_puts(func->name);
+	char sep = ' ';
 	while (argc-- > 0) {
 		dc.p++;  // skip '!'
 		parse_cali(&dc.p, true);  // skip varname
-		dc_putc(',');
+		dc_putc(sep);
+		sep = ',';
 		cali(false);
 	}
 	dc_putc(':');

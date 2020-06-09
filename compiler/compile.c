@@ -227,7 +227,7 @@ static void label(void) {
 	}
 }
 
-// defun ::= '**' name (',' var)* ':'
+// defun ::= '**' name (var (',' var)*)? ':'
 static void defun(void) {
 	const char *top = input;
 	char *name = get_label();
@@ -244,8 +244,6 @@ static void defun(void) {
 		while (!consume(':')) {
 			if (needs_comma)
 				expect(',');
-			else
-				consume(',');
 			needs_comma = true;
 			vec_push(func->params, get_identifier());
 		}
@@ -293,7 +291,7 @@ static void defun(void) {
 	expect(':');
 }
 
-//    funcall ::= '~' name (',' var)* ':'
+//    funcall ::= '~' name (var (',' var)*)? ':'
 //     return ::= '~0' ',' expr ':'
 // get-retval ::= '~~' ',' var ':'
 static void funcall(void) {
@@ -321,8 +319,6 @@ static void funcall(void) {
 		while (!consume(':')) {
 			if (needs_comma)
 				expect(',');
-			else
-				consume(',');
 			needs_comma = true;
 			expr();
 		}
