@@ -402,6 +402,14 @@ static void dll_arguments(DLLFunc *f) {
 			emit(out, OP_END);
 			break;
 		case HEL_IConstString:
+			if (need_comma)
+				expect(',');
+			expect('"');
+			compile_string(out, '"', false);
+			emit(out, 0);
+			need_comma = true;
+			break;
+		default:
 			error("argtype %d not implemented", f->argtypes[i]);
 		}
 	}

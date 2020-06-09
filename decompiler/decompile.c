@@ -953,8 +953,15 @@ static void dll_call(void) {
 			dc.p += 2;  // ??
 			break;
 		case HEL_IConstString:
+			dc_puts(sep);
+			sep = ",";
+			dc_putc('"');
+			dc_puts_escaped((const char *)dc.p, '\0');
+			dc.p += strlen((const char *)dc.p) + 1;
+			dc_putc('"');
+			break;
 		default:
-			error("argtype %d not implemented", f->argtypes[i]);
+			error_at(dc.p, "argtype %d not implemented", f->argtypes[i]);
 		}
 	}
 	dc_putc(':');
