@@ -40,6 +40,7 @@ typedef struct {
 } Function;
 
 typedef struct {
+	const char *filename;
 	Map *dlls;         // dllname -> Vector<DLLFunc>
 	Map *functions;    // funcname -> Function
 	Vector *variables;
@@ -75,7 +76,7 @@ typedef struct {
 
 extern Config config;
 
-void decompile(Vector *scos, Ain *ain, const char *outdir);
+void decompile(Vector *scos, Ain *ain, const char *outdir, const char *aldname);
 noreturn void error_at(const uint8_t *pos, char *fmt, ...);
 void warning_at(const uint8_t *pos, char *fmt, ...);
 

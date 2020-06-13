@@ -1731,10 +1731,14 @@ static void scan_for_data_tables(Sco *sco) {
 	}
 }
 
-static void write_config(const char *path) {
+static void write_config(const char *path, const char *aldname) {
 	if (dc.scos->len == 0)
 		return;
 	FILE *fp = checked_fopen(path, "w+");
+	fprintf(fp, "output_ald = %s\n", aldname);
+	if (dc.ain)
+		fprintf(fp, "output_ain = %s\n", dc.ain->filename);
+
 	fputs("hed = xsys35dc.hed\n", fp);
 	fputs("variables = variables.txt\n", fp);
 	if (dc.disable_else)
@@ -1760,8 +1764,6 @@ static void write_config(const char *path) {
 	}
 
 	fprintf(fp, "encoding = %s\n", config.utf8 ? "utf8" : "sjis");
-	if (config.utf8)
-		convert_to_utf8(fp);
 
 	fclose(fp);
 }
@@ -1820,7 +1822,7 @@ void warning_at(const uint8_t *pos, char *fmt, ...) {
 	fputc('\n', stderr);
 }
 
-void decompile(Vector *scos, Ain *ain, const char *outdir) {
+void decompile(Vector *scos, Ain *ain, const char *outdir, const char *aldname) {
 	memset(&dc, 0, sizeof(dc));
 	dc.scos = scos;
 	dc.ain = ain;
@@ -1873,7 +1875,7 @@ void decompile(Vector *scos, Ain *ain, const char *outdir) {
 	if (config.verbose)
 		puts("Generating config files...");
 
-	write_config(path_join(outdir, "xsys35c.cfg"));
+	write_config(path_join(outdir, "xsys35c.cfg"), aldname);
 	write_hed(path_join(outdir, "xsys35dc.hed"), ain ? ain->dlls : NULL);
 	write_variables(path_join(outdir, "variables.txt"));
 	if (ain && ain->dlls)

@@ -23,6 +23,9 @@
 #include <string.h>
 #include <time.h>
 
+#define DEFAULT_OUTPUT_ALD "adisk.ald"
+#define DEFAULT_OUTPUT_AIN "System39.ain"
+
 static const char short_options[] = "a:E:hi:o:p:s:V:v";
 static const struct option long_options[] = {
 	{ "ain",       required_argument, NULL, 'a' },
@@ -40,12 +43,12 @@ static const struct option long_options[] = {
 static void usage(void) {
 	puts("Usage: xsys35c [options] file...");
 	puts("Options:");
-	puts("    -a, --ain <file>          Write .ain output to <file> (default: System39.ain)");
+	puts("    -a, --ain <file>          Write .ain output to <file> (default: " DEFAULT_OUTPUT_AIN ")");
 	puts("    -Es, --encoding=sjis      Set input coding system to SJIS");
 	puts("    -Eu, --encoding=utf8      Set input coding system to UTF-8 (default)");
 	puts("    -i, --hed <file>          Read compile header (.hed) from <file>");
 	puts("    -h, --help                Display this message and exit");
-	puts("    -o, --output <file>       Write output to <file> (default: adisk.ald)");
+	puts("    -o, --output <file>       Write output to <file> (default: " DEFAULT_OUTPUT_ALD ")");
 	puts("    -p, --project <file>      Read project configuration from <file>");
 	puts("    -s, --sys-ver <ver>       Target System version (3.5|3.6|3.8(default)|3.9)");
 	puts("    -V, --variables <file>    Read list of variables from <file>");
@@ -216,8 +219,8 @@ int main(int argc, char *argv[]) {
 	init();
 
 	const char *project = NULL;
-	const char *output = "adisk.ald";
-	const char *output_ain = "System39.ain";
+	const char *output_ald = NULL;
+	const char *output_ain = NULL;
 	const char *hed = NULL;
 	const char *var_list = NULL;
 
@@ -241,7 +244,7 @@ int main(int argc, char *argv[]) {
 			hed = optarg;
 			break;
 		case 'o':
-			output = optarg;
+			output_ald = optarg;
 			break;
 		case 'p':
 			project = optarg;
@@ -281,6 +284,10 @@ int main(int argc, char *argv[]) {
 		hed = config.hed;
 	if (!var_list && config.var_list)
 		var_list = config.var_list;
+	if (!output_ald)
+		output_ald = config.output_ald ? config.output_ald : DEFAULT_OUTPUT_ALD;
+	if (!output_ain)
+		output_ain = config.output_ain ? config.output_ain : DEFAULT_OUTPUT_AIN;
 
 	Vector *srcs = new_vec();
 	Map *dlls = new_map();
@@ -292,5 +299,5 @@ int main(int argc, char *argv[]) {
 
 	Vector *vars = var_list ? read_var_list(var_list) : NULL;
 
-	build(srcs, vars, dlls, output, output_ain);
+	build(srcs, vars, dlls, output_ald, output_ain);
 }

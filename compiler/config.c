@@ -88,6 +88,10 @@ void load_config(FILE *fp, const char *cfg_dir) {
 			config.disable_ain_variable = to_bool(val);
 		} else if (sscanf(line, "old_SR = %s", val)) {
 			config.old_SR = to_bool(val);
+		} else if (sscanf(line, "output_ald = %s", val)) {
+			config.output_ald = path_join(cfg_dir, val);
+		} else if (sscanf(line, "output_ain = %s", val)) {
+			config.output_ain = path_join(cfg_dir, val);
 		}
 	}
 }

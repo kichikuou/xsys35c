@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
 	if (outdir && make_dir(outdir) != 0 && errno != EEXIST)
 		error("cannot create directory %s: %s", outdir, strerror(errno));
 
-	decompile(scos, ain, outdir);
+	decompile(scos, ain, outdir, basename(argv[0]));
 
 	return 0;
 }

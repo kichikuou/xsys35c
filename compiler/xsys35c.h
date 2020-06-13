@@ -27,6 +27,9 @@ typedef enum {
 } SysVer;
 
 typedef struct {
+	const char *output_ald;
+	const char *output_ain;
+
 	SysVer sys_ver;
 	ScoVer sco_ver;
 	const char *hed;
