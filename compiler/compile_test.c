@@ -169,6 +169,9 @@ int main() {
 	TEST("const",
 		 "const word C1=1, C2=2: !V:C1+C2!",
 		 "\x21\x80\x41\x42\x79\x7f");
+	TEST("__LINE__",
+		 "!V:__LINE__+\n__LINE__!",
+		 "\x21\x80\x41\x42\x79\x7f");
 
 	TEST("label",
 		 "*lbl:@lbl:",

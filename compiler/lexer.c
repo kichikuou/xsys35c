@@ -25,6 +25,7 @@ const char *input_name;
 int input_page;
 const char *input_buf;
 const char *input;
+int input_line;
 
 noreturn void error_at(const char *pos, char *fmt, ...) {
 	int line = 1;
@@ -56,11 +57,15 @@ void lexer_init(const char *source, const char *name, int pageno) {
 	input_buf = input = source;
 	input_name = name;
 	input_page = pageno;
+	input_line = 1;
 }
 
 void skip_whitespaces(void) {
 	while (*input) {
-		if (isspace(*input)) {
+		if (*input == '\n') {
+			input++;
+			input_line++;
+		} else if (isspace(*input)) {
 			input++;
 		} else if (*input == ';' || (*input == '/' && *(input+1) == '/')) {
 			input = strchr(input, '\n');

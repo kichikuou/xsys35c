@@ -91,11 +91,15 @@ static void expr_prim(void) {
 		error_at(top, "reference to unknown source file: '%s'", fname);
 	} else {
 		char *id = get_identifier();
-		int* cnst = hash_get(compiler->consts, id);
-		if (cnst)
-			emit_number(out, *cnst);
-		else
-			variable(id, false);
+		if (!strcmp(id, "__LINE__")) {
+			emit_number(out, input_line);
+		} else {
+			int* cnst = hash_get(compiler->consts, id);
+			if (cnst)
+				emit_number(out, *cnst);
+			else
+				variable(id, false);
+		}
 	}
 }
 

@@ -76,6 +76,7 @@ extern const char *input_name;
 extern int input_page;
 extern const char *input_buf;
 extern const char *input;
+extern int input_line;
 
 noreturn void error_at(const char *pos, char *fmt, ...);
 void lexer_init(const char *source, const char *name, int pageno);
