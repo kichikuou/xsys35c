@@ -40,7 +40,7 @@ static int lookup_var(char *var, bool create) {
 		if (!strcmp(var, compiler->variables->data[i]))
 			return i;
 	}
-	if (create || compiling) {
+	if (create) {
 		vec_push(compiler->variables, var);
 		return compiler->variables->len - 1;
 	}
@@ -52,7 +52,10 @@ static void expr_equal(void);
 static void commands(void);
 
 static void variable(bool create) {
-	int var = lookup_var(get_identifier(), create);
+	char *id = get_identifier();
+	int var = lookup_var(id, create);
+	if (compiling && var < 0)
+		error_at(input - strlen(id), "Undefined variable '%s'", id);
 	if (consume('[')) {
 		emit(out, 0xc0);
 		emit(out, OP_C0_INDEX);
@@ -280,13 +283,13 @@ static void defun(void) {
 	func->addr = addr;
 	func->resolved = true;
 
-	// Skip parameter names
+	// Check if all parameters are defined as variables.
 	for (int i = 0; i < func->params->len; i++) {
-		if (i == 0)
-			consume(',');
-		else
+		if (i != 0)
 			expect(',');
-		get_identifier();
+		char *id = get_identifier();
+		if (lookup_var(id, false) < 0)
+			error_at(input - strlen(id), "Undefined variable '%s'", id);
 	}
 	expect(':');
 }
@@ -599,7 +602,7 @@ static void while_loop(void) {
 
 // for-loop ::= '<' var ',' expr ',' expr ',' expr ',' expr ':' commands '>'
 static void for_loop(void) {
-	int var_id = lookup_var(get_identifier(), false);
+	int var_id = lookup_var(get_identifier(), true);  // for-loop can define a variable.
 	expect(',');
 
 	emit(out, '!');
