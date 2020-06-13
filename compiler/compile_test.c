@@ -35,17 +35,16 @@ static void test(const char *name, const char *source,
 		  const char *expected, int expected_len) {
 	if (strlen(name) > 14)
 		error("%s: test name must be <= 14 characters.", name);
-	Compiler compiler;
 	Vector *src_names = new_vec();
 	vec_push(src_names, (char *)name);
 	Vector *variables = new_vec();
 	vec_push(variables, "V");
-	compiler_init(&compiler, src_names, variables, NULL);
-	preprocess(&compiler, source, 0);
+	Compiler *compiler = new_compiler(src_names, variables, NULL);
+	preprocess(compiler, source, 0);
 
-	compiler.msg_count = 0;
+	compiler->msg_count = 0;
 
-	Buffer *sco = compile(&compiler, source, 0);
+	Buffer *sco = compile(compiler, source, 0);
 	// Ignore SCO header
 	sco->buf += 32;
 	sco->len -= 32;

@@ -118,7 +118,7 @@ typedef struct {
 	Buffer **scos;
 } Compiler;
 
-void compiler_init(Compiler *compiler, Vector *src_names, Vector *variables, Map *dlls);
+Compiler *new_compiler(Vector *src_names, Vector *variables, Map *dlls);
 void preprocess(Compiler *comp, const char *source, int pageno);
 void preprocess_done(Compiler *comp);
 Buffer *compile(Compiler *comp, const char *source, int pageno);

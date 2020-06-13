@@ -181,20 +181,19 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *a
 		map_put(srcs, utf2sjis(name), read_file(path));
 	}
 
-	Compiler compiler;
-	compiler_init(&compiler, srcs->keys, variables, dlls);
+	Compiler *compiler = new_compiler(srcs->keys, variables, dlls);
 
 	for (int i = 0; i < srcs->keys->len; i++) {
 		const char *source = srcs->vals->data[i];
-		preprocess(&compiler, source, i);
+		preprocess(compiler, source, i);
 	}
 
-	preprocess_done(&compiler);
+	preprocess_done(compiler);
 
 	Vector *ald = new_vec();
 	for (int i = 0; i < srcs->keys->len; i++) {
 		const char *source = srcs->vals->data[i];
-		Buffer *sco = compile(&compiler, source, i);
+		Buffer *sco = compile(compiler, source, i);
 		AldEntry *e = calloc(1, sizeof(AldEntry));
 		e->disk = 1;
 		e->name = sconame(srcs->keys->data[i]);
@@ -206,7 +205,7 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *a
 
 	if (config.sys_ver == SYSTEM39) {
 		FILE *fp = checked_fopen(ain_path, "wb");
-		ain_write(&compiler, fp);
+		ain_write(compiler, fp);
 		fclose(fp);
 	}
 
