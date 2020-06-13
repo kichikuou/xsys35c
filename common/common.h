@@ -320,4 +320,5 @@ enum {
 	// Pseudo commands
 	COMMAND_IF = 0x80,
 	COMMAND_LXWx = 0x81,
+	COMMAND_CONST = 0x82,
 };

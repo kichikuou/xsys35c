@@ -41,6 +41,8 @@ static int lookup_var(char *var, bool create) {
 			return i;
 	}
 	if (create) {
+		if (hash_get(compiler->consts, var))
+			error_at(input - strlen(var), "'%s' is already defined as a constant", var);
 		vec_push(compiler->variables, var);
 		return compiler->variables->len - 1;
 	}
@@ -51,8 +53,7 @@ static void expr(void);
 static void expr_equal(void);
 static void commands(void);
 
-static void variable(bool create) {
-	char *id = get_identifier();
+static void variable(char *id, bool create) {
 	int var = lookup_var(id, create);
 	if (compiling && var < 0)
 		error_at(input - strlen(id), "Undefined variable '%s'", id);
@@ -71,7 +72,7 @@ static void number(void) {
 	emit_number(out, get_number());
 }
 
-// prim ::= '(' equal ')' | number | '#' filename | var
+// prim ::= '(' equal ')' | number | '#' filename | const | var
 static void expr_prim(void) {
 	if (consume('(')) {
 		expr_equal();
@@ -89,7 +90,12 @@ static void expr_prim(void) {
 		}
 		error_at(top, "reference to unknown source file: '%s'", fname);
 	} else {
-		variable(false);
+		char *id = get_identifier();
+		int* cnst = hash_get(compiler->consts, id);
+		if (cnst)
+			emit_number(out, *cnst);
+		else
+			variable(id, false);
 	}
 }
 
@@ -191,6 +197,28 @@ static void expr_equal(void) {
 static void expr(void) {
 	expr_equal();
 	emit(out, OP_END);
+}
+
+// 'const' 'word' identifier '=' constexpr (',' identifier '=' constexpr)* ':'
+static void define_const(void) {
+	if (!consume_keyword("word"))
+		error_at(input, "unknown const type");
+	do {
+		const char *top = input;
+		char *id = get_identifier();
+		consume('=');
+		int val = get_number();  // TODO: Allow expressions
+		if (!compiling) {
+			if (lookup_var(id, false) >= 0)
+				error_at(top, "'%s' is already defined as a variable", id);
+			if (hash_get(compiler->consts, id))
+				error_at(top, "constant '%s' redefined", id);
+			int *pval = malloc(sizeof(int));
+			*pval = val;
+			hash_put(compiler->consts, id, pval);
+		}
+	} while (consume(','));
+	expect(':');
 }
 
 static Label *lookup_label(char *id) {
@@ -301,7 +329,7 @@ static void funcall(void) {
 	if (consume('~')) {
 		emit(out, '~');
 		emit_word(out, 0xffff);
-		variable(false);
+		variable(get_identifier(), false);
 		emit(out, OP_END);
 		expect(':');
 		return;
@@ -494,7 +522,7 @@ static void arguments(const char *sig) {
 			emit(out, 0);
 			break;
 		case 'v':
-			variable(false);
+			variable(get_identifier(), false);
 			emit(out, OP_END);
 			break;
 		case 'F':
@@ -531,7 +559,7 @@ static void arguments(const char *sig) {
 static void assign(void) {
 	int op = current_address(out);
 	emit(out, '!');
-	variable(true);
+	variable(get_identifier(), true);
 	if (consume('+')) {
 		set_byte(out, op, 0x10);
 	} else if (consume('-')) {
@@ -1109,6 +1137,10 @@ static bool command(void) {
 		conditional();
 		break;
 
+	case COMMAND_CONST:
+		define_const();
+		break;
+
 	case COMMAND_TOC: arguments(""); break;
 	case COMMAND_TOS: arguments(""); break;
 	case COMMAND_TPC: arguments("e"); break;
@@ -1299,6 +1331,7 @@ void compiler_init(Compiler *comp, Vector *src_names, Vector *variables, Map *dl
 	memset(comp, 0, sizeof(Compiler));
 	comp->src_names = src_names;
 	comp->variables = variables ? variables : new_vec();
+	comp->consts = new_hash();
 	comp->functions = new_hash();
 	comp->dlls = dlls ? dlls : new_map();
 	comp->scos = calloc(src_names->len, sizeof(Buffer*));

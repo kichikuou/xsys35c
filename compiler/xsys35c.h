@@ -106,6 +106,7 @@ typedef struct {
 typedef struct {
 	Vector *src_names;
 	Vector *variables;
+	HashMap *consts;
 	HashMap *functions;
 	Map *dlls;
 	Buffer *msg_buf;

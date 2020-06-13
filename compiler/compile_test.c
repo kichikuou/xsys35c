@@ -166,6 +166,10 @@ int main() {
 		 "!V:65532!",
 		 "\x21\x80\x3f\xff\x3f\xff\x3f\xff\x3f\xff\x79\x79\x79\x7f");
 
+	TEST("const",
+		 "const word C1=1, C2=2: !V:C1+C2!",
+		 "\x21\x80\x41\x42\x79\x7f");
+
 	TEST("label",
 		 "*lbl:@lbl:",
 		 "\x40\x20\x00\x00\x00");
