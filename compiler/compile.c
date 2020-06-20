@@ -1331,6 +1331,13 @@ static void commands(void) {
 		;
 }
 
+// toplevel ::= commands
+static void toplevel(void) {
+	commands();
+	if (*input)
+		error_at(input, "unexpected '%c'", *input);
+}
+
 Compiler *new_compiler(Vector *src_names, Vector *variables, Map *dlls) {
 	Compiler *comp = calloc(1, sizeof(Compiler));
 	comp->src_names = src_names;
@@ -1360,8 +1367,9 @@ void preprocess(Compiler *comp, const char *source, int pageno) {
 	prepare(comp, source, pageno);
 	compiling = false;
 	labels = NULL;
-	while (next_char())
-		commands();
+
+	toplevel();
+
 	if (menu_item_start)
 		error_at(menu_item_start, "unfinished menu item");
 }
@@ -1380,8 +1388,7 @@ Buffer *compile(Compiler *comp, const char *source, int pageno) {
 	out = new_buf();
 	sco_init(out, comp->src_names->data[pageno], pageno);
 
-	while (next_char())
-		commands();
+	toplevel();
 
 	if (menu_item_start)
 		error_at(menu_item_start, "unfinished menu item");
