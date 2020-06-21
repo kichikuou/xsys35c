@@ -77,7 +77,7 @@ typedef struct {
 
 extern Config config;
 
-void decompile(Vector *scos, Ain *ain, const char *outdir, const char *aldname);
+void decompile(Vector *scos, Ain *ain, const char *outdir, const char *ald_basename);
 noreturn void error_at(const uint8_t *pos, char *fmt, ...);
 void warning_at(const uint8_t *pos, char *fmt, ...);
 

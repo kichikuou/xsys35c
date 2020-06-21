@@ -19,20 +19,21 @@
 #include <ctype.h>
 #include <errno.h>
 #include <getopt.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
-#define DEFAULT_OUTPUT_ALD "adisk.ald"
+#define DEFAULT_ALD_BASENAME "out"
 #define DEFAULT_OUTPUT_AIN "System39.ain"
 
 static const char short_options[] = "a:E:hi:o:p:s:V:v";
 static const struct option long_options[] = {
 	{ "ain",       required_argument, NULL, 'a' },
+	{ "ald",       required_argument, NULL, 'o' },
 	{ "encoding",  required_argument, NULL, 'E' },
 	{ "hed",       required_argument, NULL, 'i' },
 	{ "help",      no_argument,       NULL, 'h' },
-	{ "output",    required_argument, NULL, 'o' },
 	{ "project",   required_argument, NULL, 'p' },
 	{ "sys-ver",   required_argument, NULL, 's' },
 	{ "variables", required_argument, NULL, 'V' },
@@ -48,7 +49,7 @@ static void usage(void) {
 	puts("    -Eu, --encoding=utf8      Set input coding system to UTF-8 (default)");
 	puts("    -i, --hed <file>          Read compile header (.hed) from <file>");
 	puts("    -h, --help                Display this message and exit");
-	puts("    -o, --output <file>       Write output to <file> (default: " DEFAULT_OUTPUT_ALD ")");
+	puts("    -o, --ald <name>          Write output to <name>SA.ALD (default: " DEFAULT_ALD_BASENAME ")");
 	puts("    -p, --project <file>      Read project configuration from <file>");
 	puts("    -s, --sys-ver <ver>       Target System version (3.5|3.6|3.8(default)|3.9)");
 	puts("    -V, --variables <file>    Read list of variables from <file>");
@@ -173,7 +174,7 @@ static char *sconame(const char *advname) {
 	return s;
 }
 
-static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *ald_path, const char *ain_path) {
+static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *ald_basename, const char *ain_path) {
 	Map *srcs = new_map();
 	for (int i = 0; i < src_paths->len; i++) {
 		char *path = src_paths->data[i];
@@ -190,6 +191,7 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *a
 
 	preprocess_done(compiler);
 
+	uint32_t ald_mask = 0;
 	Vector *ald = new_vec();
 	for (int i = 0; i < srcs->keys->len; i++) {
 		const char *source = srcs->vals->data[i];
@@ -201,6 +203,8 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *a
 		e->data = sco->buf->buf;
 		e->size = sco->buf->len;
 		vec_push(ald, e);
+		if (0 < e->disk && e->disk <= 26)
+			ald_mask |= 1 << e->disk;
 	}
 
 	if (config.sys_ver == SYSTEM39) {
@@ -209,16 +213,22 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *a
 		fclose(fp);
 	}
 
-	FILE *fp = checked_fopen(ald_path, "wb");
-	ald_write(ald, 1, fp);
-	fclose(fp);
+	for (int i = 1; i <= 26; i++) {
+		if (!(ald_mask & 1 << i))
+			continue;
+		char ald_path[PATH_MAX+1];
+		snprintf(ald_path, sizeof(ald_path), "%sS%c.ALD", ald_basename, 'A' + i - 1);
+		FILE *fp = checked_fopen(ald_path, "wb");
+		ald_write(ald, i, fp);
+		fclose(fp);
+	}
 }
 
 int main(int argc, char *argv[]) {
 	init();
 
 	const char *project = NULL;
-	const char *output_ald = NULL;
+	const char *ald_basename = NULL;
 	const char *output_ain = NULL;
 	const char *hed = NULL;
 	const char *var_list = NULL;
@@ -243,7 +253,7 @@ int main(int argc, char *argv[]) {
 			hed = optarg;
 			break;
 		case 'o':
-			output_ald = optarg;
+			ald_basename = optarg;
 			break;
 		case 'p':
 			project = optarg;
@@ -283,8 +293,8 @@ int main(int argc, char *argv[]) {
 		hed = config.hed;
 	if (!var_list && config.var_list)
 		var_list = config.var_list;
-	if (!output_ald)
-		output_ald = config.output_ald ? config.output_ald : DEFAULT_OUTPUT_ALD;
+	if (!ald_basename)
+		ald_basename = config.ald_basename ? config.ald_basename : DEFAULT_ALD_BASENAME;
 	if (!output_ain)
 		output_ain = config.output_ain ? config.output_ain : DEFAULT_OUTPUT_AIN;
 
@@ -298,5 +308,5 @@ int main(int argc, char *argv[]) {
 
 	Vector *vars = var_list ? read_var_list(var_list) : NULL;
 
-	build(srcs, vars, dlls, output_ald, output_ain);
+	build(srcs, vars, dlls, ald_basename, output_ain);
 }

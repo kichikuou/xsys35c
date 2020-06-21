@@ -28,8 +28,8 @@ Exit() {
 }
 
 ./decompiler/xsys35dc -a -o "$out" "$@" || Exit 1
-./compiler/xsys35c -p "$out"/xsys35c.cfg -o "$out"/out.ald -a "$out"/out.ain || Exit 1
-./tools/ald compare "$1" "$out"/out.ald || Exit 1
+./compiler/xsys35c -p "$out"/xsys35c.cfg -o "$out"/out -a "$out"/out.ain || Exit 1
+./tools/ald compare "$1" "$out"/outSA.ALD || Exit 1
 if [ -n "$2" ]; then
 	cmp "$2" "$out"/out.ain || Exit 1
 fi

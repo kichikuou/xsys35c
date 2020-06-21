@@ -144,12 +144,19 @@ int main(int argc, char *argv[]) {
 
 	Vector *scos = NULL;
 	Ain *ain = NULL;
+	const char *ald_basename = NULL;
 	for (int i = 0; i < argc; i++) {
 		int len = strlen(argv[i]);
-		if (len >= 4 && !strcasecmp(argv[i] + len - 4, ".ain"))
+		if (len >= 4 && !strcasecmp(argv[i] + len - 4, ".ain")) {
 			ain = ain_read(argv[i]);
-		else
-			scos = ald_read(scos, argv[i]);
+			continue;
+		}
+		scos = ald_read(scos, argv[i]);
+		if (len >= 6 && !strcasecmp(argv[i] + len - 6, "sa.ald")) {
+			char *s = strdup(argv[i]);
+			s[len - 6] = '\0';
+			ald_basename = basename(s);
+		}
 	}
 
 	for (int i = 0; i < scos->len; i++) {
@@ -168,7 +175,7 @@ int main(int argc, char *argv[]) {
 	if (outdir && make_dir(outdir) != 0 && errno != EEXIST)
 		error("cannot create directory %s: %s", outdir, strerror(errno));
 
-	decompile(scos, ain, outdir, basename(argv[0]));
+	decompile(scos, ain, outdir, ald_basename);
 
 	return 0;
 }

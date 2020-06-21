@@ -1751,7 +1751,8 @@ char *missing_adv_name(int page) {
 static void create_adv_for_missing_sco(const char *outdir, int page) {
 	dc.out = checked_fopen(path_join(outdir, missing_adv_name(page)), "w+");
 
-	fprintf(dc.out, "pragma ald_file_id 2:\n");
+	// Set ald_file_id to zero so that xsys35c will not generate ALD for this.
+	fprintf(dc.out, "pragma ald_file_id 0:\n");
 
 	for (int i = 0; i < dc.functions->vals->len; i++) {
 		Function *f = dc.functions->vals->data[i];
@@ -1767,11 +1768,12 @@ static void create_adv_for_missing_sco(const char *outdir, int page) {
 	fclose(dc.out);
 }
 
-static void write_config(const char *path, const char *aldname) {
+static void write_config(const char *path, const char *ald_basename) {
 	if (dc.scos->len == 0)
 		return;
 	FILE *fp = checked_fopen(path, "w+");
-	fprintf(fp, "output_ald = %s\n", aldname);
+	if (ald_basename)
+		fprintf(fp, "ald_basename = %s\n", ald_basename);
 	if (dc.ain)
 		fprintf(fp, "output_ain = %s\n", dc.ain->filename);
 
@@ -1858,7 +1860,7 @@ void warning_at(const uint8_t *pos, char *fmt, ...) {
 	fputc('\n', stderr);
 }
 
-void decompile(Vector *scos, Ain *ain, const char *outdir, const char *aldname) {
+void decompile(Vector *scos, Ain *ain, const char *outdir, const char *ald_basename) {
 	memset(&dc, 0, sizeof(dc));
 	dc.scos = scos;
 	dc.ain = ain;
@@ -1919,7 +1921,7 @@ void decompile(Vector *scos, Ain *ain, const char *outdir, const char *aldname) 
 	if (config.verbose)
 		puts("Generating config files...");
 
-	write_config(path_join(outdir, "xsys35c.cfg"), aldname);
+	write_config(path_join(outdir, "xsys35c.cfg"), ald_basename);
 	write_hed(path_join(outdir, "xsys35dc.hed"), ain ? ain->dlls : NULL);
 	write_variables(path_join(outdir, "variables.txt"));
 	if (ain && ain->dlls)
