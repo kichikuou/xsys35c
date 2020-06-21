@@ -446,6 +446,8 @@ int get_command(Buffer *b) {
 			return COMMAND_IF;
 		if (ISKEYWORD(command_top, len, "const"))
 			return COMMAND_CONST;
+		if (ISKEYWORD(command_top, len, "pragma"))
+			return COMMAND_PRAGMA;
 		int cmd = lower_case_command(command_top, len);
 		if (cmd) {
 			emit_command(b, cmd);

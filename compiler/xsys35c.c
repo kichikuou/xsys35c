@@ -193,13 +193,13 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *a
 	Vector *ald = new_vec();
 	for (int i = 0; i < srcs->keys->len; i++) {
 		const char *source = srcs->vals->data[i];
-		Buffer *sco = compile(compiler, source, i);
+		Sco *sco = compile(compiler, source, i);
 		AldEntry *e = calloc(1, sizeof(AldEntry));
-		e->disk = 1;
+		e->disk = sco->ald_file_id;
 		e->name = sconame(srcs->keys->data[i]);
 		e->timestamp = time(NULL);
-		e->data = sco->buf;
-		e->size = sco->len;
+		e->data = sco->buf->buf;
+		e->size = sco->buf->len;
 		vec_push(ald, e);
 	}
 

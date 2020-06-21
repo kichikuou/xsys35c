@@ -44,7 +44,7 @@ static void test(const char *name, const char *source,
 
 	compiler->msg_count = 0;
 
-	Buffer *sco = compile(compiler, source, 0);
+	Buffer *sco = compile(compiler, source, 0)->buf;
 	// Ignore SCO header
 	sco->buf += 32;
 	sco->len -= 32;

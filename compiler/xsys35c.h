@@ -108,6 +108,11 @@ typedef struct {
 } Function;
 
 typedef struct {
+	Buffer *buf;
+	int ald_file_id;
+} Sco;
+
+typedef struct {
 	Vector *src_names;
 	Vector *variables;
 	HashMap *consts;
@@ -115,13 +120,13 @@ typedef struct {
 	Map *dlls;
 	Buffer *msg_buf;
 	int msg_count;
-	Buffer **scos;
+	Sco *scos;
 } Compiler;
 
 Compiler *new_compiler(Vector *src_names, Vector *variables, Map *dlls);
 void preprocess(Compiler *comp, const char *source, int pageno);
 void preprocess_done(Compiler *comp);
-Buffer *compile(Compiler *comp, const char *source, int pageno);
+Sco *compile(Compiler *comp, const char *source, int pageno);
 
 // ain.c
 

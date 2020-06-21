@@ -298,7 +298,7 @@ static void defun(void) {
 			func->page = swap_word(out, func->addr, page);
 			func->addr = swap_dword(out, func->addr + 2, addr);
 		} else {
-			Buffer *sco = compiler->scos[func->page - 1];
+			Buffer *sco = compiler->scos[func->page - 1].buf;
 			assert(sco);
 			uint8_t *p = sco->buf + func->addr;
 			func->page = p[0] | p[1] << 8;
@@ -666,6 +666,15 @@ static void for_loop(void) {
 	emit_dword(out, loop_addr);
 
 	swap_dword(out, end_hole, current_address(out));
+}
+
+static void pragma(void) {
+	if (consume_keyword("ald_file_id")) {
+		compiler->scos[input_page].ald_file_id = get_number();
+		expect(':');
+	} else {
+		error_at(input, "unknown pragma");
+	}
 }
 
 static int subcommand_num(void) {
@@ -1145,6 +1154,10 @@ static bool command(void) {
 		define_const();
 		break;
 
+	case COMMAND_PRAGMA:
+		pragma();
+		break;
+
 	case COMMAND_TOC: arguments(""); break;
 	case COMMAND_TOS: arguments(""); break;
 	case COMMAND_TPC: arguments("e"); break;
@@ -1345,7 +1358,7 @@ Compiler *new_compiler(Vector *src_names, Vector *variables, Map *dlls) {
 	comp->consts = new_hash();
 	comp->functions = new_hash();
 	comp->dlls = dlls ? dlls : new_map();
-	comp->scos = calloc(src_names->len, sizeof(Buffer*));
+	comp->scos = calloc(src_names->len, sizeof(Sco));
 	return comp;
 }
 
@@ -1380,11 +1393,12 @@ void preprocess_done(Compiler *comp) {
 	comp->msg_count = 0;
 }
 
-Buffer *compile(Compiler *comp, const char *source, int pageno) {
+Sco *compile(Compiler *comp, const char *source, int pageno) {
 	prepare(comp, source, pageno);
 	compiling = true;
 	labels = new_map();
 
+	comp->scos[pageno].ald_file_id = 1;
 	out = new_buf();
 	sco_init(out, comp->src_names->data[pageno], pageno);
 
@@ -1395,7 +1409,7 @@ Buffer *compile(Compiler *comp, const char *source, int pageno) {
 	check_undefined_labels();
 
 	sco_finalize(out);
-	comp->scos[pageno] = out;
+	comp->scos[pageno].buf = out;
 	out = NULL;
-	return comp->scos[pageno];
+	return &comp->scos[pageno];
 }
