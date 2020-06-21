@@ -8,6 +8,7 @@ Currently, the following games can be decompiled and compiled (and the compiled 
 - 鬼畜王ランス
 - Rance5D
 - 闘神都市
+- 闘神都市II
 - Dr.STOP!
 - DALK
 - 零式
@@ -21,19 +22,22 @@ Currently, the following games can be decompiled and compiled (and the compiled 
 - 守り神様
 - ママトト
 - DARCROWS
+- PERSIOM
 - 隠れ月
 - SeeIn青
+- 20世紀アリス (かえるにょ国にょアリス / これDPS?)
 - 大悪司
 - 超昂天使エスカレイヤー
 - Only You -リ・クルス-
+- 妻みぐい
+- 妻みぐい2
+- シェル・クレイル
 
 The following games cannot be (de)compiled yet.
 - Rance II
-- 闘神都市II
 - アトラク＝ナクア
 - 王道勇者
 - かえるにょ・ぱにょ〜ん
-- PERSIOM
 - 夜が来る!
 
 ## Build & Install
