@@ -35,7 +35,7 @@ static const struct option long_options[] = {
 };
 
 static void usage(void) {
-	puts("Usage: xsys35dc [options] aldfile [ainfile]");
+	puts("Usage: xsys35dc [options] aldfile(s) [ainfile]");
 	puts("Options:");
 	puts("    -a, --address             Prefix each line with address");
 	puts("    -Es, --encoding=sjis      Output files in SJIS encoding");
@@ -51,11 +51,12 @@ static void version(void) {
 	puts("xsys35dc " VERSION);
 }
 
-Sco *sco_new(const char *name, const uint8_t *data, int len) {
+Sco *sco_new(const char *name, const uint8_t *data, int len, int disk) {
 	Sco *sco = calloc(1, sizeof(Sco));
 	sco->data = data;
 	sco->mark = calloc(1, len + 1);
 	sco->sco_name = name;
+	sco->ald_file_id = disk;
 	if (!memcmp(data, "S350", 4))
 		sco->version = SCO_S350;
 	else if (!memcmp(data, "S351", 4))
@@ -136,17 +137,26 @@ int main(int argc, char *argv[]) {
 	argc -= optind;
 	argv += optind;
 
-	if (argc != 1 && argc != 2) {
+	if (argc == 0) {
 		usage();
 		return 1;
 	}
 
-	Vector *scos = ald_read(NULL, argv[0]);
+	Vector *scos = NULL;
+	Ain *ain = NULL;
+	for (int i = 0; i < argc; i++) {
+		int len = strlen(argv[i]);
+		if (len >= 4 && !strcasecmp(argv[i] + len - 4, ".ain"))
+			ain = ain_read(argv[i]);
+		else
+			scos = ald_read(scos, argv[i]);
+	}
+
 	for (int i = 0; i < scos->len; i++) {
 		AldEntry *e = scos->data[i];
 		if (!e)
 			continue;
-		Sco *sco = sco_new(e->name, e->data, e->size);
+		Sco *sco = sco_new(e->name, e->data, e->size, e->disk);
 		scos->data[i] = sco;
 		if (seq) {
 			char buf[16];
@@ -154,9 +164,6 @@ int main(int argc, char *argv[]) {
 			sco->src_name = strdup(buf);
 		}
 	}
-	Ain *ain = NULL;
-	if (argc >= 2)
-		ain = ain_read(argv[1]);
 
 	if (outdir && make_dir(outdir) != 0 && errno != EEXIST)
 		error("cannot create directory %s: %s", outdir, strerror(errno));

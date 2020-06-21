@@ -3,7 +3,7 @@
 
 ## Usage
 ```
-xsys35dc [options] aldfile [ainfile]
+xsys35dc [options] aldfile(s) [ainfile]
 ```
 The following options are available:
 <dl>

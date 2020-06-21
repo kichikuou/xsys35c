@@ -1057,7 +1057,7 @@ static void decompile_page(int page) {
 		if (*dc.p == '>')
 			dc.indent--;
 		indent();
-		if (*dc.p == 0x20 || *dc.p > 0x80) {
+		if (*dc.p == 0 || *dc.p == 0x20 || *dc.p > 0x80) {
 			uint8_t *mark_at_string_start = &sco->mark[dc.p - sco->data];
 			dc_putc('\'');
 			while (*dc.p == 0x20 || *dc.p > 0x80) {
@@ -1908,6 +1908,8 @@ void decompile(Vector *scos, Ain *ain, const char *outdir, const char *aldname) 
 		if (config.verbose)
 			printf("Decompiling %s (page %d)...\n", sjis2utf(sco->sco_name), i);
 		dc.out = checked_fopen(path_join(outdir, sjis2utf(sco->src_name)), "w+");
+		if (sco->ald_file_id != 1)
+			fprintf(dc.out, "pragma ald_file_id %d:\n", sco->ald_file_id);
 		decompile_page(i);
 		if (config.utf8)
 			convert_to_utf8(dc.out);
