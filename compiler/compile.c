@@ -672,6 +672,15 @@ static void pragma(void) {
 	if (consume_keyword("ald_file_id")) {
 		compiler->scos[input_page].ald_file_id = get_number();
 		expect(':');
+	} else if (consume_keyword("address")) {
+		int address = get_number();
+		if (out) {
+			if (out->len > address)
+				out->len = address;
+			while (out->len < address)
+				emit(out, 0);
+		}
+		expect(':');
 	} else {
 		error_at(input, "unknown pragma");
 	}

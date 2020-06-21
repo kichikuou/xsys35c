@@ -342,6 +342,17 @@ static void conditional(Vector *branch_end_stack) {
 	stack_push(branch_end_stack, endaddr);
 }
 
+static void defun(Function *f) {
+	dc_puts("**");
+	dc_puts(f->name);
+	for (int i = 0; i < f->argc; i++) {
+		dc_putc(i == 0 ? ' ' : ',');
+		Cali node = {.type = NODE_VARIABLE, .val = f->argv[i]};
+		print_cali(&node, dc.variables, dc.out);
+	}
+	dc_putc(':');
+}
+
 static void func_labels(uint16_t page, uint32_t addr) {
 	if (!dc.out)
 		return;
@@ -350,14 +361,8 @@ static void func_labels(uint16_t page, uint32_t addr) {
 		Function *f = dc.functions->vals->data[i];
 		if (f->page - 1 == page && f->addr == addr) {
 			print_address();
-			dc_puts("**");
-			dc_puts(dc.functions->keys->data[i]);
-			for (int i = 0; i < f->argc; i++) {
-				dc_putc(i == 0 ? ' ' : ',');
-				Cali node = {.type = NODE_VARIABLE, .val = f->argv[i]};
-				print_cali(&node, dc.variables, dc.out);
-			}
-			dc_puts(":\n");
+			defun(f);
+			dc_putc('\n');
 			found = true;
 		}
 	}
@@ -1744,13 +1749,22 @@ char *missing_adv_name(int page) {
 }
 
 static void create_adv_for_missing_sco(const char *outdir, int page) {
-	FILE *fp = checked_fopen(path_join(outdir, missing_adv_name(page)), "w+");
+	dc.out = checked_fopen(path_join(outdir, missing_adv_name(page)), "w+");
 
-	fprintf(fp, "pragma ald_file_id 2:\n");
+	fprintf(dc.out, "pragma ald_file_id 2:\n");
+
+	for (int i = 0; i < dc.functions->vals->len; i++) {
+		Function *f = dc.functions->vals->data[i];
+		if (f->page - 1 != page)
+			continue;
+		fprintf(dc.out, "pragma address 0x%x:\n", f->addr);
+		defun(f);
+		dc_putc('\n');
+	}
 
 	if (config.utf8)
-		convert_to_utf8(fp);
-	fclose(fp);
+		convert_to_utf8(dc.out);
+	fclose(dc.out);
 }
 
 static void write_config(const char *path, const char *aldname) {
