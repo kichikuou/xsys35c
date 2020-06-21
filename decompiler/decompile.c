@@ -91,6 +91,8 @@ static uint8_t *mark_at(int page, int addr) {
 	if (page >= dc.scos->len)
 		error("page out of range (%x:%x)", page, addr);
 	Sco *sco = dc.scos->data[page];
+	if (!sco)
+		error("page does not exist (%x:%x)", page, addr);
 	if (addr > sco->filesize)
 		error("address out of range (%x:%x)", page, addr);
 	return &sco->mark[addr];
@@ -182,8 +184,10 @@ static void page_name(int cmd) {
 		int page = node->val;
 		if ((cmd != '%' || page != 0) && page < dc.scos->len) {
 			Sco *sco = dc.scos->data[page];
-			fprintf(dc.out, "#%s", sco->src_name);
-			return;
+			if (sco) {
+				fprintf(dc.out, "#%s", sco->src_name);
+				return;
+			}
 		}
 	}
 	print_cali(node, dc.variables, dc.out);
@@ -385,10 +389,12 @@ static Function *func_label(uint16_t page, uint32_t addr) {
 	Function *f = get_function(page, addr);
 	dc_puts(f->name);
 
-	uint8_t *mark = mark_at(page, addr);
-	*mark |= FUNC_TOP;
-	if (!(*mark & (CODE | DATA)))
-		((Sco *)dc.scos->data[page])->analyzed = false;
+	if (page < dc.scos->len && dc.scos->data[page]) {
+		uint8_t *mark = mark_at(page, addr);
+		*mark |= FUNC_TOP;
+		if (!(*mark & (CODE | DATA)))
+			((Sco *)dc.scos->data[page])->analyzed = false;
+	}
 	return f;
 }
 
@@ -1731,6 +1737,22 @@ static void scan_for_data_tables(Sco *sco) {
 	}
 }
 
+char *missing_adv_name(int page) {
+	char buf[32];
+	sprintf(buf, "_missing%d.adv", page);
+	return strdup(buf);
+}
+
+static void create_adv_for_missing_sco(const char *outdir, int page) {
+	FILE *fp = checked_fopen(path_join(outdir, missing_adv_name(page)), "w+");
+
+	fprintf(fp, "pragma ald_file_id 2:\n");
+
+	if (config.utf8)
+		convert_to_utf8(fp);
+	fclose(fp);
+}
+
 static void write_config(const char *path, const char *aldname) {
 	if (dc.scos->len == 0)
 		return;
@@ -1773,7 +1795,7 @@ static void write_hed(const char *path, Map *dlls) {
 	fputs("#SYSTEM35\n", fp);
 	for (int i = 0; i < dc.scos->len; i++) {
 		Sco *sco = dc.scos->data[i];
-		fprintf(fp, "%s\n", sco->src_name);
+		fprintf(fp, "%s\n", sco ? sco->src_name : missing_adv_name(i));
 	}
 
 	if (dlls && dlls->keys->len) {
@@ -1832,7 +1854,8 @@ void decompile(Vector *scos, Ain *ain, const char *outdir, const char *aldname) 
 
 	for (int i = 0; i < dc.functions->vals->len; i++) {
 		Function *f = dc.functions->vals->data[i];
-		*mark_at(f->page - 1, f->addr) |= FUNC_TOP;
+		if (f->page - 1 < dc.scos->len && dc.scos->data[f->page - 1])
+			*mark_at(f->page - 1, f->addr) |= FUNC_TOP;
 	}
 
 	// Preprocess
@@ -1841,7 +1864,8 @@ void decompile(Vector *scos, Ain *ain, const char *outdir, const char *aldname) 
 
 	for (int i = 0; i < scos->len; i++) {
 		Sco *sco = scos->data[i];
-		scan_for_data_tables(sco);
+		if (sco)
+			scan_for_data_tables(sco);
 	}
 
 	// Analyze
@@ -1850,7 +1874,7 @@ void decompile(Vector *scos, Ain *ain, const char *outdir, const char *aldname) 
 		done = true;
 		for (int i = 0; i < scos->len; i++) {
 			Sco *sco = scos->data[i];
-			if (sco->analyzed)
+			if (!sco || sco->analyzed)
 				continue;
 			if (config.verbose)
 				printf("Analyzing %s (page %d)...\n", sjis2utf(sco->sco_name), i);
@@ -1863,6 +1887,10 @@ void decompile(Vector *scos, Ain *ain, const char *outdir, const char *aldname) 
 	// Decompile
 	for (int i = 0; i < scos->len; i++) {
 		Sco *sco = scos->data[i];
+		if (!sco) {
+			create_adv_for_missing_sco(outdir, i);
+			continue;
+		}
 		if (config.verbose)
 			printf("Decompiling %s (page %d)...\n", sjis2utf(sco->sco_name), i);
 		dc.out = checked_fopen(path_join(outdir, sjis2utf(sco->src_name)), "w+");

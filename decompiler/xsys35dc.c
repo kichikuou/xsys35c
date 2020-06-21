@@ -144,6 +144,8 @@ int main(int argc, char *argv[]) {
 	Vector *scos = ald_read(NULL, argv[0]);
 	for (int i = 0; i < scos->len; i++) {
 		AldEntry *e = scos->data[i];
+		if (!e)
+			continue;
 		Sco *sco = sco_new(e->name, e->data, e->size);
 		scos->data[i] = sco;
 		if (seq) {
