@@ -21,7 +21,11 @@ The following options are available:
 <dl>
   <dt><code>-a <var>file</var></code>
   <br/><code>--ain <var>file</var></code></dt>
-  <dd>Write <code>.ain</code> output to <var>file</var>. (default: <code>System39.ain</code>)</dd>
+  <dd>Write AIN output to <var>file</var>. (default: <code>System39.ain</code>)</dd>
+
+  <dt><code>-o <var>name</var></code>
+  <br/><code>--ald <var>name</var></code></dt>
+  <dd>Write ALD output to <var>name</var><code>SA.ALD</code>, <var>name</var><code>SB.ALD</code>, ... (default: <code>out</code>)</dd>
 
   <dt><code>-E <var>enc</var></code>
   <br/><code>--encoding <var>enc</var></code></dt>
@@ -34,10 +38,6 @@ The following options are available:
   <dt><code>-h</code>
   <br/><code>--help</code></dt>
   <dd>Display help message about <code>xsys35c</code> and exit.</dd>
-
-  <dt><code>-o <var>file</var></code>
-  <br/><code>--output <var>file</var></code></dt>
-  <dd>Write <code>.ald</code> output to <var>file</var>. (default: <code>adisk.ald</code>)</dd>
 
   <dt><code>-p <var>file</var></code>
   <br/><code>--project <var>file</var></code></dt>

@@ -45,11 +45,11 @@ static void usage(void) {
 	puts("Usage: xsys35c [options] file...");
 	puts("Options:");
 	puts("    -a, --ain <file>          Write .ain output to <file> (default: " DEFAULT_OUTPUT_AIN ")");
+	puts("    -o, --ald <name>          Write output to <name>SA.ALD, <name>SB.ALD, ... (default: " DEFAULT_ALD_BASENAME ")");
 	puts("    -Es, --encoding=sjis      Set input coding system to SJIS");
 	puts("    -Eu, --encoding=utf8      Set input coding system to UTF-8 (default)");
 	puts("    -i, --hed <file>          Read compile header (.hed) from <file>");
 	puts("    -h, --help                Display this message and exit");
-	puts("    -o, --ald <name>          Write output to <name>SA.ALD (default: " DEFAULT_ALD_BASENAME ")");
 	puts("    -p, --project <file>      Read project configuration from <file>");
 	puts("    -s, --sys-ver <ver>       Target System version (3.5|3.6|3.8(default)|3.9)");
 	puts("    -V, --variables <file>    Read list of variables from <file>");
