@@ -7,7 +7,7 @@
 #
 
 if [ $# -eq 0 ]; then
-	echo 'Usage: rtt.sh [options] <aldfile> [<ainfile>]'
+	echo 'Usage: rtt.sh [options] <aldfile(s)> [<ainfile>]'
 	echo 'Options:'
 	echo '    -o <directory>  Generate outputs into <directory>'
 	exit 1
@@ -28,9 +28,15 @@ Exit() {
 }
 
 ./decompiler/xsys35dc -a -o "$out" "$@" || Exit 1
-./compiler/xsys35c -p "$out"/xsys35c.cfg -o "$out"/out -a "$out"/out.ain || Exit 1
-./tools/ald compare "$1" "$out"/outSA.ALD || Exit 1
-if [ -n "$2" ]; then
-	cmp "$2" "$out"/out.ain || Exit 1
-fi
+./compiler/xsys35c -p "$out"/xsys35c.cfg || Exit 1
+
+for file in "$@"; do
+	base=$(basename "$file")
+	if [[ "$file" == *.ALD ]]; then
+		./tools/ald compare "$file" "$out"/"$base" || Exit 1
+	else
+		cmp "$file" "$out"/"$base" || Exit 1
+	fi
+done
+
 Exit 0
