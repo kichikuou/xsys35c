@@ -38,10 +38,15 @@ Cali *parse_cali(const uint8_t **code, bool is_lhs) {
 		case OP_END:
 			if (top == stack)
 				error_at(p, "empty expression");
-			if (--top != stack)
+			while (top - 2 >= stack) {
+				// Rance 2, Oudou Yuusha
 				warning_at(p, "unexpected end of expression");
+				Cali *rhs = *--top;
+				Cali *lhs = *--top;
+				*top++ = new_node(NODE_OP, OP_END, lhs, rhs);
+			}
 			*code = p;
-			return *top;
+			return *--top;
 
 		case OP_AND:
 		case OP_OR:
@@ -168,6 +173,7 @@ void print_cali(Cali *node, Vector *variables, FILE *out) {
 		case OP_C0_MOD:fputs(" % ", out); break;
 		case OP_C0_LE: fputs(" <= ", out); break;
 		case OP_C0_GE: fputs(" >= ", out); break;
+		case OP_END:   fputs(" $ ", out); break;
 		default:
 			error("BUG: unknown operator %d", node->val);
 		}

@@ -3,6 +3,7 @@ This is an open-source toolchain for AliceSoft's System 3.x game engine.
 
 Currently, the following games can be decompiled and compiled (and the compiled files match the original):
 - Rance
+- Rance II
 - Rance III
 - Rance IV
 - 鬼畜王ランス
@@ -34,7 +35,6 @@ Currently, the following games can be decompiled and compiled (and the compiled 
 - シェル・クレイル
 
 The following games cannot be (de)compiled yet.
-- Rance II
 - アトラク＝ナクア
 - 王道勇者
 - かえるにょ・ぱにょ〜ん

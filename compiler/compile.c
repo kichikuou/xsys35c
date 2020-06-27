@@ -181,7 +181,7 @@ static void expr_compare(void) {
 	}
 }
 
-// equal ::= compare ('=' compare | '\' compare)*
+// equal ::= compare ('=' compare | '\' compare | '$' compare)*
 static void expr_equal(void) {
 	expr_compare();
 	for (;;) {
@@ -191,6 +191,8 @@ static void expr_equal(void) {
 		} else if (consume('\\')) {
 			expr_compare();
 			emit(out, OP_NE);
+		} else if (consume('$')) {
+			expr_compare();
 		} else {
 			break;
 		}
