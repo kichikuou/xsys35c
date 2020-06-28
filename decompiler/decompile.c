@@ -210,7 +210,7 @@ static void label(void) {
 	*mark_at(dc.page, addr) |= LABEL;
 }
 
-static bool is_string_data(const uint8_t *begin, const uint8_t *end, bool conv_half_to_full) {
+static bool is_string_data(const uint8_t *begin, const uint8_t *end, bool should_expand) {
 	if (*begin == '\0' && begin + 1 == end)
 		return true;
 	for (const uint8_t *p = begin; p < end;) {
@@ -218,7 +218,7 @@ static bool is_string_data(const uint8_t *begin, const uint8_t *end, bool conv_h
 			return p - begin >= 2;
 		if (is_valid_sjis(p[0], p[1]))
 			p += 2;
-		else if (isprint(*p) || (conv_half_to_full && is_compacted_kana(*p)))
+		else if (isprint(*p) || (should_expand && is_compacted_sjis(*p)))
 			p++;
 		else
 			break;
@@ -232,24 +232,26 @@ static void data_block(const uint8_t *end) {
 		return;
 	}
 
-	bool conv_half_to_full = current_sco()->version <= SCO_S351;
+	bool should_expand = current_sco()->version <= SCO_S351;
 
 	while (dc.p < end) {
 		indent();
-		if (is_string_data(dc.p, end, conv_half_to_full) ||
-			(*dc.p == '\0' && is_string_data(dc.p + 1, end, conv_half_to_full))) {
+		if (is_string_data(dc.p, end, should_expand) ||
+			(*dc.p == '\0' && is_string_data(dc.p + 1, end, should_expand))) {
 			dc_putc('"');
 			while (*dc.p) {
 				uint8_t c = *dc.p++;
-				if (conv_half_to_full && c == ' ') {
-					dc_puts("\x81\x40"); // full-width space
-				} else if (isprint(c)) {
+				if (isgraph(c)) {
 					maybe_escape(c);
 					dc_putc(c);
-				} else if (conv_half_to_full && is_compacted_kana(c)) {
-					uint16_t full = from_sjis_half_kana(c);
-					dc_putc(full >> 8);
-					dc_putc(full & 0xff);
+				} else if (is_compacted_sjis(c)) {
+					if (should_expand) {
+						uint16_t full = expand_sjis(c);
+						dc_putc(full >> 8);
+						dc_putc(full & 0xff);
+					} else {
+						dc_putc(c);
+					}
 				} else {
 					assert(is_sjis_byte1(c));
 					uint8_t c2 = *dc.p++;
@@ -268,7 +270,7 @@ static void data_block(const uint8_t *end) {
 
 		dc_putc('[');
 		const char *sep = "";
-		for (; dc.p < end && !is_string_data(dc.p, end, conv_half_to_full); dc.p += 2) {
+		for (; dc.p < end && !is_string_data(dc.p, end, should_expand); dc.p += 2) {
 			if (dc.p + 1 == end) {
 				warning_at(dc.p, "data block with odd number of bytes");
 				dc_printf("%s%db", sep, dc.p[0]);
@@ -887,10 +889,8 @@ static bool inline_menu_string(void) {
 
 	while (dc.p < end) {
 		uint8_t c = *dc.p++;
-		if (c == ' ') {
-			dc_puts("\x81\x40"); // full-width space
-		} else if (is_compacted_kana(c)) {
-			uint16_t full = from_sjis_half_kana(c);
+		if (is_compacted_sjis(c)) {
+			uint16_t full = expand_sjis(c);
 			dc_putc(full >> 8);
 			dc_putc(full & 0xff);
 		} else {
@@ -1062,10 +1062,8 @@ static void decompile_page(int page) {
 			dc_putc('\'');
 			while (*dc.p == 0x20 || *dc.p > 0x80) {
 				uint8_t c = *dc.p++;
-				if (c == ' ') {
-					dc_puts("\x81\x40"); // full-width space
-				} else if (is_compacted_kana(c)) {
-					uint16_t full = from_sjis_half_kana(c);
+				if (is_compacted_sjis(c)) {
+					uint16_t full = expand_sjis(c);
 					dc_putc(full >> 8);
 					dc_putc(full & 0xff);
 				} else {

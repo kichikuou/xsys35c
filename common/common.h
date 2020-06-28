@@ -54,8 +54,8 @@ int make_dir(const char *path);
 #define utf2sjis(s) utf2sjis_sub((s), -1)
 char *sjis2utf_sub(const char *str, int substitution_char);
 char *utf2sjis_sub(const char *str, int substitution_char);
-uint8_t to_sjis_half_kana(uint8_t c1, uint8_t c2);
-uint16_t from_sjis_half_kana(uint8_t c);
+uint8_t compact_sjis(uint8_t c1, uint8_t c2);
+uint16_t expand_sjis(uint8_t c);
 bool is_valid_sjis(uint8_t c1, uint8_t c2);
 bool is_unicode_safe(uint8_t c1, uint8_t c2);
 
@@ -63,8 +63,8 @@ static inline bool is_sjis_half_kana(uint8_t c) {
 	return 0xa1 <= c && c <= 0xdf;
 }
 
-static inline bool is_compacted_kana(uint8_t c) {
-	return 0xa1 <= c && c <= 0xdd;
+static inline bool is_compacted_sjis(uint8_t c) {
+	return c == ' ' || (0xa1 <= c && c <= 0xdd);
 }
 
 static inline bool is_sjis_byte1(uint8_t c) {

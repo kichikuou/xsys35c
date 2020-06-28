@@ -208,7 +208,7 @@ void compile_string(Buffer *b, char terminator, bool compact) {
 			error_at(input - 2, "invalid SJIS character: %02x %02x", c1, c2);
 		uint8_t hk = 0;
 		if (compact)
-			hk = to_sjis_half_kana(c1, c2);
+			hk = compact_sjis(c1, c2);
 		if (hk) {
 			emit(b, hk);
 		} else {

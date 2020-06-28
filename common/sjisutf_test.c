@@ -21,22 +21,33 @@
 
 static void test_compaction(void) {
 	for (int c = 0; c < 256; c++) {
-		if (is_compacted_kana(c)) {
-			uint16_t full = from_sjis_half_kana(c);
+		if (is_compacted_sjis(c)) {
+			uint16_t full = expand_sjis(c);
 			if (!full) {
-				printf("[FAIL] from_sjis_half_kana(0x%02x) unexpectedly returned zero\n", c);
+				printf("[FAIL] expand_sjis(0x%02x) unexpectedly returned zero\n", c);
 				exit(1);
 			}
-			uint8_t half = to_sjis_half_kana(full >> 8, full & 0xff);
+			uint8_t half = compact_sjis(full >> 8, full & 0xff);
 			if (c != half) {
-				printf("[FAIL] to_sjis_half_kana(0x%04x): expected 0x%02x, got 0x%02x\n", full, c, half);
+				printf("[FAIL] compact_sjis(0x%04x): expected 0x%02x, got 0x%02x\n", full, c, half);
 				exit(1);
 			}
 		} else {
-			uint16_t full = from_sjis_half_kana(c);
+			uint16_t full = expand_sjis(c);
 			if (full) {
-				printf("[FAIL] from_sjis_half_kana(0x%02x) unexpectedly returned non-zero value 0x%04x\n", c, full);
+				printf("[FAIL] expand_sjis(0x%02x) unexpectedly returned non-zero value 0x%04x\n", c, full);
 				exit(1);
+			}
+		}
+	}
+	for (int c1 = 0x81; c1 <= 0x82; c1++) {
+		for (int c2 = 0x40; c2 <= 0xff; c2++) {
+			uint8_t half = compact_sjis(c1, c2);
+			if (!half)
+				continue;
+			uint16_t full = expand_sjis(half);
+			if (full != (c1 << 8 | c2)) {
+				printf("[FAIL] compact_sjis/expand_sjis: 0x%04x -> 0x%02x -> 0x%04x\n", c1 << 8 | c2, half, full);
 			}
 		}
 	}

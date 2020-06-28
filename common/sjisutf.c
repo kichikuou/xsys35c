@@ -260,13 +260,15 @@ char *utf2sjis_sub(const char *str, int substitution_char) {
 #endif
 }
 
-uint8_t to_sjis_half_kana(uint8_t c1, uint8_t c2) {
+uint8_t compact_sjis(uint8_t c1, uint8_t c2) {
 	return c1 == 0x81 ? hankaku81[c2 - 0x40] :
 		   c1 == 0x82 ? hankaku82[c2 - 0x40] : 0;
 }
 
-uint16_t from_sjis_half_kana(uint8_t c) {
-	if (!is_compacted_kana(c))
+uint16_t expand_sjis(uint8_t c) {
+	if (!is_compacted_sjis(c))
 		return 0;
+	if (c == ' ')
+		return 0x8140; // full-width space
 	return kanatbl[c - 0xa0];
 }
