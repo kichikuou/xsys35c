@@ -14,6 +14,7 @@ Currently, the following games can be decompiled and compiled (and the compiled 
 - DALK
 - 零式
 - いけないかつみ先生
+- かえるにょ・ぱにょ〜ん
 - 戦巫女
 - 王道勇者
 - AmbivalenZ
@@ -37,7 +38,6 @@ Currently, the following games can be decompiled and compiled (and the compiled 
 
 The following games cannot be (de)compiled yet.
 - アトラク＝ナクア
-- かえるにょ・ぱにょ〜ん
 - 夜が来る!
 
 ## Build & Install

@@ -24,6 +24,7 @@
 static Compiler *compiler;
 static const char *menu_item_start;
 static bool compiling;
+static Vector *branch_end_stack;
 
 typedef struct {
 	uint32_t addr;
@@ -595,6 +596,12 @@ static void conditional(void) {
 	expect(':');
 	int hole = current_address(out);
 	emit_dword(out, 0);
+
+	if (branch_end_stack) {
+		stack_push(branch_end_stack, hole);
+		return;
+	}
+
 	commands();
 	expect('}');
 	if (config.sys_ver >= SYSTEM38 && !config.disable_else) {
@@ -736,7 +743,14 @@ static bool command(void) {
 		break;
 
 	case '}':
-		return false;
+		if (branch_end_stack && branch_end_stack->len > 0) {
+			expect('}');
+			swap_dword(out, stack_top(branch_end_stack), current_address(out));
+			stack_pop(branch_end_stack);
+		} else {
+			return false;
+		}
+		break;
 
 	case '*':  // Label or function definition
 		if (consume('*')) {
@@ -1377,6 +1391,7 @@ static void prepare(Compiler *comp, const char *source, int pageno) {
 	compiler = comp;
 	lexer_init(source, comp->src_names->data[pageno], pageno);
 	menu_item_start = NULL;
+	branch_end_stack = (config.sys_ver == SYSTEM35) ? new_vec() : NULL;
 }
 
 static void check_undefined_labels(void) {
@@ -1396,6 +1411,8 @@ void preprocess(Compiler *comp, const char *source, int pageno) {
 
 	if (menu_item_start)
 		error_at(menu_item_start, "unfinished menu item");
+	if (branch_end_stack && branch_end_stack->len > 0)
+		error_at(input, "'}' expected");
 }
 
 void preprocess_done(Compiler *comp) {

@@ -87,6 +87,10 @@ Vector *new_vec(void);
 void vec_push(Vector *v, void *e);
 void vec_set(Vector *v, int index, void *e);
 
+void stack_push(Vector *stack, uintptr_t n);
+void stack_pop(Vector *stack);
+uintptr_t stack_top(Vector *stack);
+
 typedef struct {
 	Vector *keys;
 	Vector *vals;

@@ -98,22 +98,6 @@ static uint8_t *mark_at(int page, int addr) {
 	return &sco->mark[addr];
 }
 
-static void stack_push(Vector *stack, ptrdiff_t n) {
-	vec_push(stack, (void *)n);
-}
-
-static void stack_pop(Vector *stack) {
-	if (stack->len == 0)
-		error("stack underflow");
-	stack->len--;
-}
-
-static ptrdiff_t stack_top(Vector *stack) {
-	if (stack->len == 0)
-		error("BUG: stack underflow while compiling page %d", dc.page);
-	return (ptrdiff_t)stack->data[stack->len - 1];
-}
-
 static void dc_putc(int c) {
 	if (dc.out)
 		fputc(c, dc.out);

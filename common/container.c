@@ -43,6 +43,22 @@ void vec_set(Vector *v, int index, void *e) {
 	v->data[index] = e;
 }
 
+void stack_push(Vector *stack, uintptr_t n) {
+	vec_push(stack, (void *)n);
+}
+
+void stack_pop(Vector *stack) {
+	if (stack->len == 0)
+		error("stack underflow");
+	stack->len--;
+}
+
+uintptr_t stack_top(Vector *stack) {
+	if (stack->len == 0)
+		error("stack underflow");
+	return (uintptr_t)stack->data[stack->len - 1];
+}
+
 Map *new_map(void) {
 	Map *m = malloc(sizeof(Map));
 	m->keys = new_vec();
