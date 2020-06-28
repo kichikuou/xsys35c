@@ -16,6 +16,7 @@ Currently, the following games can be decompiled and compiled (and the compiled 
 - いけないかつみ先生
 - かえるにょ・ぱにょ〜ん
 - 戦巫女
+- アトラク＝ナクア
 - 王道勇者
 - AmbivalenZ
 - DiaboLiQuE
@@ -37,7 +38,6 @@ Currently, the following games can be decompiled and compiled (and the compiled 
 - シェル・クレイル
 
 The following games cannot be (de)compiled yet.
-- アトラク＝ナクア
 - 夜が来る!
 
 ## Build & Install

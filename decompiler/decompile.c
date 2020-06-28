@@ -385,8 +385,10 @@ static Function *func_label(uint16_t page, uint32_t addr) {
 	if (page < dc.scos->len && dc.scos->data[page]) {
 		uint8_t *mark = mark_at(page, addr);
 		*mark |= FUNC_TOP;
-		if (!(*mark & (CODE | DATA)))
-			((Sco *)dc.scos->data[page])->analyzed = false;
+		if (!(*mark & (CODE | DATA))) {
+			if (page != dc.page || addr < dc_addr())
+				((Sco *)dc.scos->data[page])->analyzed = false;
+		}
 	}
 	return f;
 }
@@ -1885,8 +1887,8 @@ void decompile(Vector *scos, Ain *ain, const char *outdir, const char *ald_basen
 			if (config.verbose)
 				printf("Analyzing %s (page %d)...\n", sjis2utf(sco->sco_name), i);
 			done = false;
-			decompile_page(i);
 			sco->analyzed = true;
+			decompile_page(i);
 		}
 	}
 
