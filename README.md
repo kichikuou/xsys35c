@@ -15,6 +15,7 @@ Currently, the following games can be decompiled and compiled (and the compiled 
 - 零式
 - いけないかつみ先生
 - 戦巫女
+- 王道勇者
 - AmbivalenZ
 - DiaboLiQuE
 - ぱすてるチャイム
@@ -36,7 +37,6 @@ Currently, the following games can be decompiled and compiled (and the compiled 
 
 The following games cannot be (de)compiled yet.
 - アトラク＝ナクア
-- 王道勇者
 - かえるにょ・ぱにょ〜ん
 - 夜が来る!
 

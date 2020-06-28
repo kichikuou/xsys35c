@@ -274,6 +274,8 @@ static void data_block(const uint8_t *end) {
 			if (dc.p + 1 == end) {
 				warning_at(dc.p, "data block with odd number of bytes");
 				dc_printf("%s%db", sep, dc.p[0]);
+				dc.p++;
+				break;
 			} else {
 				dc_printf("%s%d", sep, dc.p[0] | dc.p[1] << 8);
 			}
@@ -1681,7 +1683,13 @@ static void decompile_page(int page) {
 		case COMMAND_sysReset: arguments(""); break;
 		default:
 		unknown_command:
-			error("%s:%x: unknown command '%.*s'", sjis2utf(sco->sco_name), topaddr, dc_addr() - topaddr, sco->data + topaddr);
+			if (dc.out)
+				error("%s:%x: unknown command '%.*s'", sjis2utf(sco->sco_name), topaddr, dc_addr() - topaddr, sco->data + topaddr);
+			// If we're in the analyze phase, retry as a data block.
+			dc.p = sco->data + topaddr;
+			sco->mark[topaddr] &= ~CODE;
+			sco->mark[topaddr] |= DATA;
+			break;
 		}
 		dc_putc('\n');
 	}
