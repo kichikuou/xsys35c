@@ -64,7 +64,7 @@ static void test(const char *name, const char *source,
 	}
 }
 
-int main() {
+void compile_test(void) {
 	config.sys_ver = SYSTEM35;
 
 	TEST("A", "A", "A");

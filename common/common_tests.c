@@ -15,32 +15,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
 */
-#include "xsys35c.h"
-#undef NDEBUG
-#include <assert.h>
-#include <string.h>
 
-void hel_test(void) {
-	Vector *hel;
+void ald_test(void);
+void sjisutf_test(void);
 
-	hel = parse_hel("", "empty.hel");
-	assert(hel->len == 0);
-
-	hel = parse_hel("void foo(void)", "simple.hel");
-	assert(hel->len == 1);
-	DLLFunc *f = hel->data[0];
-	assert(!strcmp(f->name, "foo"));
-	assert(f->argc == 0);
-
-	hel = parse_hel("void func1(pword arg)\nvoid func2(int arg1, IConstString arg2)", "twofuncs.hel");
-	assert(hel->len == 2);
-	DLLFunc *f1 = hel->data[0];
-	DLLFunc *f2 = hel->data[1];
-	assert(!strcmp(f1->name, "func1"));
-	assert(!strcmp(f2->name, "func2"));
-	assert(f1->argc == 1);
-	assert(f1->argtypes[0] == HEL_pword);
-	assert(f2->argc == 2);
-	assert(f2->argtypes[0] == HEL_int);
-	assert(f2->argtypes[1] == HEL_IConstString);
+int main() {
+	ald_test();
+	sjisutf_test();
 }

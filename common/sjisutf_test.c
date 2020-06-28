@@ -53,7 +53,6 @@ static void test_compaction(void) {
 	}
 }
 
-int main() {
+void sjisutf_test(void) {
 	test_compaction();
-	return 0;
 }

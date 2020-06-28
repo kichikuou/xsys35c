@@ -105,10 +105,9 @@ static void test_multidisk_write(void) {
 	}
 }
 
-int main() {
+void ald_test(void) {
 	test_read();
 	test_write();
 	test_multidisk_read();
 	test_multidisk_write();
-	return 0;
 }

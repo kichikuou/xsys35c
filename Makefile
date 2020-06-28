@@ -14,41 +14,43 @@ COMMANDS := \
 	tools/ald
 
 TESTS := \
-	common/ald_test \
-	common/sjisutf_test \
-	compiler/compile_test \
-	compiler/sco_test \
-	compiler/hel_test
+	common/common_tests \
+	compiler/compiler_tests
 
-COMMON_SRCS := \
-	common/ald.c \
-	common/container.c \
-	common/sjisutf.c \
-	common/util.c
+COMMON_OBJS := \
+	common/ald.o \
+	common/container.o \
+	common/sjisutf.o \
+	common/util.o
 
-COMMON_OBJS = $(COMMON_SRCS:.c=.o)
+COMMON_TESTS_OBJS := \
+	common/ald_test.o \
+	common/common_tests.o \
+	common/sjisutf_test.o
 
-COMPILER_SRCS := \
-	compiler/ain.c \
-	compiler/compile.c \
-	compiler/config.c \
-	compiler/hel.c \
-	compiler/lexer.c \
-	compiler/sco.c
+COMPILER_OBJS := \
+	compiler/ain.o \
+	compiler/compile.o \
+	compiler/config.o \
+	compiler/hel.o \
+	compiler/lexer.o \
+	compiler/sco.o
 
-COMPILER_OBJS = $(COMPILER_SRCS:.c=.o)
+COMPILER_TESTS_OBJS := \
+	compiler/compile_test.o \
+	compiler/compiler_tests.o \
+	compiler/hel_test.o \
+	compiler/sco_test.o
 
-DECOMPILER_SRCS := \
-	decompiler/ain.c \
-	decompiler/cali.c \
-	decompiler/decompile.c
-
-DECOMPILER_OBJS = $(DECOMPILER_SRCS:.c=.o)
+DECOMPILER_OBJS := \
+	decompiler/ain.o \
+	decompiler/cali.o \
+	decompiler/decompile.o
 
 all: $(COMMANDS)
 
-$(COMMON_OBJS): common/common.h
-$(COMPILER_OBJS): compiler/xsys35c.h common/common.h
+$(COMMON_OBJS) $(COMMON_TESTS_OBJS): common/common.h
+$(COMPILER_OBJS) $(COMPILER_TESTS_OBJS): compiler/xsys35c.h common/common.h
 $(DECOMPILER_OBJS): decompiler/xsys35dc.h common/common.h
 common/sjisutf.o: common/s2utbl.h
 
@@ -56,18 +58,12 @@ compiler/xsys35c: compiler/xsys35c.o $(COMPILER_OBJS) $(COMMON_OBJS)
 decompiler/xsys35dc: decompiler/xsys35dc.o $(DECOMPILER_OBJS) $(COMMON_OBJS)
 tools/ald: tools/ald.o $(COMMON_OBJS)
 
-common/ald_test: common/ald_test.o $(COMMON_OBJS)
-common/sjisutf_test: common/sjisutf_test.o $(COMMON_OBJS)
-compiler/compile_test: compiler/compile_test.o $(COMPILER_OBJS) $(COMMON_OBJS)
-compiler/sco_test: compiler/sco_test.o $(COMPILER_OBJS) $(COMMON_OBJS)
-compiler/hel_test: compiler/hel_test.o $(COMPILER_OBJS) $(COMMON_OBJS)
+common/common_tests: $(COMMON_TESTS_OBJS) $(COMMON_OBJS)
+compiler/compiler_tests: $(COMPILER_TESTS_OBJS) $(COMPILER_OBJS) $(COMMON_OBJS)
 
 test: $(TESTS) $(COMMANDS) regression_test.sh
-	compiler/sco_test
-	compiler/hel_test
-	compiler/compile_test
-	common/sjisutf_test
-	common/ald_test && cmp testdata/expected.ald testdata/actual.ald && rm testdata/actual*.ald
+	common/common_tests && cmp testdata/expected.ald testdata/actual.ald && rm testdata/actual*.ald
+	compiler/compiler_tests
 	./regression_test.sh
 
 install: $(COMMANDS)

@@ -5,4 +5,5 @@ compiler/xsys35c
 decompiler/xsys35dc
 tools/ald
 *_test
+*_tests
 rtt_adv/
