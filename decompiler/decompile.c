@@ -218,7 +218,7 @@ static bool is_string_data(const uint8_t *begin, const uint8_t *end, bool conv_h
 			return p - begin >= 2;
 		if (is_valid_sjis(p[0], p[1]))
 			p += 2;
-		else if (isprint(*p) || (conv_half_to_full && is_sjis_half_kana(*p)))
+		else if (isprint(*p) || (conv_half_to_full && is_compacted_kana(*p)))
 			p++;
 		else
 			break;
@@ -246,7 +246,7 @@ static void data_block(const uint8_t *end) {
 				} else if (isprint(c)) {
 					maybe_escape(c);
 					dc_putc(c);
-				} else if (conv_half_to_full && is_sjis_half_kana(c)) {
+				} else if (conv_half_to_full && is_compacted_kana(c)) {
 					uint16_t full = from_sjis_half_kana(c);
 					dc_putc(full >> 8);
 					dc_putc(full & 0xff);
@@ -889,7 +889,7 @@ static bool inline_menu_string(void) {
 		uint8_t c = *dc.p++;
 		if (c == ' ') {
 			dc_puts("\x81\x40"); // full-width space
-		} else if (is_sjis_half_kana(c)) {
+		} else if (is_compacted_kana(c)) {
 			uint16_t full = from_sjis_half_kana(c);
 			dc_putc(full >> 8);
 			dc_putc(full & 0xff);
@@ -1064,7 +1064,7 @@ static void decompile_page(int page) {
 				uint8_t c = *dc.p++;
 				if (c == ' ') {
 					dc_puts("\x81\x40"); // full-width space
-				} else if (is_sjis_half_kana(c)) {
+				} else if (is_compacted_kana(c)) {
 					uint16_t full = from_sjis_half_kana(c);
 					dc_putc(full >> 8);
 					dc_putc(full & 0xff);

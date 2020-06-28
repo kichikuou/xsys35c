@@ -266,5 +266,7 @@ uint8_t to_sjis_half_kana(uint8_t c1, uint8_t c2) {
 }
 
 uint16_t from_sjis_half_kana(uint8_t c) {
+	if (!is_compacted_kana(c))
+		return 0;
 	return kanatbl[c - 0xa0];
 }

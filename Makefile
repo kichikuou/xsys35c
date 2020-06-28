@@ -15,6 +15,7 @@ COMMANDS := \
 
 TESTS := \
 	common/ald_test \
+	common/sjisutf_test \
 	compiler/compile_test \
 	compiler/sco_test \
 	compiler/hel_test
@@ -56,6 +57,7 @@ decompiler/xsys35dc: decompiler/xsys35dc.o $(DECOMPILER_OBJS) $(COMMON_OBJS)
 tools/ald: tools/ald.o $(COMMON_OBJS)
 
 common/ald_test: common/ald_test.o $(COMMON_OBJS)
+common/sjisutf_test: common/sjisutf_test.o $(COMMON_OBJS)
 compiler/compile_test: compiler/compile_test.o $(COMPILER_OBJS) $(COMMON_OBJS)
 compiler/sco_test: compiler/sco_test.o $(COMPILER_OBJS) $(COMMON_OBJS)
 compiler/hel_test: compiler/hel_test.o $(COMPILER_OBJS) $(COMMON_OBJS)
@@ -64,6 +66,7 @@ test: $(TESTS) $(COMMANDS) regression_test.sh
 	compiler/sco_test
 	compiler/hel_test
 	compiler/compile_test
+	common/sjisutf_test
 	common/ald_test && cmp testdata/expected.ald testdata/actual.ald && rm testdata/actual*.ald
 	./regression_test.sh
 

@@ -63,6 +63,10 @@ static inline bool is_sjis_half_kana(uint8_t c) {
 	return 0xa1 <= c && c <= 0xdf;
 }
 
+static inline bool is_compacted_kana(uint8_t c) {
+	return 0xa1 <= c && c <= 0xdd;
+}
+
 static inline bool is_sjis_byte1(uint8_t c) {
 	return (0x81 <= c && c <= 0x9f) || (0xe0 <= c && c <= 0xfc);
 }
