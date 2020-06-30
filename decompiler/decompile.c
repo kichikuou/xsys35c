@@ -1693,21 +1693,23 @@ static void decompile_page(int page) {
 // Scan the SCO and annotate locations that look like data blocks.
 static void scan_for_data_tables(Sco *sco) {
 	const uint8_t *p = sco->data + sco->hdrsize;
-	const uint8_t *end = sco->data + sco->filesize - 4;  // -4 for address
+	const uint8_t *end = sco->data + sco->filesize - 6;  // -6 for address and cali
 
-	// Scan for '#' command
+	// Scan for the pattern '#' <32-bit address> <cali>
 	while (p < end && (p = memchr(p, '#', end - p)) != NULL) {
 		uint32_t ptr_addr = le32(++p);
-		if (ptr_addr >= sco->hdrsize && ptr_addr <= sco->filesize - 4) {
-			// Mark only backward references heuristically. Forward references
-			// will be marked in the analyze phase.
-			if (ptr_addr < p - sco->data)
-				sco->mark[ptr_addr] |= DATA;
+		if (p[5] != 0x7f) // Only check if it is a simple 2-byte cali
+			continue;
+		if (ptr_addr < sco->hdrsize || ptr_addr > sco->filesize - 4)
+			continue;
+		// Mark only backward references heuristically. Forward references
+		// will be marked in the analyze phase.
+		if (ptr_addr < p - sco->data)
+			sco->mark[ptr_addr] |= DATA;
 
-			uint32_t data_addr = le32(sco->data + ptr_addr);
-			if (data_addr >= sco->hdrsize && data_addr < sco->filesize) {
-				sco->mark[data_addr] |= DATA;
-			}
+		uint32_t data_addr = le32(sco->data + ptr_addr);
+		if (data_addr >= sco->hdrsize && data_addr < sco->filesize) {
+			sco->mark[data_addr] |= DATA;
 		}
 	}
 
