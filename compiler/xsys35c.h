@@ -64,6 +64,7 @@ void emit_word_be(Buffer *b, uint16_t v);
 void emit_dword(Buffer *b, uint32_t v);
 void emit_string(Buffer *b, const char *s);
 void set_byte(Buffer *b, uint32_t addr, uint8_t val);
+uint8_t get_byte(Buffer *b, uint32_t addr);
 uint16_t swap_word(Buffer *b, uint32_t addr, uint16_t val);
 uint32_t swap_dword(Buffer *b, uint32_t addr, uint32_t val);
 void emit_var(Buffer *b, int var_id);

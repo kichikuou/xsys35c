@@ -16,6 +16,7 @@
  *
 */
 #include "xsys35c.h"
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -69,6 +70,13 @@ void set_byte(Buffer *b, uint32_t addr, uint8_t val) {
 	if (!b)
 		return;
 	b->buf[addr] = val;
+}
+
+uint8_t get_byte(Buffer *b, uint32_t addr) {
+	if (!b)
+		return 0;
+	assert(addr < b->len);
+	return b->buf[addr];
 }
 
 uint16_t swap_word(Buffer *b, uint32_t addr, uint16_t val) {

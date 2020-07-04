@@ -643,11 +643,12 @@ static void while_loop(void) {
 
 // for-loop ::= '<' var ',' expr ',' expr ',' expr ',' expr ':' commands '>'
 static void for_loop(void) {
-	int var_id = lookup_var(get_identifier(), true);  // for-loop can define a variable.
+	emit(out, '!');
+	int var_begin = current_address(out);
+	variable(get_identifier(), true);  // for-loop can define a variable.
+	int var_end = current_address(out);
 	expect(',');
 
-	emit(out, '!');
-	emit_var(out, var_id);
 	expr();  // start
 	expect(',');
 
@@ -659,8 +660,12 @@ static void for_loop(void) {
 
 	int end_hole = current_address(out);
 	emit_dword(out, 0);
-	emit_var(out, var_id);
+
+	// Copy the opcode for the variable.
+	for (int i = var_begin; i < var_end; i++)
+		emit(out, get_byte(out, i));
 	emit(out, OP_END);
+
 	expr();  // end
 	expect(',');
 	expr();  // sign
