@@ -33,7 +33,7 @@ static void scan_for_data_tables(Sco *sco, Vector *scos, Ain *ain) {
 		// Mark only backward references heuristically. Forward references
 		// will be marked in the analyze phase.
 		if (ptr_addr < p - sco->data)
-			sco->mark[ptr_addr] |= DATA;
+			sco->mark[ptr_addr] |= DATA_TABLE;
 
 		uint32_t data_addr = le32(sco->data + ptr_addr);
 		if (data_addr >= sco->hdrsize && data_addr < sco->filesize) {

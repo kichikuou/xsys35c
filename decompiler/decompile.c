@@ -261,7 +261,38 @@ static void data_table_addr(void) {
 	cali(false);
 	dc_putc(':');
 
-	annotate(mark_at(dc.page, addr), DATA_TABLE | LABEL);
+	uint8_t *mark = mark_at(dc.page, addr);
+	uint8_t old_mark = *mark;
+	annotate(mark, DATA_TABLE | LABEL);
+	if (*mark != old_mark)
+		current_sco()->analyzed = false;
+}
+
+static bool data_table(void) {
+	Sco *sco = current_sco();
+	uint32_t pos = dc.p - sco->data;
+	uint32_t first_data = sco->filesize;
+	while (pos < first_data) {
+		uint32_t addr = le32(&sco->data[pos]);
+		pos += 4;
+		if (addr < sco->hdrsize || addr >= sco->filesize)
+			return false;
+		if (pos <= addr && addr < first_data)
+			first_data = addr;
+		if (sco->mark[pos])
+			break;
+	}
+
+	for (; dc.p < sco->data + pos; dc.p += 4) {
+		uint32_t addr = le32(dc.p);
+		indent();
+		dc_printf("_L_%05x:\n", addr);
+		if ((sco->mark[addr] & (DATA | LABEL)) != (DATA | LABEL)) {
+			sco->mark[addr] |= DATA | LABEL;
+			sco->analyzed = false;
+		}
+	}
+	return true;
 }
 
 static uint8_t *get_surrounding_else(Vector *branch_end_stack) {
@@ -982,16 +1013,8 @@ static void decompile_page(int page) {
 		}
 
 		if ((mark & TYPE_MASK) == DATA_TABLE) {
-			uint32_t addr = le32(dc.p);
-			if (dc_addr() < addr && addr < sco->filesize) {
-				indent();
-				dc_printf("_L_%05x:\n", addr);
-				sco->mark[addr] |= DATA | LABEL;
-				dc.p += 4;
-				if (!(sco->mark[dc.p - sco->data] & DATA))
-					annotate(sco->mark + (dc.p - sco->data), DATA_TABLE);
+			if (data_table())
 				continue;
-			}
 			mark |= DATA;
 		}
 		if (mark & DATA) {
