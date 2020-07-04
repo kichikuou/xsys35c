@@ -191,7 +191,10 @@ static void label(void) {
 	else
 		dc_printf("L_%05x", addr);
 
-	*mark_at(dc.page, addr) |= LABEL;
+	uint8_t *mark = mark_at(dc.page, addr);
+	if (!(*mark & LABEL) && addr < dc_addr())
+		current_sco()->analyzed = false;
+	*mark |= LABEL;
 }
 
 static bool is_string_data(const uint8_t *begin, const uint8_t *end, bool should_expand) {
