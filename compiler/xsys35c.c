@@ -161,7 +161,7 @@ static char *sconame(const char *advname) {
 			strcpy(s + strlen(advname) - 3, "sco");
 			return s;
 		}
-		if (!strcmp(dot + 1, "ADV")) {
+		if (!strcasecmp(dot + 1, "ADV")) {
 			char *s = strdup(advname);
 			strcpy(s + strlen(advname) - 3, "SCO");
 			return s;
