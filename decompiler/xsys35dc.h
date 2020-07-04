@@ -30,6 +30,25 @@ typedef struct {
 	bool analyzed;
 } Sco;
 
+// Sco.mark[i] stores annotation for Sco.data[i].
+// An annotation consists of a 3-bit type field and flags.
+enum {
+	  // Type field
+	  WHILE_START = 1,  // on '{'
+	  FOR_START,        // on '!'
+	  ELSE,             // on '@'
+	  ELSE_IF,          // on '@'
+	  FUNCALL_TOP,      // on '!'
+	  DATA_TABLE,
+	  TYPE_MASK   = 0x7,
+
+	  // Flags
+	  CODE        = 1 << 4,
+	  DATA        = 1 << 5,
+	  LABEL       = 1 << 6,
+	  FUNC_TOP    = 1 << 7,
+};
+
 // ain.c
 
 typedef struct {
@@ -66,6 +85,10 @@ typedef struct Cali {
 
 Cali *parse_cali(const uint8_t **code, bool is_lhs);
 void print_cali(Cali *node, Vector *variables, FILE *out);
+
+// preprocess.c
+
+void preprocess(Vector *scos, Ain *ain);
 
 // decompile.c
 

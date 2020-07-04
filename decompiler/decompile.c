@@ -28,25 +28,6 @@ Config config = {
 	.utf8 = true,
 };
 
-// Sco.mark[i] stores annotation for Sco.data[i].
-// An annotation consists of a 3-bit type field and flags.
-enum {
-	  // Type field
-	  WHILE_START = 1,  // on '{'
-	  FOR_START,        // on '!'
-	  ELSE,             // on '@'
-	  ELSE_IF,          // on '@'
-	  FUNCALL_TOP,      // on '!'
-	  DATA_TABLE,
-	  TYPE_MASK   = 0x7,
-
-	  // Flags
-	  CODE        = 1 << 4,
-	  DATA        = 1 << 5,
-	  LABEL       = 1 << 6,
-	  FUNC_TOP    = 1 << 7,
-};
-
 static inline void annotate(uint8_t* mark, int type) {
 	*mark = (*mark & ~TYPE_MASK) | type;
 }
@@ -1693,52 +1674,6 @@ static void decompile_page(int page) {
 		dc_printf("*L_%05x:\n", sco->filesize);
 }
 
-// Scan the SCO and annotate locations that look like data blocks.
-static void scan_for_data_tables(Sco *sco) {
-	const uint8_t *p = sco->data + sco->hdrsize;
-	const uint8_t *end = sco->data + sco->filesize - 6;  // -6 for address and cali
-
-	// Scan for the pattern '#' <32-bit address> <cali>
-	while (p < end && (p = memchr(p, '#', end - p)) != NULL) {
-		uint32_t ptr_addr = le32(++p);
-		if (p[5] != 0x7f) // Only check if it is a simple 2-byte cali
-			continue;
-		if (ptr_addr < sco->hdrsize || ptr_addr > sco->filesize - 4)
-			continue;
-		// Mark only backward references heuristically. Forward references
-		// will be marked in the analyze phase.
-		if (ptr_addr < p - sco->data)
-			sco->mark[ptr_addr] |= DATA;
-
-		uint32_t data_addr = le32(sco->data + ptr_addr);
-		if (data_addr >= sco->hdrsize && data_addr < sco->filesize) {
-			sco->mark[data_addr] |= DATA;
-		}
-	}
-
-	// Scan for dataSetPointer (0x2f 0x80) command
-	if (!dc.ain)
-		return;  // dataSetPointer is only in system 3.9
-	p = sco->data + sco->hdrsize;
-	end = sco->data + sco->filesize - 7;
-	while (p < end && (p = memchr(p, 0x2f, end - p)) != NULL) {
-		if (*++p != 0x80)
-			continue;
-		p++;
-		uint16_t page = (p[0] | p[1] << 8) - 1;
-		uint32_t addr = le32(p + 2);
-		if (page >= dc.scos->len)
-			continue;
-		Sco *sco = dc.scos->data[page];
-		if (addr >= sco->filesize)
-			continue;
-		// Must be adready marked using ain->functions
-		if (!(sco->mark[addr] & FUNC_TOP))
-			continue;
-		sco->mark[addr] |= DATA;
-	}
-}
-
 char *missing_adv_name(int page) {
 	char buf[32];
 	sprintf(buf, "_missing%d.adv", page);
@@ -1865,21 +1800,10 @@ void decompile(Vector *scos, Ain *ain, const char *outdir, const char *ald_basen
 	dc.functions = (ain && ain->functions) ? ain->functions : new_map();
 	dc.disable_ain_variable = ain && !ain->variables;
 
-	for (int i = 0; i < dc.functions->vals->len; i++) {
-		Function *f = dc.functions->vals->data[i];
-		if (f->page - 1 < dc.scos->len && dc.scos->data[f->page - 1])
-			*mark_at(f->page - 1, f->addr) |= FUNC_TOP;
-	}
-
 	// Preprocess
 	if (config.verbose)
 		puts("Preprocessing...");
-
-	for (int i = 0; i < scos->len; i++) {
-		Sco *sco = scos->data[i];
-		if (sco)
-			scan_for_data_tables(sco);
-	}
+	preprocess(scos, ain);
 
 	// Analyze
 	bool done = false;

@@ -45,7 +45,8 @@ COMPILER_TESTS_OBJS := \
 DECOMPILER_OBJS := \
 	decompiler/ain.o \
 	decompiler/cali.o \
-	decompiler/decompile.o
+	decompiler/decompile.o \
+	decompiler/preprocess.o
 
 all: $(COMMANDS)
 
