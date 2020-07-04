@@ -201,11 +201,12 @@ static void data_block(const uint8_t *end) {
 	}
 
 	bool should_expand = current_sco()->version <= SCO_S351;
+	bool prefer_string = false;
 
 	while (dc.p < end) {
 		indent();
 		if (is_string_data(dc.p, end, should_expand) ||
-			(*dc.p == '\0' && is_string_data(dc.p + 1, end, should_expand))) {
+			(*dc.p == '\0' && (prefer_string || is_string_data(dc.p + 1, end, should_expand)))) {
 			dc_putc('"');
 			while (*dc.p) {
 				uint8_t c = *dc.p++;
@@ -233,8 +234,10 @@ static void data_block(const uint8_t *end) {
 			}
 			dc_puts("\"\n");
 			dc.p++;
+			prefer_string = true;
 			continue;
 		}
+		prefer_string = false;
 
 		dc_putc('[');
 		const char *sep = "";
