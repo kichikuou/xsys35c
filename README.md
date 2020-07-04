@@ -1,7 +1,8 @@
 # System 3.x Compiler and Decompiler
 This is an open-source toolchain for AliceSoft's System 3.x game engine.
 
-Currently, the following games can be decompiled and compiled (and the compiled files match the original):
+The following games can be decompiled and then re-compiled to an ALD file that is equivalent to the original:
+
 - Rance
 - Rance II
 - Rance III
@@ -30,6 +31,7 @@ Currently, the following games can be decompiled and compiled (and the compiled 
 - 隠れ月
 - SeeIn青
 - 20世紀アリス (かえるにょ国にょアリス / これDPS?)
+- 夜が来る!
 - 大悪司
 - 超昂天使エスカレイヤー
 - Only You -リ・クルス-
@@ -37,8 +39,8 @@ Currently, the following games can be decompiled and compiled (and the compiled 
 - 妻みぐい2
 - シェル・クレイル
 
-The following games cannot be (de)compiled yet.
-- 夜が来る!
+The following games cannot be decompiled or compiled yet:
+- None (Let me know if you find a title that does not (de)compile!)
 
 ## Build & Install
 To build the executables, run `make` command:
