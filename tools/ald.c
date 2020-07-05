@@ -35,6 +35,33 @@ static void usage(void) {
 	puts("Run 'ald help <command>' for more information about a specific command.");
 }
 
+static Vector *read_alds(int *pargc, char **pargv[]) {
+	int argc = *pargc;
+	char **argv = *pargv;
+
+	for (int dd = 0; dd < argc; dd++) {
+		if (!strcmp(argv[dd], "--")) {
+			Vector *ald = NULL;
+			for (int i = 0; i < dd; i++)
+				ald = ald_read(ald, argv[i]);
+			*pargc -= dd + 1;
+			*pargv += dd + 1;
+			return ald;
+		}
+	}
+
+	Vector *ald = NULL;
+	for (int i = 0; i < argc; i++) {
+		const char *dot = strrchr(argv[i], '.');
+		if (!dot || strcasecmp(dot, ".ald"))
+			break;
+		ald = ald_read(ald, argv[i]);
+		*pargc -= 1;
+		*pargv += 1;
+	}
+	return ald;
+}
+
 static void help_list(void) {
 	puts("Usage: ald list <aldfile>...");
 }
@@ -68,7 +95,7 @@ static const struct option extract_long_options[] = {
 };
 
 static void help_extract(void) {
-	puts("Usage: ald extract [options] <aldfile>");
+	puts("Usage: ald extract [options] <aldfile>...");
 	puts("Options:");
 	puts("    -d, --directory <dir>    Extract files into <dir>");
 }
@@ -89,7 +116,8 @@ static int do_extract(int argc, char *argv[]) {
 	argc -= optind;
 	argv += optind;
 
-	if (argc == 0) {
+	Vector *ald = read_alds(&argc, &argv);
+	if (!ald) {
 		help_extract();
 		return 1;
 	}
@@ -97,7 +125,6 @@ static int do_extract(int argc, char *argv[]) {
 	if (directory && make_dir(directory) != 0 && errno != EEXIST)
 		error("cannot create directory %s: %s", directory, strerror(errno));
 
-	Vector *ald = ald_read(NULL, argv[0]);
 	for (int i = 0; i < ald->len; i++) {
 		AldEntry *e = ald->data[i];
 		if (!e)
@@ -111,7 +138,7 @@ static int do_extract(int argc, char *argv[]) {
 }
 
 static void help_dump(void) {
-	puts("Usage: ald dump <aldfile> [<n>|<file>]");
+	puts("Usage: ald dump <aldfile>... [--] <n>|<file>");
 }
 
 static void print_sjis_2byte(uint8_t c1, uint8_t c2) {
@@ -160,14 +187,16 @@ static void dump_entry(AldEntry *entry) {
 }
 
 static int do_dump(int argc, char *argv[]) {
-	if (argc != 3) {
+	argc--;
+	argv++;
+	Vector *ald = read_alds(&argc, &argv);
+	if (!ald || argc != 1) {
 		help_dump();
 		return 1;
 	}
-	Vector *ald = ald_read(NULL, argv[1]);
 
 	char *endptr;
-	unsigned long n = strtoul(argv[2], &endptr, 0);
+	unsigned long n = strtoul(argv[0], &endptr, 0);
 	if (!*endptr) {
 		if (n >= ald->len || !ald->data[n])
 			error("Page %d is out of range", n);
@@ -177,12 +206,12 @@ static int do_dump(int argc, char *argv[]) {
 
 	for (int i = 0; i < ald->len; i++) {
 		AldEntry *e = ald->data[i];
-		if (e && !strcasecmp(argv[2], sjis2utf(e->name))) {
+		if (e && !strcasecmp(argv[0], sjis2utf(e->name))) {
 			dump_entry(e);
 			return 0;
 		}
 	}
-	error("%s: no entry for '%s'", argv[1], argv[2]);
+	error("No entry for '%s'", argv[0]);
 }
 
 static void help_compare(void) {
