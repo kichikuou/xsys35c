@@ -20,16 +20,32 @@ The following information are displayed for each file in the archive:
 - filename
 
 ### `extract`
+`ald extract` extracts files from an ALD archive.
+
 Usage:
 ```
-ald extract <aldfile>
+ald extract [options] <aldfile>... [--] [(<index>|<filename>)...]
 ```
-`ald extract` extracts files from an ALD archive. It extracts all files in the archive into current directory.
+Arguments:
+<dl>
+  <dt><code>&lt;aldfile&gt;...</code>
+  <dd>Path of the ALD archive file(s).</dd>
+
+  <dt><code>[(&lt;index&gt;|&lt;filename&gt;)...]</code>
+  <dd>An optional list of archive members to be processed, specified by index or file name.</dd>
+</dl>
+
+Options:
+<dl>
+  <dt><code>-d <var>dir</var></code>
+  <br/><code>--directory <var>dir</var></code></dt>
+  <dd>Extract files into <var>dir</var>. (default: <code>./</code>)</dd>
+</dl>
 
 ### `dump`
 Usage:
 ```
-ald dump <aldfile> [<index>|<filename>]
+ald dump <aldfile>... <index>|<filename>
 ```
 `ald dump` displays content of a file in the ALD archive, specified by an index or a file name, in hexadecimal bytes + SJIS-aware characters format.
 

@@ -62,6 +62,25 @@ static Vector *read_alds(int *pargc, char **pargv[]) {
 	return ald;
 }
 
+static AldEntry *find_entry(Vector *ald, const char *num_or_name) {
+	char *endptr;
+	unsigned long n = strtoul(num_or_name, &endptr, 0);
+	if (*endptr == '\0') {
+		if (n < ald->len && ald->data[n])
+			return ald->data[n];
+		fprintf(stderr, "ald: Page %lu is out of range\n", n);
+		return NULL;
+	}
+
+	for (int i = 0; i < ald->len; i++) {
+		AldEntry *e = ald->data[i];
+		if (e && !strcasecmp(num_or_name, sjis2utf(e->name)))
+			return e;
+	}
+	fprintf(stderr, "ald: No entry for '%s'\n", num_or_name);
+	return NULL;
+}
+
 static void help_list(void) {
 	puts("Usage: ald list <aldfile>...");
 }
@@ -95,9 +114,16 @@ static const struct option extract_long_options[] = {
 };
 
 static void help_extract(void) {
-	puts("Usage: ald extract [options] <aldfile>...");
+	puts("Usage: ald extract [options] <aldfile>... [--] [(<n>|<file>)...]");
 	puts("Options:");
 	puts("    -d, --directory <dir>    Extract files into <dir>");
+}
+
+static void extract_entry(AldEntry *e, const char *directory) {
+	FILE *fp = checked_fopen(path_join(directory, sjis2utf(e->name)), "wb");
+	if (fwrite(e->data, e->size, 1, fp) != 1)
+		error("%s: %s", sjis2utf(e->name), strerror(errno));
+	fclose(fp);
 }
 
 static int do_extract(int argc, char *argv[]) {
@@ -125,14 +151,19 @@ static int do_extract(int argc, char *argv[]) {
 	if (directory && make_dir(directory) != 0 && errno != EEXIST)
 		error("cannot create directory %s: %s", directory, strerror(errno));
 
-	for (int i = 0; i < ald->len; i++) {
-		AldEntry *e = ald->data[i];
-		if (!e)
-			continue;
-		FILE *fp = checked_fopen(path_join(directory, sjis2utf(e->name)), "wb");
-		if (fwrite(e->data, e->size, 1, fp) != 1)
-			error("%s: %s", sjis2utf(e->name), strerror(errno));
-		fclose(fp);
+	if (!argc) {
+		// Extract all files.
+		for (int i = 0; i < ald->len; i++) {
+			AldEntry *e = ald->data[i];
+			if (e)
+				extract_entry(e, directory);
+		}
+	} else {
+		for (int i = 0; i < argc; i++) {
+			AldEntry *e = find_entry(ald, argv[i]);
+			if (e)
+				extract_entry(e, directory);
+		}
 	}
 	return 0;
 }
@@ -195,23 +226,11 @@ static int do_dump(int argc, char *argv[]) {
 		return 1;
 	}
 
-	char *endptr;
-	unsigned long n = strtoul(argv[0], &endptr, 0);
-	if (!*endptr) {
-		if (n >= ald->len || !ald->data[n])
-			error("Page %d is out of range", n);
-		dump_entry(ald->data[n]);
-		return 0;
-	}
-
-	for (int i = 0; i < ald->len; i++) {
-		AldEntry *e = ald->data[i];
-		if (e && !strcasecmp(argv[0], sjis2utf(e->name))) {
-			dump_entry(e);
-			return 0;
-		}
-	}
-	error("No entry for '%s'", argv[0]);
+	AldEntry *e = find_entry(ald, argv[0]);
+	if (!e)
+		return 1;
+	dump_entry(e);
+	return 0;
 }
 
 static void help_compare(void) {
