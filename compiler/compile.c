@@ -26,6 +26,23 @@ static const char *menu_item_start;
 static bool compiling;
 static Vector *branch_end_stack;
 
+typedef enum {
+	VARIABLE,
+	CONST,
+} SymbolType;
+
+typedef struct {
+	SymbolType type;
+	int value;  // variable index or constant value
+} Symbol;
+
+static Symbol *new_symbol(SymbolType type, int value) {
+	Symbol *s = calloc(1, sizeof(Symbol));
+	s->type = type;
+	s->value = value;
+	return s;
+}
+
 typedef struct {
 	uint32_t addr;
 	uint32_t hole_addr;
@@ -37,17 +54,24 @@ static Map *labels;
 static Buffer *out;
 
 static int lookup_var(char *var, bool create) {
-	for (int i = 0; i < compiler->variables->len; i++) {
-		if (!strcmp(var, compiler->variables->data[i]))
-			return i;
+	Symbol *sym = hash_get(compiler->symbols, var);
+	if (sym) {
+		switch (sym->type) {
+		case VARIABLE:
+			return sym->value;
+		case CONST:
+			if (create)
+				error_at(input - strlen(var), "'%s' is already defined as a constant", var);
+			return -1;
+		}
 	}
-	if (create) {
-		if (hash_get(compiler->consts, var))
-			error_at(input - strlen(var), "'%s' is already defined as a constant", var);
-		vec_push(compiler->variables, var);
-		return compiler->variables->len - 1;
-	}
-	return -1;
+
+	if (!create)
+		return -1;
+	sym = new_symbol(VARIABLE, compiler->variables->len);
+	vec_push(compiler->variables, var);
+	hash_put(compiler->symbols, var, sym);
+	return sym->value;
 }
 
 static void expr(void);
@@ -95,9 +119,9 @@ static void expr_prim(void) {
 		if (!strcmp(id, "__LINE__")) {
 			emit_number(out, input_line);
 		} else {
-			int* cnst = hash_get(compiler->consts, id);
-			if (cnst)
-				emit_number(out, *cnst);
+			Symbol *sym = hash_get(compiler->symbols, id);
+			if (sym && sym->type == CONST)
+				emit_number(out, sym->value);
 			else
 				variable(id, false);
 		}
@@ -216,13 +240,16 @@ static void define_const(void) {
 		consume('=');
 		int val = get_number();  // TODO: Allow expressions
 		if (!compiling) {
-			if (lookup_var(id, false) >= 0)
-				error_at(top, "'%s' is already defined as a variable", id);
-			if (hash_get(compiler->consts, id))
-				error_at(top, "constant '%s' redefined", id);
-			int *pval = malloc(sizeof(int));
-			*pval = val;
-			hash_put(compiler->consts, id, pval);
+			Symbol *sym = hash_get(compiler->symbols, id);
+			if (sym) {
+				switch (sym->type) {
+				case VARIABLE:
+					error_at(top, "'%s' is already defined as a variable", id);
+				case CONST:
+					error_at(top, "constant '%s' redefined", id);
+				}
+			}
+			hash_put(compiler->symbols, id, new_symbol(CONST, val));
 		}
 	} while (consume(','));
 	expect(':');
@@ -1385,10 +1412,14 @@ Compiler *new_compiler(Vector *src_names, Vector *variables, Map *dlls) {
 	Compiler *comp = calloc(1, sizeof(Compiler));
 	comp->src_names = src_names;
 	comp->variables = variables ? variables : new_vec();
-	comp->consts = new_string_hash();
+	comp->symbols = new_string_hash();
 	comp->functions = new_string_hash();
 	comp->dlls = dlls ? dlls : new_map();
 	comp->scos = calloc(src_names->len, sizeof(Sco));
+
+	for (int i = 0; i < comp->variables->len; i++)
+		hash_put(comp->symbols, comp->variables->data[i], new_symbol(VARIABLE, i));
+
 	return comp;
 }
 
