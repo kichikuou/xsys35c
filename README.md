@@ -42,6 +42,9 @@ The following games can be decompiled and then re-compiled to an ALD file that i
 The following games cannot be decompiled or compiled yet:
 - None (Let me know if you find a title that does not (de)compile!)
 
+## Download
+Prebuilt Windows executables can be found [here](https://github.com/kichikuou/xsys35c/releases).
+
 ## Build & Install
 To build the executables, run `make` command:
 ```
