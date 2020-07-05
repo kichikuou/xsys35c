@@ -137,12 +137,34 @@ static Cali *parse(const uint8_t **code, bool is_lhs) {
 	return node;
 }
 
+static int precedence(int op) {
+	switch (op) {
+	case OP_MUL:    return 4;
+	case OP_DIV:    return 4;
+	case OP_C0_MOD: return 4;
+	case OP_ADD:    return 3;
+	case OP_SUB:    return 3;
+	case OP_AND:    return 2;
+	case OP_OR:     return 2;
+	case OP_XOR:    return 2;
+	case OP_LT:     return 1;
+	case OP_GT:     return 1;
+	case OP_C0_LE:  return 1;
+	case OP_C0_GE:  return 1;
+	case OP_EQ:     return 0;
+	case OP_NE:     return 0;
+	case OP_END:    return 0;
+	default:
+		error("BUG: unknown operator %d", op);
+	}
+}
+
 Cali *parse_cali(const uint8_t **code, bool is_lhs) {
 	free_node = node_pool + NODE_POOL_SIZE;
 	return parse(code, is_lhs);
 }
 
-void print_cali(Cali *node, Vector *variables, FILE *out) {
+void print_cali_prec(Cali *node, int out_prec, Vector *variables, FILE *out) {
 	switch (node->type) {
 	case NODE_NUMBER:
 		fprintf(out, "%d", node->val);
@@ -160,35 +182,44 @@ void print_cali(Cali *node, Vector *variables, FILE *out) {
 		fputs(variables->data[node->val], out);
 		if (node->type == NODE_AREF) {
 			fputc('[', out);
-			print_cali(node->lhs, variables, out);
+			print_cali_prec(node->lhs, 0, variables, out);
 			fputc(']', out);
 		}
 		break;
 
 	case NODE_OP:
-		fputc('(', out);
-		print_cali(node->lhs, variables, out);
-		switch (node->val) {
-		case OP_AND:   fputs(" & ", out); break;
-		case OP_OR:    fputs(" | ", out); break;
-		case OP_XOR:   fputs(" ^ ", out); break;
-		case OP_MUL:   fputs(" * ", out); break;
-		case OP_DIV:   fputs(" / ", out); break;
-		case OP_ADD:   fputs(" + ", out); break;
-		case OP_SUB:   fputs(" - ", out); break;
-		case OP_EQ:    fputs(" = ", out); break;
-		case OP_LT:    fputs(" < ", out); break;
-		case OP_GT:    fputs(" > ", out); break;
-		case OP_NE:    fputs(" \\ ", out); break;
-		case OP_C0_MOD:fputs(" % ", out); break;
-		case OP_C0_LE: fputs(" <= ", out); break;
-		case OP_C0_GE: fputs(" >= ", out); break;
-		case OP_END:   fputs(" $ ", out); break;
-		default:
-			error("BUG: unknown operator %d", node->val);
+		{
+			int prec = precedence(node->val);
+			if (out_prec > prec)
+				fputc('(', out);
+			print_cali_prec(node->lhs, prec, variables, out);
+			switch (node->val) {
+			case OP_AND:   fputs(" & ", out); break;
+			case OP_OR:    fputs(" | ", out); break;
+			case OP_XOR:   fputs(" ^ ", out); break;
+			case OP_MUL:   fputs(" * ", out); break;
+			case OP_DIV:   fputs(" / ", out); break;
+			case OP_ADD:   fputs(" + ", out); break;
+			case OP_SUB:   fputs(" - ", out); break;
+			case OP_EQ:    fputs(" = ", out); break;
+			case OP_LT:    fputs(" < ", out); break;
+			case OP_GT:    fputs(" > ", out); break;
+			case OP_NE:    fputs(" \\ ", out); break;
+			case OP_C0_MOD:fputs(" % ", out); break;
+			case OP_C0_LE: fputs(" <= ", out); break;
+			case OP_C0_GE: fputs(" >= ", out); break;
+			case OP_END:   fputs(" $ ", out); break;
+			default:
+				error("BUG: unknown operator %d", node->val);
+			}
+			print_cali_prec(node->rhs, prec + 1, variables, out);
+			if (out_prec > prec)
+				fputc(')', out);
+			break;
 		}
-		print_cali(node->rhs, variables, out);
-		fputc(')', out);
-		break;
 	}
+}
+
+void print_cali(Cali *node, Vector *variables, FILE *out) {
+	print_cali_prec(node, 0, variables, out);
 }
