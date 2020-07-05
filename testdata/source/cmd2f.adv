@@ -1,5 +1,5 @@
 **F_0_00020:
-	!VAR0:0!
+	!VAR0 : 0!
 	TOC:
 	TOS:
 	TPC 0:
@@ -10,129 +10,129 @@
 	dec VAR0:
 	TAA 0:
 	TAB VAR0:
-	wavLoad 0,0:
-	wavPlay 0,0:
+	wavLoad 0, 0:
+	wavPlay 0, 0:
 	wavStop 0:
 	wavUnload 0:
-	wavIsPlay 0,VAR0:
-	wavFade 0,0,0,0:
-	wavIsFade 0,VAR0:
+	wavIsPlay 0, VAR0:
+	wavFade 0, 0, 0, 0:
+	wavIsFade 0, VAR0:
 	wavStopFade 0:
 	trace "a":
-	wav3DSetPos 0,0,0,0:
+	wav3DSetPos 0, 0, 0, 0:
 	wav3DCommit:
-	wav3DGetPos 0,VAR0,VAR0,VAR0:
-	wav3DSetPosL 0,0,0:
-	wav3DGetPosL VAR0,VAR0,VAR0:
-	wav3DFadePos 0,0,0,0,0:
-	wav3DIsFadePos 0,VAR0:
+	wav3DGetPos 0, VAR0, VAR0, VAR0:
+	wav3DSetPosL 0, 0, 0:
+	wav3DGetPosL VAR0, VAR0, VAR0:
+	wav3DFadePos 0, 0, 0, 0, 0:
+	wav3DIsFadePos 0, VAR0:
 	wav3DStopFadePos 0:
-	wav3DFadePosL 0,0,0,0:
+	wav3DFadePosL 0, 0, 0, 0:
 	wav3DIsFadePosL VAR0:
 	wav3DStopFadePosL:
-	sndPlay 0,0:
+	sndPlay 0, 0:
 	sndStop:
 	sndIsPlay VAR0:
 	'a'
-	HH 0,0:
-	LC 0,0,"a":
-	LE 0,"a",0,0:
-	LXG 0,"a","a":
-	MI 0,0,"a":
-	MS 0,"a":
+	HH 0, 0:
+	LC 0, 0, "a":
+	LE 0, "a", 0, 0:
+	LXG 0, "a", "a":
+	MI 0, 0, "a":
+	MS 0, "a":
 	MT "a":
 	NT "a":
-	QE 0,"a",0,0:
-	UP2 "a","a":
-	F 1,0,0:
-	wavWaitTime 0,0:
-	wavGetPlayPos 0,VAR0:
+	QE 0, "a", 0, 0:
+	UP2 "a", "a":
+	F 1, 0, 0:
+	wavWaitTime 0, 0:
+	wavGetPlayPos 0, VAR0:
 	wavWaitEnd 0:
-	wavGetWaveTime 0,VAR0:
+	wavGetWaveTime 0, VAR0:
 	menuSetCbkSelect F_0_00020:
 	menuSetCbkCancel F_0_00020:
 	menuClearCbkSelect:
 	menuClearCbkCancel:
-	wav3DSetMode 0,0:
-	grCopyStretch 0,0,0,0,0,0,0,0,0:
-	grFilterRect 0,0,0,0,0:
+	wav3DSetMode 0, 0:
+	grCopyStretch 0, 0, 0, 0, 0, 0, 0, 0, 0:
+	grFilterRect 0, 0, 0, 0, 0:
 	iptClearWheelCount:
-	iptGetWheelCount VAR0,VAR0:
+	iptGetWheelCount VAR0, VAR0:
 	menuGetFontSize VAR0:
 	msgGetFontSize VAR0:
-	strGetCharType 0,0,VAR0:
-	strGetLengthASCII 0,VAR0:
+	strGetCharType 0, 0, VAR0:
+	strGetLengthASCII 0, VAR0:
 	sysWinMsgLock:
 	sysWinMsgUnlock:
-	aryCmpCount VAR0,0,0,VAR0:
-	aryCmpTrans VAR0,0,0,0,0,VAR0:
-	grBlendColorRect 0,0,0,0,0,0,0,0,0:
-	grDrawFillCircle 0,0,0,0:
-	MHH 0,0,0:
+	aryCmpCount VAR0, 0, 0, VAR0:
+	aryCmpTrans VAR0, 0, 0, 0, 0, VAR0:
+	grBlendColorRect 0, 0, 0, 0, 0, 0, 0, 0, 0:
+	grDrawFillCircle 0, 0, 0, 0:
+	MHH 0, 0, 0:
 	menuSetCbkInit F_0_00020:
 	menuClearCbkInit:
 	
 	]
 	sysOpenShell "a":
-	sysAddWebMenu "a","a":
+	sysAddWebMenu "a", "a":
 	iptSetMoveCursorTime 0:
 	iptGetMoveCursorTime VAR0:
-	grBlt 0,0,0,0,0,0:
-	LXWT 0,"a":
-	LXWS 0,0:
-	LXWE 0,0:
-	LXWH 0,0,0:
-	LXWHH 0,0,0:
+	grBlt 0, 0, 0, 0, 0, 0:
+	LXWT 0, "a":
+	LXWS 0, 0:
+	LXWE 0, 0:
+	LXWH 0, 0, 0:
+	LXWHH 0, 0, 0:
 	sysGetOSName 0:
 	patchEC 0:
-	mathSetClipWindow 0,0,0,0:
-	mathClip VAR0,VAR0,VAR0,VAR0,VAR0,VAR0:
-	LXF 0,"a","a":
-	strInputDlg "a",0,0,VAR0:
-	strCheckASCII 0,VAR0:
-	strCheckSJIS 0,VAR0:
+	mathSetClipWindow 0, 0, 0, 0:
+	mathClip VAR0, VAR0, VAR0, VAR0, VAR0, VAR0:
+	LXF 0, "a", "a":
+	strInputDlg "a", 0, 0, VAR0:
+	strCheckASCII 0, VAR0:
+	strCheckSJIS 0, VAR0:
 	strMessageBox "a":
 	strMessageBoxStr 0:
-	grCopyUseAMapUseA 0,0,0,0,0,0,0:
-	grSetCEParam 0,0:
-	grEffectMoveView 0,0,0,0:
+	grCopyUseAMapUseA 0, 0, 0, 0, 0, 0, 0:
+	grSetCEParam 0, 0:
+	grEffectMoveView 0, 0, 0, 0:
 	cgSetCacheSize 0:
-	gaijiSet 0,0:
+	gaijiSet 0, 0:
 	gaijiClearAll:
 	menuGetLatestSelect VAR0:
-	lnkIsLink 0,0,VAR0:
-	lnkIsData 0,0,VAR0:
-	fncSetTable 0,F_0_00020:
-	fncSetTableFromStr 0,0,VAR0:
+	lnkIsLink 0, 0, VAR0:
+	lnkIsData 0, 0, VAR0:
+	fncSetTable 0, F_0_00020:
+	fncSetTableFromStr 0, 0, VAR0:
 	fncClearTable 0:
 	fncCall 0:
 	fncSetReturnCode 0:
 	fncGetReturnCode VAR0:
 	msgSetOutputFlag 0:
-	saveDeleteFile 0,VAR0:
+	saveDeleteFile 0, VAR0:
 	wav3DSetUseFlag 0:
-	wavFadeVolume 0,0,0,0:
+	wavFadeVolume 0, 0, 0, 0:
 	patchEMEN 0:
 	wmenuEnableMsgSkip 0:
 	winGetFlipFlag VAR0:
 	cdGetMaxTrack VAR0:
-	dlgErrorOkCancel "a",VAR0:
+	dlgErrorOkCancel "a", VAR0:
 	menuReduce 0:
 	menuGetNumof VAR0:
-	menuGetText 0,0:
-	menuGoto 0,0:
-	menuReturnGoto 0,0:
+	menuGetText 0, 0:
+	menuGoto 0, 0:
+	menuReturnGoto 0, 0:
 	menuFreeShelterDIB:
 	msgFreeShelterDIB:
-	dataGetWORD VAR0,0:
-	dataGetString 0,0:
+	dataGetWORD VAR0, 0:
+	dataGetString 0, 0:
 	dataSkipWORD 0:
 	dataSkipString 0:
 	varGetNumof VAR0:
 	patchG0 0:
-	regReadString 0,0,0,VAR0:
-	fileCheckExist 0,VAR0:
-	timeCheckCurDate 0,0,0,VAR0:
-	dlgManualProtect "a","a":
-	fileCheckDVD "a",0,0,"a",VAR0:
+	regReadString 0, 0, 0, VAR0:
+	fileCheckExist 0, VAR0:
+	timeCheckCurDate 0, 0, 0, VAR0:
+	dlgManualProtect "a", "a":
+	fileCheckDVD "a", 0, 0, "a", VAR0:
 	sysReset:

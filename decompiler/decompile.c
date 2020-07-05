@@ -260,7 +260,7 @@ static void data_table_addr(void) {
 	uint32_t addr = le32(dc.p);
 	dc.p += 4;
 	dc_printf("L_%05x", addr);
-	dc_putc(',');
+	dc_puts(", ");
 	cali(false);
 	dc_putc(':');
 
@@ -352,7 +352,7 @@ static void defun(Function *f, const char *name) {
 	dc_puts("**");
 	dc_puts(name);
 	for (int i = 0; i < f->argc; i++) {
-		dc_putc(i == 0 ? ' ' : ',');
+		dc_puts(i == 0 ? " " : ", ");
 		Cali node = {.type = NODE_VARIABLE, .val = f->argv[i]};
 		print_cali(&node, dc.variables, dc.out);
 	}
@@ -545,12 +545,12 @@ static bool funcall_with_args(void) {
 	assert(argc == func->argc);
 	dc_putc('~');
 	dc_puts(func->name);
-	char sep = ' ';
+	char *sep = " ";
 	while (argc-- > 0) {
 		dc.p++;  // skip '!'
 		parse_cali(&dc.p, true);  // skip varname
-		dc_putc(sep);
-		sep = ',';
+		dc_puts(sep);
+		sep = ", ";
 		cali(false);
 	}
 	dc_putc(':');
@@ -599,9 +599,9 @@ static void for_loop(void) {
 	dc.p += 4; // skip label
 	parse_cali(&dc.p, false);  // var
 	cali(false);  // e2
-	dc_putc(',');
+	dc_puts(", ");
 	cali(false);  // e3
-	dc_putc(',');
+	dc_puts(", ");
 	cali(false);  // e4
 	dc_putc(':');
 	dc.indent++;
@@ -638,7 +638,7 @@ static void arguments(const char *sig) {
 	const char *sep = " ";
 	for (; *sig; sig++) {
 		dc_puts(sep);
-		sep = ",";
+		sep = ", ";
 
 		switch (*sig) {
 		case 'e':
@@ -957,7 +957,7 @@ static void dll_call(void) {
 		case HEL_int:
 		case HEL_IString:
 			dc_puts(sep);
-			sep = ",";
+			sep = ", ";
 			cali(false);
 			break;
 		case HEL_ISurface:
@@ -976,7 +976,7 @@ static void dll_call(void) {
 			break;
 		case HEL_IConstString:
 			dc_puts(sep);
-			sep = ",";
+			sep = ", ";
 			dc_putc('"');
 			dc_puts_escaped((const char *)dc.p, '\0');
 			dc.p += strlen((const char *)dc.p) + 1;
@@ -1096,9 +1096,9 @@ static void decompile_page(int page) {
 			dc.p++;
 			dc_putc('<');
 			cali(true);
-			dc_putc(',');
+			dc_puts(", ");
 			cali(false);
-			dc_putc(',');
+			dc_puts(", ");
 			assert(*dc.p == '<');
 			dc.p++;
 			for_loop();
@@ -1131,9 +1131,10 @@ static void decompile_page(int page) {
 				// Array reference cannot be a function argument.
 				if (node->type == NODE_AREF)
 					next_funcall_top_candidate = 0;
+				dc_putc(' ');
 				if (cmd != '!')
 					dc_putc("+-*/%&|^"[cmd - 0x10]);
-				dc_putc(':');
+				dc_puts(": ");
 				cali(false);
 				dc_putc('!');
 			}
@@ -1429,13 +1430,13 @@ static void decompile_page(int page) {
 		case CMD2('S', 'W'): arguments("veee"); break;
 		case CMD2('S', 'X'):
 			subcommand_num();  // device
-			dc_putc(',');
+			dc_puts(", ");
 			switch (subcommand_num()) {
 			case 1:
-				dc_putc(','); arguments("eee"); break;
+				dc_puts(", "); arguments("eee"); break;
 			case 2:
 			case 4:
-				dc_putc(','); arguments("v"); break;
+				dc_puts(", "); arguments("v"); break;
 			case 3:
 				break;
 			default:
