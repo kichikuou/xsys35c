@@ -69,7 +69,14 @@ static Cali *parse(const uint8_t **code, bool is_lhs) {
 					error_at(p, "stack underflow");
 				Cali *rhs = *--top;
 				Cali *lhs = *--top;
-				*top++ = new_node(NODE_OP, op, lhs, rhs);
+				if (op == OP_ADD &&
+					lhs->type == NODE_NUMBER && lhs->val == 16383 &&
+					rhs->type == NODE_NUMBER && rhs->val <= 65535-16383) {
+					lhs->val += rhs->val;
+					*top++ = lhs;
+				} else {
+					*top++ = new_node(NODE_OP, op, lhs, rhs);
+				}
 			}
 			break;
 
