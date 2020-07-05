@@ -31,6 +31,7 @@ static void usage(void) {
 	puts("  dump     Print hex dump of file");
 	puts("  compare  Compare contents of two archives");
 	puts("  help     Display help information about commands");
+	puts("  version  Display version information and exit");
 	puts("");
 	puts("Run 'ald help <command>' for more information about a specific command.");
 }
@@ -298,6 +299,15 @@ static void help_help(void) {
 
 static int do_help(int argc, char *argv[]);
 
+static void help_version(void) {
+	puts("Usage: ald version");
+}
+
+static int do_version(int argc, char *argv[]) {
+	puts("ald " VERSION);
+	return 0;
+}
+
 typedef struct {
 	const char *name;
 	int (*func)(int argc, char *argv[]);
@@ -310,6 +320,7 @@ Command commands[] = {
 	{"dump",    do_dump,    help_dump},
 	{"compare", do_compare, help_compare},
 	{"help",    do_help,    help_help},
+	{"version", do_version, help_version},
 	{NULL, NULL, NULL}
 };
 

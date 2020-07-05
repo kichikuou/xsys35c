@@ -64,3 +64,10 @@ Usage:
 ald help <command>
 ```
 `ald help` displays help information about *command* and exits.
+
+### `version`
+Usage:
+```
+ald version
+```
+`ald version` displays the version number of `ald` and exit.
