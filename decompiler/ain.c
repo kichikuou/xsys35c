@@ -23,6 +23,14 @@
 
 static uint8_t *input;
 
+static uint32_t FunctionHash(const Function *f) {
+	return ((f->page * 16777619) ^ f->addr) * 16777619;
+}
+
+static int FunctionCompare(const Function *f1, const Function *f2) {
+	return f1->page == f2->page && f1->addr == f2->addr ? 0 : 1;
+}
+
 static inline uint32_t read_le16(void) {
 	uint16_t n = input[0] | input[1] << 8;
 	input += 2;
@@ -64,9 +72,9 @@ static Map *read_HEL0(void) {
 	return dlls;
 }
 
-static Map *read_FUNC(void) {
+static HashMap *read_FUNC(void) {
 	input += 8; // skip section header
-	Map *functions = new_map();
+	HashMap *functions = new_function_hash();
 	uint32_t count = read_le32();
 	for (uint32_t i = 0; i < count; i++) {
 		const char *name = read_string();
@@ -75,7 +83,14 @@ static Map *read_FUNC(void) {
 		func->page = read_le16();
 		func->addr = read_le32();
 		func->argc = -1;
-		map_put(functions, name, func);
+		Function *existing_entry = hash_get(functions, func);
+		if (existing_entry) {
+			if (!existing_entry->aliases)
+				existing_entry->aliases = new_vec();
+			vec_push(existing_entry->aliases, (void *)name);
+		} else {
+			hash_put(functions, func, func);
+		}
 	}
 	return functions;
 }
@@ -87,6 +102,10 @@ static Vector *read_strings_section(void) {
 	for (uint32_t i = 0; i < count; i++)
 		vec_push(v, (void *)read_string());
 	return v;
+}
+
+HashMap *new_function_hash(void) {
+	return new_hash((HashFunc)FunctionHash, (HashKeyCompare)FunctionCompare);
 }
 
 Ain *ain_read(const char *path) {

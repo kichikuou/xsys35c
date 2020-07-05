@@ -53,6 +53,7 @@ enum {
 
 typedef struct {
 	const char *name;
+	Vector *aliases; // Used if a single address has multiple global labels
 	uint16_t page;  // one-based numbering
 	uint32_t addr;
 	int argc;  // -1 for unknown
@@ -61,14 +62,15 @@ typedef struct {
 
 typedef struct {
 	const char *filename;
-	Map *dlls;         // dllname -> Vector<DLLFunc>
-	Map *functions;    // funcname -> Function
+	Map *dlls;           // dllname -> Vector<DLLFunc>
+	HashMap *functions;  // Function -> Function (itself)
 	Vector *variables;
 	Vector *messages;
 } Ain;
 
 Ain *ain_read(const char *path);
 void write_hels(Map *dlls, const char *dir);
+HashMap *new_function_hash(void);
 
 // cali.c
 

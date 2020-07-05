@@ -36,7 +36,7 @@ typedef struct {
 	Vector *scos;
 	Ain *ain;
 	Vector *variables;
-	Map *functions;    // funcname -> Function
+	HashMap *functions; // Function -> Function (itself)
 	FILE *out;
 
 	int page;
@@ -348,9 +348,9 @@ static void conditional(Vector *branch_end_stack) {
 	stack_push(branch_end_stack, endaddr);
 }
 
-static void defun(Function *f) {
+static void defun(Function *f, const char *name) {
 	dc_puts("**");
-	dc_puts(f->name);
+	dc_puts(name);
 	for (int i = 0; i < f->argc; i++) {
 		dc_putc(i == 0 ? ' ' : ',');
 		Cali node = {.type = NODE_VARIABLE, .val = f->argv[i]};
@@ -362,37 +362,40 @@ static void defun(Function *f) {
 static void func_labels(uint16_t page, uint32_t addr) {
 	if (!dc.out)
 		return;
-	bool found = false;
-	for (int i = 0; i < dc.functions->vals->len; i++) {
-		Function *f = dc.functions->vals->data[i];
-		if (f->page - 1 == page && f->addr == addr) {
+	const Function key = { .page = page + 1, .addr = addr };
+	Function *f = hash_get(dc.functions, &key);
+	if (!f)
+		error("BUG: function record for (%d:%x) not found", page, addr);
+
+	print_address();
+	defun(f, f->name);
+	dc_putc('\n');
+	if (f->aliases) {
+		for (int i = 0; i < f->aliases->len; i++) {
 			print_address();
-			defun(f);
+			defun(f, f->aliases->data[i]);
 			dc_putc('\n');
-			found = true;
 		}
 	}
-	if (!found)
-		error("BUG: function record for (%d:%x) not found", page, addr);
 }
 
 static Function *get_function(uint16_t page, uint32_t addr) {
-	for (int i = 0; i < dc.functions->vals->len; i++) {
-		Function *f = dc.functions->vals->data[i];
-		if (f->page - 1 == page && f->addr == addr)
-			return f;
-	}
+	const Function key = { .page = page + 1, .addr = addr };
+	Function *f = hash_get(dc.functions, &key);
+	if (f)
+		return f;
+
 	if (dc.ain && dc.ain->functions)
 		warning_at(dc.p, "function %d:%d is not found in System39.ain", page, addr);
 
-	Function *f = calloc(1, sizeof(Function));
+	f = calloc(1, sizeof(Function));
 	char name[16];
 	sprintf(name, "F_%d_%05x", page, addr);
 	f->name = strdup(name);
 	f->page = page + 1;
 	f->addr = addr;
 	f->argc = -1;
-	map_put(dc.functions, f->name, f);
+	hash_put(dc.functions, f, f);
 	return f;
 }
 
@@ -1712,13 +1715,19 @@ static void create_adv_for_missing_sco(const char *outdir, int page) {
 	// Set ald_file_id to zero so that xsys35c will not generate ALD for this.
 	fprintf(dc.out, "pragma ald_file_id 0:\n");
 
-	for (int i = 0; i < dc.functions->vals->len; i++) {
-		Function *f = dc.functions->vals->data[i];
+	for (HashItem *i = hash_iterate(dc.functions, NULL); i; i = hash_iterate(dc.functions, i)) {
+		Function *f = (Function *)i->val;
 		if (f->page - 1 != page)
 			continue;
 		fprintf(dc.out, "pragma address 0x%x:\n", f->addr);
-		defun(f);
+		defun(f, f->name);
 		dc_putc('\n');
+		if (f->aliases) {
+			for (int i = 0; i < f->aliases->len; i++) {
+				defun(f, f->aliases->data[i]);
+				dc_putc('\n');
+			}
+		}
 	}
 
 	if (config.utf8)
@@ -1823,7 +1832,7 @@ void decompile(Vector *scos, Ain *ain, const char *outdir, const char *ald_basen
 	dc.scos = scos;
 	dc.ain = ain;
 	dc.variables = (ain && ain->variables) ? ain->variables : new_vec();
-	dc.functions = (ain && ain->functions) ? ain->functions : new_map();
+	dc.functions = (ain && ain->functions) ? ain->functions : new_function_hash();
 	dc.disable_ain_variable = ain && !ain->variables;
 
 	// Preprocess

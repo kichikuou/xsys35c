@@ -140,8 +140,8 @@ static void mark_functions_from_ain(Vector *scos, Ain *ain) {
 			hash_put(data_labels, utf2sjis(*s), *s);
 	}
 
-	for (int i = 0; i < ain->functions->vals->len; i++) {
-		Function *f = ain->functions->vals->data[i];
+	for (HashItem *i = hash_iterate(ain->functions, NULL); i; i = hash_iterate(ain->functions, i)) {
+		Function *f = (Function *)i->val;
 		unsigned page = f->page - 1;
 		Sco *sco = page < scos->len ? scos->data[page] : NULL;
 		if (sco && f->addr <= sco->filesize) {
