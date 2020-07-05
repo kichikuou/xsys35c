@@ -19,8 +19,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define NODE_POOL_SIZE 1024
+
+static Cali node_pool[NODE_POOL_SIZE];
+static Cali *free_node;
+
 static Cali *new_node(int type, int val, Cali *lhs, Cali *rhs) {
-	Cali *n = calloc(1, sizeof(Cali));
+	Cali *n = (free_node > node_pool) ? --free_node : calloc(1, sizeof(Cali));
 	n->type = type;
 	n->val = val;
 	n->lhs = lhs;
@@ -28,7 +33,7 @@ static Cali *new_node(int type, int val, Cali *lhs, Cali *rhs) {
 	return n;
 }
 
-Cali *parse_cali(const uint8_t **code, bool is_lhs) {
+static Cali *parse(const uint8_t **code, bool is_lhs) {
 	Cali *stack[256];
 	Cali **top = stack;
 	const uint8_t *p = *code;
@@ -79,7 +84,7 @@ Cali *parse_cali(const uint8_t **code, bool is_lhs) {
 				{
 					int var = p[0] << 8 | p[1];
 					p += 2;
-					Cali *index = parse_cali(&p, false);
+					Cali *index = parse(&p, false);
 					*top++ = new_node(NODE_AREF, var, index, NULL);
 				}
 				break;
@@ -130,6 +135,11 @@ Cali *parse_cali(const uint8_t **code, bool is_lhs) {
 		error_at(p, "unexpected left-hand-side for assignment %d", node->type);
 	*code = p;
 	return node;
+}
+
+Cali *parse_cali(const uint8_t **code, bool is_lhs) {
+	free_node = node_pool + NODE_POOL_SIZE;
+	return parse(code, is_lhs);
 }
 
 void print_cali(Cali *node, Vector *variables, FILE *out) {

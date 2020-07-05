@@ -85,6 +85,7 @@ typedef struct Cali {
 	struct Cali *lhs, *rhs;
 } Cali;
 
+// The returned node is valid until next parse_cali() call.
 Cali *parse_cali(const uint8_t **code, bool is_lhs);
 void print_cali(Cali *node, Vector *variables, FILE *out);
 
