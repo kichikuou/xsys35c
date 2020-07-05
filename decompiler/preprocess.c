@@ -134,10 +134,10 @@ static const char *night_data_labels[] = {
 };
 
 static void mark_functions_from_ain(Vector *scos, Ain *ain) {
-	HashMap *data_labels = new_hash();
+	HashMap *data_labels = new_string_hash();
 	if (ain->dlls && map_get(ain->dlls, "NIGHTDLL")) {
 		for (const char **s = night_data_labels; *s; s++)
-			hash_put(data_labels, utf2sjis(*s), (void*)*s);
+			hash_put(data_labels, utf2sjis(*s), *s);
 	}
 
 	for (int i = 0; i < ain->functions->vals->len; i++) {

@@ -101,19 +101,26 @@ void map_put(Map *m, const char *key, void *val);
 void *map_get(Map *m, const char *key);
 
 typedef struct {
-	const char *key;
+	const void *key;
 	void *val;
 } HashItem;
+
+typedef uint32_t (*HashFunc)(const void *key);
+// Returns zero if the two keys are equal.
+typedef int (*HashKeyCompare)(const void *k1, const void *k2);
 
 typedef struct {
 	HashItem *table;
 	uint32_t size;
 	uint32_t occupied;
+	HashFunc hash;
+	HashKeyCompare compare;
 } HashMap;
 
-HashMap *new_hash(void);
-void hash_put(HashMap *m, const char *key, void *val);
-void *hash_get(HashMap *m, const char *key);
+HashMap *new_hash(HashFunc hash, HashKeyCompare compare);
+HashMap *new_string_hash(void);
+void hash_put(HashMap *m, const void *key, const void *val);
+void *hash_get(HashMap *m, const void *key);
 HashItem *hash_iterate(HashMap *m, HashItem *item);
 
 // ald.c

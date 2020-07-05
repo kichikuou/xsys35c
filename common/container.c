@@ -78,14 +78,16 @@ void *map_get(Map *m, const char *key) {
 	return NULL;
 }
 
-HashMap *new_hash(void) {
+HashMap *new_hash(HashFunc hash, HashKeyCompare compare) {
 	HashMap *m = calloc(1, sizeof(HashMap));
 	m->size = HASH_INIT_SIZE;
 	m->table = calloc(m->size, sizeof(HashItem));
+	m->hash = hash;
+	m->compare = compare;
 	return m;
 }
 
-static uint32_t hash(const char *p) {
+static uint32_t string_hash(const char *p) {
 	// FNV hash
 	uint32_t r = 2166136261;
 	for (; *p; p++) {
@@ -93,6 +95,10 @@ static uint32_t hash(const char *p) {
 		r *= 16777619;
 	}
 	return r;
+}
+
+HashMap *new_string_hash(void) {
+	return new_hash((HashFunc)string_hash, (HashKeyCompare)strcmp);
 }
 
 static void maybe_rehash(HashMap *m) {
@@ -109,26 +115,26 @@ static void maybe_rehash(HashMap *m) {
 	free(old.table);
 }
 
-void hash_put(HashMap *m, const char *key, void *val) {
+void hash_put(HashMap *m, const void *key, const void *val) {
 	maybe_rehash(m);
-	uint32_t h = hash(key) & (m->size - 1);
+	uint32_t h = m->hash(key) & (m->size - 1);
 	while (m->table[h].key) {
-		if (!strcmp(key, m->table[h].key)) {
-			m->table[h].val = val;
+		if (!m->compare(key, m->table[h].key)) {
+			m->table[h].val = (void *)val;
 			return;
 		}
 		if (++h == m->size)
 			h = 0;
 	}
 	m->table[h].key = key;
-	m->table[h].val = val;
+	m->table[h].val = (void *)val;
 	m->occupied++;
 }
 
-void *hash_get(HashMap *m, const char *key) {
-	uint32_t h = hash(key) & (m->size - 1);
+void *hash_get(HashMap *m, const void *key) {
+	uint32_t h = m->hash(key) & (m->size - 1);
 	while (m->table[h].key) {
-		if (!strcmp(key, m->table[h].key))
+		if (!m->compare(key, m->table[h].key))
 			return m->table[h].val;
 		if (++h == m->size)
 			h = 0;

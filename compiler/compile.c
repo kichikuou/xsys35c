@@ -1385,8 +1385,8 @@ Compiler *new_compiler(Vector *src_names, Vector *variables, Map *dlls) {
 	Compiler *comp = calloc(1, sizeof(Compiler));
 	comp->src_names = src_names;
 	comp->variables = variables ? variables : new_vec();
-	comp->consts = new_hash();
-	comp->functions = new_hash();
+	comp->consts = new_string_hash();
+	comp->functions = new_string_hash();
 	comp->dlls = dlls ? dlls : new_map();
 	comp->scos = calloc(src_names->len, sizeof(Sco));
 	return comp;
