@@ -1042,7 +1042,6 @@ static bool command(void) {
 	case CMD3('N', 'D', 'D'): arguments("ve"); break;
 	case CMD3('N', 'D', 'H'): arguments("ee"); break;
 	case CMD3('N', 'D', 'M'): arguments("ee"); break;
-	case 'O': arguments(""); break;
 	case CMD2('P', 'C'): arguments("e"); break;
 	case CMD2('P', 'D'): arguments("e"); break;
 	case CMD2('P', 'F'): // fall through
