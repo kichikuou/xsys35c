@@ -121,7 +121,9 @@ static void help_extract(void) {
 }
 
 static void extract_entry(AldEntry *e, const char *directory) {
-	FILE *fp = checked_fopen(path_join(directory, sjis2utf(e->name)), "wb");
+	const char *utf_name = sjis2utf(e->name);
+	puts(utf_name);
+	FILE *fp = checked_fopen(path_join(directory, utf_name), "wb");
 	if (fwrite(e->data, e->size, 1, fp) != 1)
 		error("%s: %s", sjis2utf(e->name), strerror(errno));
 	fclose(fp);
