@@ -389,9 +389,20 @@ static Function *get_function(uint16_t page, uint32_t addr) {
 		warning_at(dc.p, "function %d:%d is not found in System39.ain", page, addr);
 
 	f = calloc(1, sizeof(Function));
-	char name[16];
-	sprintf(name, "F_%d_%05x", page, addr);
-	f->name = strdup(name);
+	if (page < dc.scos->len && dc.scos->data[page]) {
+		Sco *sco = dc.scos->data[page];
+		char *name = malloc(strlen(sco->sco_name) + 10);
+		strcpy(name, sco->sco_name);
+		char *p = strrchr(name, '.');
+		if (!p)
+			p = name + strlen(name);
+		sprintf(p, "_%x", addr);
+		f->name = name;
+	} else {
+		char name[16];
+		sprintf(name, "F_%d_%05x", page, addr);
+		f->name = strdup(name);
+	}
 	f->page = page + 1;
 	f->addr = addr;
 	f->argc = -1;

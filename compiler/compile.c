@@ -368,7 +368,9 @@ static void funcall(void) {
 		expect(':');
 		return;
 	}
-	if (consume('0')) {
+	const char *top = input;
+	char *name = get_label();
+	if (!strcmp(name, "0")) {
 		emit(out, '~');
 		emit_word(out, 0);
 		expect(',');
@@ -376,8 +378,6 @@ static void funcall(void) {
 		expect(':');
 		return;
 	}
-	const char *top = input;
-	char *name = get_label();
 	if (!compiling) {
 		// First pass - skip parameters
 		bool needs_comma = false;

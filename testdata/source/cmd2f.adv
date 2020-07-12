@@ -1,4 +1,4 @@
-**F_0_00020:
+**cmd2f_20:
 	!VAR0 : 0!
 	TOC:
 	TOS:
@@ -49,8 +49,8 @@
 	wavGetPlayPos 0, VAR0:
 	wavWaitEnd 0:
 	wavGetWaveTime 0, VAR0:
-	menuSetCbkSelect F_0_00020:
-	menuSetCbkCancel F_0_00020:
+	menuSetCbkSelect cmd2f_20:
+	menuSetCbkCancel cmd2f_20:
 	menuClearCbkSelect:
 	menuClearCbkCancel:
 	wav3DSetMode 0, 0:
@@ -69,7 +69,7 @@
 	grBlendColorRect 0, 0, 0, 0, 0, 0, 0, 0, 0:
 	grDrawFillCircle 0, 0, 0, 0:
 	MHH 0, 0, 0:
-	menuSetCbkInit F_0_00020:
+	menuSetCbkInit cmd2f_20:
 	menuClearCbkInit:
 	
 	]
@@ -102,7 +102,7 @@
 	menuGetLatestSelect VAR0:
 	lnkIsLink 0, 0, VAR0:
 	lnkIsData 0, 0, VAR0:
-	fncSetTable 0, F_0_00020:
+	fncSetTable 0, cmd2f_20:
 	fncSetTableFromStr 0, 0, VAR0:
 	fncClearTable 0:
 	fncCall 0:

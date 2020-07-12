@@ -1,4 +1,4 @@
-**F_1_00020:
+**control_20:
 *L_00020:
 	'Control structures test'
 	A
@@ -57,7 +57,7 @@
 	%#control.adv:
 	%0:
 	'Function call / return'
-	~F_1_00020:
+	~control_20:
 	~0,1:
 	'For loop'
 	<VAR0, 0, 10, 1, 2:
