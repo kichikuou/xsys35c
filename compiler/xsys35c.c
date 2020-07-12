@@ -225,7 +225,7 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *a
 }
 
 int main(int argc, char *argv[]) {
-	init();
+	init(argc, argv);
 
 	const char *project = NULL;
 	const char *ald_basename = NULL;

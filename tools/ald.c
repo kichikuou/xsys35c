@@ -339,7 +339,7 @@ static int do_help(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-	init();
+	init(argc, argv);
 
 	if (argc == 1) {
 		usage();

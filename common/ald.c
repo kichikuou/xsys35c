@@ -154,9 +154,7 @@ Vector *ald_read(Vector *entries, const char *path) {
 	if (!entries)
 		entries = new_vec();
 
-	int fd = open(path, O_RDONLY | _O_BINARY);
-	if (fd == -1)
-		error("%s: %s", path, strerror(errno));
+	int fd = checked_open(path, O_RDONLY | _O_BINARY);
 
 	struct stat sbuf;
 	if (fstat(fd, &sbuf) < 0)

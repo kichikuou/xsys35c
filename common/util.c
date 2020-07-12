@@ -27,8 +27,25 @@
 #include <sys/stat.h>
 #endif
 
-void init(void) {
 #ifdef _WIN32
+static char *native_to_utf8(const char *native) {
+	int native_len = strlen(native);
+	wchar_t *wstr = malloc((native_len + 1) * sizeof(wchar_t));
+	if (!MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, native, -1, wstr, native_len + 1))
+		error("MultiByteToWideChar(\"%s\") failed with error code 0x%x", native, GetLastError());
+	int utf_len = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
+	char *utf = malloc(utf_len);
+	if (!WideCharToMultiByte(CP_UTF8, 0, wstr, -1, utf, utf_len, NULL, NULL))
+		error("WideCharToMultiByte(\"%s\") failed with error code 0x%x", native, GetLastError());
+	free(wstr);
+	return utf;
+}
+#endif
+
+void init(int argc, char **argv) {
+#ifdef _WIN32
+	for (int i = 0; i < argc; i++)
+		argv[i] = native_to_utf8(argv[i]);
 	SetConsoleOutputCP(CP_UTF8);
 #endif
 }
@@ -62,6 +79,20 @@ FILE *checked_fopen(const char *path_utf8, const char *mode) {
 	if (!fp)
 		error("cannot open %s: %s", path_utf8, strerror(errno));
 	return fp;
+}
+
+int checked_open(const char *path_utf8, int oflag) {
+#ifdef _WIN32
+	wchar_t wpath[PATH_MAX + 1];
+	if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path_utf8, -1, wpath, PATH_MAX + 1))
+		error("MultiByteToWideChar(\"%s\") failed with error code 0x%x", path_utf8, GetLastError());
+	int fd = _wopen(wpath, oflag);
+#else
+	int fd = open(path_utf8, oflag);
+#endif
+	if (fd == -1)
+		error("cannot open %s: %s", path_utf8, strerror(errno));
+	return fd;
 }
 
 const char *basename(const char *path) {
