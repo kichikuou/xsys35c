@@ -1,63 +1,64 @@
-; -*- coding: shift_jis -*-
+	; Title
+	MT Example:
 
-    ; Title
-    MT Example:
+	; Variables
+	!RND:0!
+	!D01:0!!D02:0!!D03:0!!D04:0!!D05:0!!D06:0!!D07:0!!D08:0!!D09:0!!D10:0!
+	!D11:0!!D12:0!!D13:0!!D14:0!!D15:0!!D16:0!!D17:0!!D18:0!!D19:0!!D20:0!
+	!X:0!!Y:0!!W:0!!H:0!!C:0!
 
-    ; Variables
-    !RND:0!
-    !D01:0!!D02:0!!D03:0!!D04:0!!D05:0!!D06:0!!D07:0!!D08:0!!D09:0!!D10:0!
-    !D11:0!!D12:0!!D13:0!!D14:0!!D15:0!!D16:0!!D17:0!!D18:0!!D19:0!!D20:0!
-    !X:0!!Y:0!!W:0!!H:0!!C:0!
+	; Scrren / window size
+	WW 640,480,16:
+	WV 0,0,640,480:
+	B1,1,450,20,172,240,1:
+	B2,1,1,0,0,0,0:
+	B3,1,8,8,624,464,0:
+	B4,1,0,0,0,1,0:
 
-    ; Scrren / window size
-    WW 640,480,16:
-    WV 0,0,640,480:
-    B1,1,450,20,172,240,1:
-    B2,1,1,0,0,0,0:
-    B3,1,8,8,624,464,0:
-    B4,1,0,0,0,1,0:
+	; No half-width / full-width conversion
+	ZH 2:
 
 *menu:
-    ; Main menu
-    $graphics$‚f‚’‚‚‚ˆ‚‰‚ƒ‚“$
-    $text$‚s‚…‚˜‚”$
-    $sysinfo$‚r‚™‚“‚”‚…‚@‚h‚‚†‚$
-    $quit$‚p‚•‚‰‚”$
-    ]
+	; Main menu
+	$graphics$'Graphics'$
+	$text$'Text'$
+	$sysinfo$'System Info'$
+	$quit$'Quit'$
+	]
 
 *graphics:
-    ; Draw 100 random rectangles
-    <D01,0,100,1,1:
-        Y4,640-16: !X:RND!
-        Y4,640-16: {X>RND: !D02:RND! !RND:X! !X:D02!} !W:RND-X!
-        Y4,480-16: !Y:RND!
-        Y4,480-16: {Y>RND: !D02:RND! !RND:Y! !Y:D02!} !H:RND-Y!
-        Y4,65535: !C:RND!
-        CF X+8,Y+8,W,H,C:
-    >
-    @menu:
+	; Draw 100 random rectangles
+	<D01,0,100,1,1:
+		Y4,640-16: !X:RND!
+		Y4,640-16: {X>RND: !D02:RND! !RND:X! !X:D02!} !W:RND-X!
+		Y4,480-16: !Y:RND!
+		Y4,480-16: {Y>RND: !D02:RND! !RND:Y! !Y:D02!} !H:RND-Y!
+		Y4,65535: !C:RND!
+		CF X+8,Y+8,W,H,C:
+	>
+	@menu:
 
 *text:
-    ; Draw text with various font size
-    ZM 12: '‚r‚™‚“‚”‚…‚‚RD‚T'R
-    ZM 16: '‚r‚™‚“‚”‚…‚‚RD‚T'R
-    ZM 24: '‚r‚™‚“‚”‚…‚‚RD‚T'R
-    ZM 32: '‚r‚™‚“‚”‚…‚‚RD‚T'R
-    ZM 48: '‚r‚™‚“‚”‚…‚‚RD‚T'R
-    ZM 64: '‚r‚™‚“‚”‚…‚‚RD‚T'A
-    ZM 16:
-    @menu:
+	; Draw text with various font sizes
+	ZM 12: 'System 3.5'R
+	ZM 16: 'System 3.5'R
+	ZM 24: 'System 3.5'R
+	ZM 32: 'System 3.5'R
+	ZM 48: 'System 3.5'R
+	ZM 64: 'System 3.5'A
+	ZM 16:
+	@menu:
 
 *sysinfo:
-    ; Display system information
-    ZT0,D01:
-    '‚b‚•‚’‚’‚…‚‚”@‚”‚‰‚‚…F@' H0,D01: '[' H0,D02: '[' H0,D03: '@' H0,D04: 'F' H0,D05: 'F' H0,D06: R
-    ZZ1,D01: ZZ2,1:
-    '‚n‚r^‚l‚‚ƒ‚ˆ‚‰‚‚…F@' H0,D01: 'i' X 1: 'j' R
-    ZZ3,D01:
-    '‚r‚ƒ‚’‚…‚…‚@‚“‚‰‚š‚…F@' H0,D01: '~' H0,D02: '@' H0,D03: '‚‚‚‰‚”@‚ƒ‚‚Œ‚‚’'R
-    A
-    @menu:
+	; Display system information
+	ZT0,D01:
+	'Current time: ' HH 0,D01: '-' HH 0,D02: '-' HH 0,D03: ' ' HH 0,D04: ':' HH 0,D05: ':' HH 0,D06: R
+	ZZ1,D01: ZZ2,1:
+	'OS/Machine: ' HH 0,D01: ' (' X 1: ')' R
+	ZZ3,D01:
+	'Screen size: ' HH 0,D01: 'x' HH 0,D02: ' ' HH 0,D03: 'bit color'R
+	A
+	@menu:
 
 *quit:
-    ZZ0,0:
+	ZZ0,0:
