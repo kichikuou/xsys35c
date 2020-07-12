@@ -1,10 +1,4 @@
-CFLAGS = -Wall -O2 -Icommon
-
-# `make SJIS_NATIVE=1` will disable SJIS<->UTF8 conversion.
-# This is useful if system charset is SJIS.
-ifdef SJIS_NATIVE
-	CFLAGS += -DSJIS_NATIVE
-endif
+CFLAGS = -Wall -Werror -O2 -Icommon
 
 PREFIX ?= /usr/local
 

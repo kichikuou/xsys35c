@@ -169,9 +169,6 @@ bool is_valid_sjis(uint8_t c1, uint8_t c2) {
 }
 
 char *sjis2utf_sub(const char *str, int substitution_char) {
-#ifdef SJIS_NATIVE
-	return strdup(str);
-#else
 	const uint8_t *src = (uint8_t *)str;
 	uint8_t *dst = malloc(strlen(str) * 3 + 1);
 	uint8_t *dstp = dst;
@@ -209,13 +206,9 @@ char *sjis2utf_sub(const char *str, int substitution_char) {
 	}
 	*dstp = '\0';
 	return (char *)dst;
-#endif
 }
 
 char *utf2sjis_sub(const char *str, int substitution_char) {
-#ifdef SJIS_NATIVE
-	return strdup(str);
-#else
 	const uint8_t *src = (uint8_t *)str;
 	uint8_t *dst = malloc(strlen(str) + 1);
 	uint8_t *dstp = dst;
@@ -257,7 +250,6 @@ char *utf2sjis_sub(const char *str, int substitution_char) {
 	}
 	*dstp = '\0';
 	return (char*)dst;
-#endif
 }
 
 uint8_t compact_sjis(uint8_t c1, uint8_t c2) {
