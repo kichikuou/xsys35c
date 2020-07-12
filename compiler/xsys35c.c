@@ -51,7 +51,7 @@ static void usage(void) {
 	puts("    -i, --hed <file>          Read compile header (.hed) from <file>");
 	puts("    -h, --help                Display this message and exit");
 	puts("    -p, --project <file>      Read project configuration from <file>");
-	puts("    -s, --sys-ver <ver>       Target System version (3.5|3.6|3.8(default)|3.9)");
+	puts("    -s, --sys-ver <ver>       Target System version (3.5|3.6|3.8|3.9(default))");
 	puts("    -V, --variables <file>    Read list of variables from <file>");
 	puts("    -v, --version             Print version information and exit");
 }

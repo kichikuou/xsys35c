@@ -20,7 +20,7 @@
 #include <string.h>
 
 Config config = {
-	.sys_ver = SYSTEM38,
+	.sys_ver = SYSTEM39,
 	.sco_ver = SCO_S380,
 	.utf8 = true,
 };

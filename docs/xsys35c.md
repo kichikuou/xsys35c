@@ -45,7 +45,7 @@ The following options are available:
 
   <dt><code>-s <var>ver</var></code>
   <br/><code>--sys-ver <var>ver</var></code></dt>
-  <dd>Sets target System version. Available values are <code>3.5</code>, <code>3.6</code>, <code>3.8</code> (default), <code>3.9</code>,</dd>
+  <dd>Sets target System version. Available values are <code>3.5</code>, <code>3.6</code>, <code>3.8</code> and <code>3.9</code> (default),</dd>
 
   <dt><code>-V <var>file</var></code>
   <br/><code>--variables <var>file</var></code></dt>
