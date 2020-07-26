@@ -27,13 +27,13 @@ static void ain_emit_HEL0(Buffer *out, Map *dlls) {
 	emit_dword(out, 0);  // reserved
 	emit_dword(out, dlls->keys->len);
 	for (int i = 0; i < dlls->keys->len; i++) {
-		emit_string(out, utf2sjis(dlls->keys->data[i]));
+		emit_string(out, utf2sjis_sub(dlls->keys->data[i], '?'));
 		emit(out, 0);
 		Vector *funcs = dlls->vals->data[i];
 		emit_dword(out, funcs->len);
 		for (int j = 0; j < funcs->len; j++) {
 			DLLFunc *f = funcs->data[j];
-			emit_string(out, utf2sjis(f->name));
+			emit_string(out, utf2sjis_sub(f->name, '?'));
 			emit(out, 0);
 			emit_dword(out, f->argc);
 			for (int k = 0; k < f->argc; k++)
@@ -69,7 +69,7 @@ static void ain_emit_FUNC(Buffer *out, HashMap *functions) {
 	Function *p = items;
 	for (HashItem *i = hash_iterate(functions, NULL); i; i = hash_iterate(functions, i)) {
 		*p = *(Function *)i->val;
-		p->name = utf2sjis(p->name);
+		p->name = utf2sjis_sub(p->name, '?');
 		p++;
 	}
 	if (config.disable_ain_variable)  // FIXME: Use a dedicated config for this.
@@ -94,7 +94,7 @@ static void ain_emit_VARI(Buffer *out, Vector *variables) {
 	emit_dword(out, 0);  // reserved
 	emit_dword(out, variables->len);
 	for (int i = 0; i < variables->len; i++) {
-		emit_string(out, utf2sjis(variables->data[i]));
+		emit_string(out, utf2sjis_sub(variables->data[i], '?'));
 		emit(out, 0);
 	}
 }

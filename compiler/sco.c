@@ -139,7 +139,7 @@ void emit_command(Buffer *b, int cmd) {
 }
 
 void sco_init(Buffer *b, const char *src_name, int pageno) {
-	char *sjis_name = utf2sjis(src_name);
+	char *sjis_name = utf2sjis_sub(src_name, '?');
 	int namelen = strlen(sjis_name);
 	if (namelen >= 1024)
 		error("file name too long: %s", src_name);

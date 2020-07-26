@@ -198,7 +198,7 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *a
 		Sco *sco = compile(compiler, source, i);
 		AldEntry *e = calloc(1, sizeof(AldEntry));
 		e->disk = sco->ald_file_id;
-		e->name = utf2sjis(sconame(srcs->keys->data[i]));
+		e->name = utf2sjis_sub(sconame(srcs->keys->data[i]), '?');
 		e->timestamp = time(NULL);
 		e->data = sco->buf->buf;
 		e->size = sco->buf->len;
