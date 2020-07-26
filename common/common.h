@@ -76,6 +76,8 @@ static inline bool is_sjis_byte2(uint8_t c) {
 	return 0x40 <= c && c <= 0xfc && c != 0x7f;
 }
 
+#define UTF8_TRAIL_BYTE(b) ((int8_t)(b) < -0x40)
+
 // container.c
 
 typedef struct {

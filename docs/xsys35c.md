@@ -92,6 +92,3 @@ Explaining the System 3.x language is beyond the scope of this document; please 
 
 ## DLL function declaration (`.hel`) file
 A `.hel` file contains a list of functions (and their argument types) exported by a DLL, in a format similar to a C function declaration. You probably won't need to modify this file, or create your own.
-
-## Bugs
-- Although `xsys35c` accepts source files in UTF-8 encoding, characters outside the Shift_JIS character set cannot be used, even in comments.

@@ -539,21 +539,22 @@ static void arguments(const char *sig) {
 				expect('"');
 				compile_string(out, '"', false);
 			} else {
-				while (*input != ',' && *input != ':') {
-					if (!*input)
-						error_at(top, "unfinished string argument");
-					echo(out);
-				}
+				compile_bare_string(out);
 			}
 			emit(out, *sig == 'z' ? 0 : ':');
 			break;
 		case 'o': // obfuscated string
-			emit(out, 0);
-			expect('"');
-			for (; *input && *input != '"'; input++)
-				emit(out, (uint8_t)*input >> 4 | (uint8_t)*input << 4);
-			expect('"');
-			emit(out, 0);
+			{
+				emit(out, 0);
+				expect('"');
+				int start = current_address(out);
+				compile_string(out, '"', false);
+				for (int i = start; i < current_address(out); i++) {
+					uint8_t b = get_byte(out, i);
+					set_byte(out, i, b >> 4 | b << 4);
+				}
+				emit(out, 0);
+			}
 			break;
 		case 'v':
 			variable(get_identifier(), false);
@@ -844,7 +845,7 @@ static bool command(void) {
 		}
 		label();
 		expect('$');
-		if (is_sjis_byte1(*input) || is_sjis_half_kana(*input)) {
+		if (!isascii(*input)) {
 			compile_string(out, '$', config.sys_ver == SYSTEM35);
 			emit(out, '$');
 		} else {

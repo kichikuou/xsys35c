@@ -102,24 +102,24 @@ void compile_test(void) {
 		 "[1, 0b100000000, 0xffff]",
 		 "\x01\x00\x00\x01\xff\xff");
 	TEST("string data",
-		 "\"\x82\xCD\x82\xA2\"",
+		 "\"はい\"",
 		 "\xca\xb2\0");
 
 	TEST("message",
-		 "'\x83\x56\x83\x42\x83\x8B'",  // 'シィル' in SJIS
+		 "'シィル'",
 		 "\x83\x56\x83\x42\x83\x8B");
 	TEST("message-conv",
-		 "'\x81\x40\x81\x75\x82\xCD\x82\xA2\x81\x76'",  // '　「はい」' in SJIS
+		 "'　「はい」'",
 		 "\x20\xa2\xca\xb2\xa3");
 	TEST("message-cp",
 		 "'<0x8148>'",
 		 "\x81\x48");
 
 	TEST("menu-item",
-		 "$l$\x83\x56\x83\x42\x83\x8B$ *l:",
+		 "$l$シィル$ *l:",
 		 "\x24\x2c\x00\x00\x00\x83\x56\x83\x42\x83\x8B\x24");
 	TEST("menu-item-cmd",
-		 "$l$'\x83\x56\x83\x42\x83\x8B'A$ *l:",
+		 "$l$'シィル'A$ *l:",
 		 "\x24\x2d\x00\x00\x00\x83\x56\x83\x42\x83\x8B\x41\x24");
 
 	TEST("assign",
@@ -229,7 +229,7 @@ void compile_test(void) {
 	config.sys_ver = SYSTEM36;
 
 	TEST("msg-noconv",
-		 "'\x81\x40\x81\x75\x82\xCD\x82\xA2\x81\x76'",  // '　「はい」' in SJIS
+		 "'　「はい」'",
 		 "\x81\x40\x81\x75\x82\xCD\x82\xA2\x81\x76");
 
 	config.sys_ver = SYSTEM38;
@@ -243,7 +243,7 @@ void compile_test(void) {
 		 "'That\\'s it'",
 		 "/!That's it\0");
 	TEST("msg-nonescape",
-		 "'\x95\x5C'",    // '表' in SJIS, where the second byte is '\'
+		 "'表'",    // In SJIS, 表's second byte is '\'
 		 "/!\x95\x5C\0");
 	TEST("msg-codepoint",
 		 "'<0x8148>'",

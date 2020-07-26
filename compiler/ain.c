@@ -27,13 +27,13 @@ static void ain_emit_HEL0(Buffer *out, Map *dlls) {
 	emit_dword(out, 0);  // reserved
 	emit_dword(out, dlls->keys->len);
 	for (int i = 0; i < dlls->keys->len; i++) {
-		emit_string(out, dlls->keys->data[i]);
+		emit_string(out, utf2sjis(dlls->keys->data[i]));
 		emit(out, 0);
 		Vector *funcs = dlls->vals->data[i];
 		emit_dword(out, funcs->len);
 		for (int j = 0; j < funcs->len; j++) {
 			DLLFunc *f = funcs->data[j];
-			emit_string(out, f->name);
+			emit_string(out, utf2sjis(f->name));
 			emit(out, 0);
 			emit_dword(out, f->argc);
 			for (int k = 0; k < f->argc; k++)
@@ -43,14 +43,14 @@ static void ain_emit_HEL0(Buffer *out, Map *dlls) {
 }
 
 static int func_compare_by_name(const void *a, const void *b) {
-	const Function *fa = *(const Function **)a;
-	const Function *fb = *(const Function **)b;
+	const Function *fa = a;
+	const Function *fb = b;
 	return strcmp(fa->name, fb->name);
 }
 
 static int func_compare_by_addr(const void *a, const void *b) {
-	const Function *fa = *(const Function **)a;
-	const Function *fb = *(const Function **)b;
+	const Function *fa = a;
+	const Function *fb = b;
 	if (fa->page != fb->page)
 		return fa->page - fb->page;
 	else
@@ -65,21 +65,24 @@ static void ain_emit_FUNC(Buffer *out, HashMap *functions) {
 	emit_dword(out, 0);  // reserved
 
 	int nfunc = functions->occupied;
-	const Function **items = malloc(nfunc * sizeof(const Function *));
-	const Function **p = items;
-	for (HashItem *i = hash_iterate(functions, NULL); i; i = hash_iterate(functions, i))
-		*p++ = (Function *)i->val;
+	Function *items = malloc(nfunc * sizeof(Function));
+	Function *p = items;
+	for (HashItem *i = hash_iterate(functions, NULL); i; i = hash_iterate(functions, i)) {
+		*p = *(Function *)i->val;
+		p->name = utf2sjis(p->name);
+		p++;
+	}
 	if (config.disable_ain_variable)  // FIXME: Use a dedicated config for this.
-		qsort(items, nfunc, sizeof(const Function *), func_compare_by_addr);
+		qsort(items, nfunc, sizeof(Function), func_compare_by_addr);
 	else
-		qsort(items, nfunc, sizeof(const Function *), func_compare_by_name);
+		qsort(items, nfunc, sizeof(Function), func_compare_by_name);
 
 	emit_dword(out, nfunc);
 	for (int i = 0; i < nfunc; i++) {
-		emit_string(out, items[i]->name);
+		emit_string(out, items[i].name);
 		emit(out, 0);
-		emit_word(out, items[i]->page);
-		emit_dword(out, items[i]->addr);
+		emit_word(out, items[i].page);
+		emit_dword(out, items[i].addr);
 	}
 }
 
@@ -91,7 +94,7 @@ static void ain_emit_VARI(Buffer *out, Vector *variables) {
 	emit_dword(out, 0);  // reserved
 	emit_dword(out, variables->len);
 	for (int i = 0; i < variables->len; i++) {
-		emit_string(out, variables->data[i]);
+		emit_string(out, utf2sjis(variables->data[i]));
 		emit(out, 0);
 	}
 }

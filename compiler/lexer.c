@@ -35,12 +35,12 @@ noreturn void error_at(const char *pos, char *fmt, ...) {
 			end = strchr(begin, '\0');
 		if (pos <= end) {
 			int col = pos - begin;
-			fprintf(stderr, "%s line %d column %d: ", sjis2utf(input_name), line, col);
+			fprintf(stderr, "%s line %d column %d: ", input_name, line, col);
 			va_list args;
 			va_start(args, fmt);
 			vfprintf(stderr, fmt, args);
 			fputc('\n', stderr);
-			fprintf(stderr, "%s\n", sjis2utf(strndup_(begin, end - begin)));
+			fprintf(stderr, "%.*s\n", (int)(end - begin), begin);
 			for (const char *p = begin; p < pos; p++)
 				fputc(*p == '\t' ? '\t' : ' ', stderr);
 			fprintf(stderr, "^\n");
@@ -77,8 +77,8 @@ void skip_whitespaces(void) {
 					error_at(top, "unfinished comment");
 			} while (*++input != '/');
 			input++;
-		} else if (input[0] == (char)0x81 && input[1] == (char)0x40) {  // SJIS full-width space
-			input += 2;
+		} else if (input[0] == (char)0xe3 && input[1] == (char)0x80 && input[2] == (char)0x80) {  // CJK IDEOGRAPHIC SPACE
+			input += 3;
 		} else {
 			break;
 		}
@@ -123,8 +123,16 @@ uint8_t echo(Buffer *b) {
 }
 
 static bool is_identifier(uint8_t c) {
-	return isalnum(c) || is_sjis_byte1(c) || is_sjis_half_kana(c)
-		|| c == '_' || c == '.';
+	return isalnum(c) || !isascii(c) || c == '_' || c == '.';
+}
+
+static bool is_label(uint8_t c) {
+	return !isascii(c) || (isgraph(c) && c != '$' && c != ',' && c != ';' && c != ':');
+}
+
+static void advance_to_next_char(void) {
+	while (UTF8_TRAIL_BYTE(*++input))
+		;
 }
 
 char *get_identifier(void) {
@@ -132,23 +140,16 @@ char *get_identifier(void) {
 	const char *top = input;
 	if (!is_identifier(*top) || isdigit(*top))
 		error_at(top, "identifier expected");
-	while (is_identifier(*input)) {
-		if (is_sjis_byte1(input[0]) && is_sjis_byte2(input[1]))
-			input++;
-		input++;
-	}
+	while (is_identifier(*input))
+		advance_to_next_char();
 	return strndup_(top, input - top);
 }
 
 char *get_label(void) {
 	skip_whitespaces();
 	const char *top = input;
-	while ((isgraph(*input) && *input != '$' && *input != ',' && *input != ';' && *input != ':') ||
-		   is_sjis_byte1(*input) || is_sjis_half_kana(*input)) {
-		if (is_sjis_byte1(input[0]) && is_sjis_byte2(input[1]))
-			input++;
-		input++;
-	}
+	while (is_label(*input))
+		advance_to_next_char();
 	if (input == top)
 		error_at(top, "label expected");
 	return strndup_(top, input - top);
@@ -156,14 +157,10 @@ char *get_label(void) {
 
 char *get_filename(void) {
 	const char *top = input;
-	while (isalnum(*input) || *input == '.' || *input == '_' || is_sjis_byte1(*input) || is_sjis_half_kana(*input)) {
-		if (is_sjis_byte1(input[0]) && is_sjis_byte2(input[1]))
-			input++;
-		input++;
-	}
+	while (is_identifier(*input))
+		advance_to_next_char();
 	if (input == top)
 		error_at(top, "file name expected");
-
 	return strndup_(top, input - top);
 }
 
@@ -185,6 +182,37 @@ int get_number(void) {
 	return n;
 }
 
+static void compile_to_sjis(Buffer *b, bool compact) {
+	const char *top = input;
+	while (!isascii(*input))
+		input++;
+	if (!b)
+		return;
+	char *buf = alloca(input - top + 1);
+	strncpy(buf, top, input - top);
+	buf[input - top] = '\0';
+	char *sjis = utf2sjis(buf);
+	if (!compact) {
+		emit_string(b, sjis);
+		return;
+	}
+	while (*sjis) {
+		uint8_t c1 = *sjis++;
+		if (!is_sjis_byte1(c1)) {
+			emit(b, c1);
+			continue;
+		}
+		uint8_t c2 = *sjis++;
+		uint8_t hk = compact_sjis(c1, c2);
+		if (hk) {
+			emit(b, hk);
+		} else {
+			emit(b, c1);
+			emit(b, c2);
+		}
+	}
+}
+
 void compile_string(Buffer *b, char terminator, bool compact) {
 	const char *top = input;
 	while (*input != terminator) {
@@ -198,28 +226,16 @@ void compile_string(Buffer *b, char terminator, bool compact) {
 			input++;
 		if (!*input)
 			error_at(top, "unfinished string");
-		if (isprint(*input)) {
-			emit(b, *input++);
-			continue;
-		}
-		uint8_t c1 = *input++;
-		uint8_t c2 = *input++;
-		if (!is_sjis_byte1(c1) || !is_sjis_byte2(c2))
-			error_at(input - 2, "invalid SJIS character: %02x %02x", c1, c2);
-		uint8_t hk = 0;
-		if (compact)
-			hk = compact_sjis(c1, c2);
-		if (hk) {
-			emit(b, hk);
-		} else {
-			emit(b, c1);
-			emit(b, c2);
-		}
+		if (isascii(*input))
+			echo(b);
+		else
+			compile_to_sjis(b, compact);
 	}
 	expect(terminator);
 }
 
 void compile_message(Buffer *b) {
+	const char *top = input;
 	while (*input && *input != '\'') {
 		if (*input == '<') {
 			input++;
@@ -229,12 +245,27 @@ void compile_message(Buffer *b) {
 		}
 		if (*input == '\\')
 			input++;
-		if (is_sjis_byte1(*input) && is_sjis_byte2(*(input+1)))
-			emit(b, *input++);
-		emit(b, *input++);
+		if (!*input)
+			error_at(top, "unfinished message");
+		if (isascii(*input))
+			echo(b);
+		else
+			compile_to_sjis(b, false);
 	}
 	expect('\'');
 	emit(b, 0);
+}
+
+void compile_bare_string(Buffer *b) {
+	const char *top = input;
+	while (*input != ',' && *input != ':') {
+		if (!*input)
+			error_at(top, "unfinished string argument");
+		if (isascii(*input))
+			echo(b);
+		else
+			compile_to_sjis(b, false);
+	}
 }
 
 #define ISKEYWORD(s, len, kwd) ((len) == sizeof(kwd) - 1 && !memcmp((s), (kwd), (len)))

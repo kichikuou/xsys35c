@@ -64,7 +64,7 @@ static char *read_line(FILE *fp) {
 	char buf[256];
 	if (!fgets(buf, sizeof(buf), fp))
 		return NULL;
-	return config.utf8 ? utf2sjis(buf) : strdup(buf);
+	return config.utf8 ? strdup(buf) : sjis2utf(buf);
 }
 
 static char *read_file(const char *path) {
@@ -81,7 +81,7 @@ static char *read_file(const char *path) {
 		error("%s: read error", path);
 	fclose(fp);
 	buf[size] = '\0';
-	return config.utf8 ? utf2sjis(buf) : buf;
+	return config.utf8 ? buf : sjis2utf(buf);
 }
 
 static char *trim_right(char *str) {
@@ -130,7 +130,7 @@ static void read_hed(const char *path, Vector *sources, Map *dlls) {
 			error("%s: syntax error", path);
 			break;
 		case SYSTEM35:
-			vec_push(sources, path_join(dir, sjis2utf(line)));
+			vec_push(sources, path_join(dir, line));
 			break;
 		case DLLHeader:
 			{
@@ -139,7 +139,7 @@ static void read_hed(const char *path, Vector *sources, Map *dlls) {
 					*dot = '\0';
 					map_put(dlls, line, new_vec());
 				} else {
-					char *hel_text = read_file(path_join(dir, sjis2utf(line)));
+					char *hel_text = read_file(path_join(dir, line));
 					Vector *funcs = parse_hel(hel_text, line);
 					if (dot)
 						*dot = '\0';
@@ -179,7 +179,7 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *a
 	for (int i = 0; i < src_paths->len; i++) {
 		char *path = src_paths->data[i];
 		const char *name = basename(path);
-		map_put(srcs, utf2sjis(name), read_file(path));
+		map_put(srcs, name, read_file(path));
 	}
 
 	Compiler *compiler = new_compiler(srcs->keys, variables, dlls);
@@ -198,7 +198,7 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *a
 		Sco *sco = compile(compiler, source, i);
 		AldEntry *e = calloc(1, sizeof(AldEntry));
 		e->disk = sco->ald_file_id;
-		e->name = sconame(srcs->keys->data[i]);
+		e->name = utf2sjis(sconame(srcs->keys->data[i]));
 		e->timestamp = time(NULL);
 		e->data = sco->buf->buf;
 		e->size = sco->buf->len;
