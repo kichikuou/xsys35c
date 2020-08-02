@@ -936,11 +936,13 @@ static void ain_msg(const char *cmd, const char *args) {
 	if (cmd) {
 		dc_puts(cmd);
 		arguments(args);
+		if (*(char *)dc.ain->messages->data[id])
+			error_at(dc.p - 6, "Unexpected non-empty message id %d", id);
+	} else {
+		dc_putc('\'');
+		dc_puts_escaped(dc.ain->messages->data[id], '\0');
+		dc_putc('\'');
 	}
-
-	dc_putc('\'');
-	dc_puts_escaped(dc.ain->messages->data[id], '\0');
-	dc_putc('\'');
 }
 
 static void dll_call(void) {

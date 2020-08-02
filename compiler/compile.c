@@ -1352,26 +1352,14 @@ static bool command(void) {
 	case COMMAND_msgFreeShelterDIB: arguments(""); break;
 	case COMMAND_ainH: // fall through
 	case COMMAND_ainHH:
+		emit(compiler->msg_buf, 0);
 		emit_dword(out, compiler->msg_count++);
 		arguments("ne");
-		skip_whitespaces();
-		if (*input == '\'') {
-			input++;
-			compile_message(compiler->msg_buf);
-		} else {
-			emit(compiler->msg_buf, 0);
-		}
 		break;
 	case COMMAND_ainX:
+		emit(compiler->msg_buf, 0);
 		emit_dword(out, compiler->msg_count++);
 		arguments("e");
-		skip_whitespaces();
-		if (*input == '\'') {
-			input++;
-			compile_message(compiler->msg_buf);
-		} else {
-			emit(compiler->msg_buf, 0);
-		}
 		break;
 	case COMMAND_dataSetPointer: arguments("F"); break;
 	case COMMAND_dataGetWORD: arguments("ve"); break;
