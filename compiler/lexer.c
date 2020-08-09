@@ -182,7 +182,13 @@ int get_number(void) {
 	return n;
 }
 
-static void compile_to_sjis(Buffer *b, bool compact) {
+static void compile_multibyte_string(Buffer *b, bool compact) {
+	if (config.unicode) {
+		while (!isascii(*input))
+			echo(b);
+		return;
+	}
+
 	const char *top = input;
 	while (!isascii(*input))
 		input++;
@@ -227,7 +233,7 @@ void compile_string(Buffer *b, char terminator, bool compact, bool forbid_ascii)
 		if (!*input)
 			error_at(top, "unfinished string");
 		if (!isascii(*input))
-			compile_to_sjis(b, compact);
+			compile_multibyte_string(b, compact);
 		else if (forbid_ascii)
 			error_at(input, "ASCII characters cannot be used here");
 		else
@@ -252,7 +258,7 @@ void compile_message(Buffer *b) {
 		if (isascii(*input))
 			echo(b);
 		else
-			compile_to_sjis(b, false);
+			compile_multibyte_string(b, false);
 	}
 	expect('\'');
 	emit(b, 0);
@@ -266,7 +272,7 @@ void compile_bare_string(Buffer *b) {
 		if (isascii(*input))
 			echo(b);
 		else
-			compile_to_sjis(b, false);
+			compile_multibyte_string(b, false);
 	}
 }
 

@@ -138,9 +138,9 @@ void emit_command(Buffer *b, int cmd) {
 		emit(b, 0);
 }
 
-void sco_init(Buffer *b, const char *src_name, int pageno) {
-	char *sjis_name = utf2sjis_sub(src_name, '?');
-	int namelen = strlen(sjis_name);
+void sco_init(Buffer *b, const char *src_name_utf8, int pageno) {
+	const char *src_name = to_output_encoding(src_name_utf8);
+	int namelen = strlen(src_name);
 	if (namelen >= 1024)
 		error("file name too long: %s", src_name);
 	int hdrsize = (18 + namelen + 15) & ~0xf;
@@ -157,7 +157,7 @@ void sco_init(Buffer *b, const char *src_name, int pageno) {
 	emit_dword(b, 0);  // File size (to be filled by sco_finalize)
 	emit_dword(b, pageno);
 	emit_word(b, namelen);
-	emit_string(b, sjis_name);
+	emit_string(b, src_name);
 	while (b->len < hdrsize)
 		emit(b, 0);
 }

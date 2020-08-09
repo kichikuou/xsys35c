@@ -80,6 +80,9 @@ Once you've finished editing the source files, you can compile them back to the 
 xsys35c -p decompiled/xsys35c.cfg -o out.ALD -a out.ain
 ```
 
+## Unicode mode
+Using the "Unicode mode" of xsys35c and [xsystem35](https://github.com/kichikuou/xsystem35-sdl2) (an open source implementation of System 3.x), you can translate games into many languages that are not supported by original System 3.x. See [docs/unicode.md](docs/unicode.md) for more information.
+
 ## Command Documentations
 Here are the manuals for the commands:
 - [docs/xsys35c.md](docs/xsys35c.md)

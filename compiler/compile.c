@@ -1199,6 +1199,7 @@ static bool command(void) {
 			goto unknown_command;
 		}
 		break;
+	case CMD2('Z', 'U'): arguments("e"); break;
 	case CMD2('Z', 'W'): arguments("e"); break;
 	case CMD2('Z', 'Z'): arguments("ne"); break;
 

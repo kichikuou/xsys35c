@@ -47,6 +47,10 @@ The following options are available:
   <br/><code>--sys-ver <var>ver</var></code></dt>
   <dd>Sets target System version. Available values are <code>3.5</code>, <code>3.6</code>, <code>3.8</code> and <code>3.9</code> (default),</dd>
 
+  <dt><code>-u</code>
+  <br/><code>--unicode</code></dt>
+  <dd>Generate output in UTF-8 character encoding. See <a href="unicode.md">unicode.md</a> for details.</dd>
+
   <dt><code>-V <var>file</var></code>
   <br/><code>--variables <var>file</var></code></dt>
   <dd>Read list of variables from <var>file</var>.</dd>

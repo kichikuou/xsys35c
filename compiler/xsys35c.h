@@ -35,6 +35,7 @@ typedef struct {
 	const char *hed;
 	const char *var_list;
 
+	bool unicode;
 	bool utf8;
 	bool disable_else;
 	bool disable_ain_message;
@@ -47,6 +48,10 @@ void set_sys_ver(const char *ver);
 void load_config(FILE *fp, const char *cfg_dir);
 static inline bool use_ain_message(void) {
 	return config.sys_ver == SYSTEM39 && !config.disable_ain_message;
+}
+
+static inline const char *to_output_encoding(const char *str_utf8) {
+	return config.unicode ? str_utf8 : utf2sjis_sub(str_utf8, '?');
 }
 
 // sco.c
@@ -71,7 +76,7 @@ void emit_var(Buffer *b, int var_id);
 void emit_number(Buffer *b, int n);
 void emit_command(Buffer *b, int cmd);
 int current_address(Buffer *b);
-void sco_init(Buffer *b, const char *src_name, int pageno);
+void sco_init(Buffer *b, const char *src_name_utf8, int pageno);
 void sco_finalize(Buffer *b);
 
 // lexer.c

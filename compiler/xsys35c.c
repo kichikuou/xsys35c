@@ -27,7 +27,7 @@
 #define DEFAULT_ALD_BASENAME "out"
 #define DEFAULT_OUTPUT_AIN "System39.ain"
 
-static const char short_options[] = "a:E:hi:o:p:s:V:v";
+static const char short_options[] = "a:E:hi:o:p:s:uV:v";
 static const struct option long_options[] = {
 	{ "ain",       required_argument, NULL, 'a' },
 	{ "ald",       required_argument, NULL, 'o' },
@@ -36,6 +36,7 @@ static const struct option long_options[] = {
 	{ "help",      no_argument,       NULL, 'h' },
 	{ "project",   required_argument, NULL, 'p' },
 	{ "sys-ver",   required_argument, NULL, 's' },
+	{ "unicode",   no_argument,       NULL, 'u' },
 	{ "variables", required_argument, NULL, 'V' },
 	{ "version",   no_argument,       NULL, 'v' },
 	{ 0, 0, 0, 0 }
@@ -52,6 +53,7 @@ static void usage(void) {
 	puts("    -h, --help                Display this message and exit");
 	puts("    -p, --project <file>      Read project configuration from <file>");
 	puts("    -s, --sys-ver <ver>       Target System version (3.5|3.6|3.8|3.9(default))");
+	puts("    -u, --unicode             Generate Unicode output (can only be run on xsystem35)");
 	puts("    -V, --variables <file>    Read list of variables from <file>");
 	puts("    -v, --version             Print version information and exit");
 }
@@ -198,7 +200,7 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *a
 		Sco *sco = compile(compiler, source, i);
 		AldEntry *e = calloc(1, sizeof(AldEntry));
 		e->disk = sco->ald_file_id;
-		e->name = utf2sjis_sub(sconame(srcs->keys->data[i]), '?');
+		e->name = to_output_encoding(sconame(srcs->keys->data[i]));
 		e->timestamp = time(NULL);
 		e->data = sco->buf->buf;
 		e->size = sco->buf->len;
@@ -260,6 +262,9 @@ int main(int argc, char *argv[]) {
 			break;
 		case 's':
 			set_sys_ver(optarg);
+			break;
+		case 'u':
+			config.unicode = true;
 			break;
 		case 'V':
 			var_list = optarg;
