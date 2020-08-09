@@ -213,7 +213,7 @@ static void compile_to_sjis(Buffer *b, bool compact) {
 	}
 }
 
-void compile_string(Buffer *b, char terminator, bool compact) {
+void compile_string(Buffer *b, char terminator, bool compact, bool forbid_ascii) {
 	const char *top = input;
 	while (*input != terminator) {
 		if (*input == '<') {
@@ -226,10 +226,12 @@ void compile_string(Buffer *b, char terminator, bool compact) {
 			input++;
 		if (!*input)
 			error_at(top, "unfinished string");
-		if (isascii(*input))
-			echo(b);
-		else
+		if (!isascii(*input))
 			compile_to_sjis(b, compact);
+		else if (forbid_ascii)
+			error_at(input, "ASCII characters cannot be used here");
+		else
+			echo(b);
 	}
 	expect(terminator);
 }

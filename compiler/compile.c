@@ -466,7 +466,7 @@ static void dll_arguments(DLLFunc *f) {
 			if (need_comma)
 				expect(',');
 			expect('"');
-			compile_string(out, '"', false);
+			compile_string(out, '"', false, false);
 			emit(out, 0);
 			need_comma = true;
 			break;
@@ -537,7 +537,7 @@ static void arguments(const char *sig) {
 				input++;  // Do not consume full-width spaces here
 			if (*input == '"') {
 				expect('"');
-				compile_string(out, '"', false);
+				compile_string(out, '"', false, false);
 			} else {
 				compile_bare_string(out);
 			}
@@ -548,7 +548,7 @@ static void arguments(const char *sig) {
 				emit(out, 0);
 				expect('"');
 				int start = current_address(out);
-				compile_string(out, '"', false);
+				compile_string(out, '"', false, false);
 				for (int i = start; i < current_address(out); i++) {
 					uint8_t b = get_byte(out, i);
 					set_byte(out, i, b >> 4 | b << 4);
@@ -762,7 +762,7 @@ static bool command(void) {
 			compile_message(out);
 			break;
 		default:
-			compile_string(out, '\'', config.sys_ver == SYSTEM35);
+			compile_string(out, '\'', config.sys_ver == SYSTEM35, true);
 			break;
 		}
 		break;
@@ -846,7 +846,7 @@ static bool command(void) {
 		label();
 		expect('$');
 		if (!isascii(*input)) {
-			compile_string(out, '$', config.sys_ver == SYSTEM35);
+			compile_string(out, '$', config.sys_ver == SYSTEM35, true);
 			emit(out, '$');
 		} else {
 			menu_item_start = command_top;
@@ -867,7 +867,7 @@ static bool command(void) {
 		break;
 
 	case '"':  // String data
-		compile_string(out, '"', config.sys_ver == SYSTEM35);
+		compile_string(out, '"', config.sys_ver == SYSTEM35, false);
 		emit(out, 0);
 		break;
 

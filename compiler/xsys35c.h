@@ -94,7 +94,7 @@ char *get_identifier(void);
 char *get_label(void);
 char *get_filename(void);
 int get_number(void);
-void compile_string(Buffer *b, char terminator, bool compact);
+void compile_string(Buffer *b, char terminator, bool compact, bool forbid_ascii);
 void compile_message(Buffer *b);
 void compile_bare_string(Buffer *b);
 int get_command(Buffer *b);
