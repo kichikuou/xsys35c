@@ -1441,7 +1441,7 @@ void preprocess(Compiler *comp, const char *source, int pageno) {
 
 void preprocess_done(Compiler *comp) {
 	if (config.sys_ver == SYSTEM39)
-		compiler->msg_buf = new_buf();
+		comp->msg_buf = new_buf();
 	comp->msg_count = 0;
 }
 

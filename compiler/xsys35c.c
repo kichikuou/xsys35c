@@ -306,6 +306,9 @@ int main(int argc, char *argv[]) {
 	for (int i = 0; i < argc; i++)
 		vec_push(srcs, argv[i]);
 
+	if (srcs->len == 0)
+		error("xsys35c: No source file specified.");
+
 	Vector *vars = var_list ? read_var_list(var_list) : NULL;
 
 	build(srcs, vars, dlls, ald_basename, output_ain);
