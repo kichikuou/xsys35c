@@ -65,12 +65,17 @@ static Vector *read_alds(int *pargc, char **pargv[]) {
 
 static AldEntry *find_entry(Vector *ald, const char *num_or_name) {
 	char *endptr;
-	unsigned long n = strtoul(num_or_name, &endptr, 0);
+	unsigned long idx = strtoul(num_or_name, &endptr, 0);
 	if (*endptr == '\0') {
-		if (n < ald->len && ald->data[n])
-			return ald->data[n];
-		fprintf(stderr, "ald: Page %lu is out of range\n", n);
-		return NULL;
+		if (idx == 0 || idx > ald->len) {
+			fprintf(stderr, "ald: index %lu is out of range (1-%d)\n", idx, ald->len);
+			return NULL;
+		}
+		if (!ald->data[idx-1]) {
+			fprintf(stderr, "ald: No entry for index %lu\n", idx);
+			return NULL;
+		}
+		return ald->data[idx-1];
 	}
 
 	for (int i = 0; i < ald->len; i++) {
@@ -98,12 +103,12 @@ static int do_list(int argc, char *argv[]) {
 	for (int i = 0; i < ald->len; i++) {
 		AldEntry *e = ald->data[i];
 		if (!e) {
-			printf("%4d  (missing)\n", i);
+			printf("%4d  (missing)\n", i + 1);
 			continue;
 		}
 		struct tm *t = localtime(&e->timestamp);
 		strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", t);
-		printf("%4d  %d  %s  %8d  %s\n", i, e->disk, buf, e->size, sjis2utf(e->name));
+		printf("%4d  %d  %s  %8d  %s\n", i + 1, e->disk, buf, e->size, sjis2utf(e->name));
 	}
 	return 0;
 }
