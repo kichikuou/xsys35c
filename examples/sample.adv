@@ -22,6 +22,7 @@
 	; Main menu
 	$graphics$'Graphics'$
 	$text$'Text'$
+	$dialogs$'Dialogs'$
 	$sysinfo$'System Info'$
 	$quit$'Quit'$
 	]
@@ -59,6 +60,29 @@
 	'Screen size: ' HH 0,D01: 'x' HH 0,D02: ' ' HH 0,D03: 'bit color'R
 	A
 	@menu:
+
+*dialogs:
+	$msgbox$'Message Box'$
+	$text_input$'Text Input'$
+	$number_input$'Number Input'$
+	$menu$'Back'$
+	]
+
+*msgbox:
+	strMessageBox "Hanihoo!":
+	@dialogs:
+
+*text_input:
+	MS 1, "Rance":
+	MI 1, 10, "Enter your name":
+	'Hanihoo, ' X 1: '!'
+	@dialogs:
+
+*number_input:
+	NT "Enter a number":
+	NI D01, 10, 0, 99:
+	{RND = 0: 'Got ' HH 0,D01:}
+	@dialogs:
 
 *quit:
 	ZZ0,0:
