@@ -21,6 +21,10 @@
 #include <getopt.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#ifdef _WIN32
+#include <sys/utime.h>
+#endif
 
 static void usage(void) {
 	puts("Usage: ald <command> [<args>]");
@@ -131,6 +135,22 @@ static void extract_entry(AldEntry *e, const char *directory) {
 	FILE *fp = checked_fopen(path_join(directory, utf_name), "wb");
 	if (fwrite(e->data, e->size, 1, fp) != 1)
 		error("%s: %s", sjis2utf(e->name), strerror(errno));
+
+	fflush(fp);
+#ifdef _WIN32
+	struct _utimbuf times = {
+		.actime = e->timestamp,
+		.modtime = e->timestamp
+	};
+	_futime(_fileno(fp), &times);
+#else
+	struct timespec times[2] = {
+		[0].tv_nsec = UTIME_OMIT,
+		[1].tv_sec = e->timestamp
+	};
+	futimens(fileno(fp), times);
+#endif
+
 	fclose(fp);
 }
 
