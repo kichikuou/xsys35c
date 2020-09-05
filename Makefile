@@ -42,9 +42,14 @@ DECOMPILER_OBJS := \
 	decompiler/decompile.o \
 	decompiler/preprocess.o
 
+MAIN_OBJS := \
+	compiler/xsys35c.o \
+	decompiler/xsys35dc.o \
+	tools/ald.o
+
 all: $(COMMANDS)
 
-$(COMMON_OBJS) $(COMMON_TESTS_OBJS): common/common.h
+$(COMMON_OBJS) $(COMMON_TESTS_OBJS) $(MAIN_OBJS): common/common.h
 $(COMPILER_OBJS) $(COMPILER_TESTS_OBJS): compiler/xsys35c.h common/common.h
 $(DECOMPILER_OBJS): decompiler/xsys35dc.h common/common.h
 common/sjisutf.o: common/s2utbl.h
