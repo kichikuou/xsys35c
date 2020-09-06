@@ -64,6 +64,8 @@
 *dialogs:
 	$msgbox$'Message Box'$
 	$text_input$'Text Input'$
+	$text_input2$'Text Input 2'$
+	$text_input3$'Text Input 3'$
 	$number_input$'Number Input'$
 	$menu$'Back'$
 	]
@@ -76,6 +78,17 @@
 	MS 1, "Rance":
 	MI 1, 10, "Enter your name":
 	'Hanihoo, ' X 1: '!'
+	@dialogs:
+
+*text_input2:
+	MS 1, "Rance":
+	strInputDlg "Enter some text", 1, 10, D01:
+	'Text: "' X 1: '", length: ' HH 0,D01:
+	@dialogs:
+
+*text_input3:
+	MJ 1, 50, 50, 16, 10:
+	'Text: "' X 1: '", length: ' HH 0,RND:
 	@dialogs:
 
 *number_input:
