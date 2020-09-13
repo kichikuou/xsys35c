@@ -31,6 +31,7 @@ static void usage(void) {
 	puts("");
 	puts("commands:");
 	puts("  list     Print list of archive files");
+	puts("  create   Create a new archive");
 	puts("  extract  Extract file(s) from archive");
 	puts("  dump     Print hex dump of file");
 	puts("  compare  Compare contents of two archives");
@@ -116,6 +117,45 @@ static int do_list(int argc, char *argv[]) {
 		strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", t);
 		printf("%4d  %d  %s  %8d  %s\n", i + 1, e->disk, buf, e->size, sjis2utf(e->name));
 	}
+	return 0;
+}
+
+// ald create ----------------------------------------
+
+static void help_create(void) {
+	puts("Usage: ald create <aldfile> <file>...");
+}
+
+static int do_create(int argc, char *argv[]) {
+	if (argc < 3) {
+		help_create();
+		return 1;
+	}
+	const char *ald_path = argv[1];
+	Vector *entries = new_vec();
+	for (int i = 2; i < argc; i++) {
+		FILE *fp = checked_fopen(argv[i], "rb");
+		struct stat sbuf;
+		if (fstat(fileno(fp), &sbuf) < 0)
+			error("%s: %s", argv[1], strerror(errno));
+		uint8_t *data = malloc(sbuf.st_size);
+		if (!data)
+			error("out of memory");
+		if (fread(data, sbuf.st_size, 1, fp) != 1)
+			error("%s: %s", argv[1], strerror(errno));
+		fclose(fp);
+
+		AldEntry *e = calloc(1, sizeof(AldEntry));
+		e->name = basename(argv[i]);
+		e->timestamp = sbuf.st_mtime;
+		e->data = data;
+		e->size = sbuf.st_size;
+		e->disk = 1;
+		vec_push(entries, e);
+	}
+	FILE *fp = checked_fopen(ald_path, "wb");
+	ald_write(entries, 1, fp);
+	fclose(fp);
 	return 0;
 }
 
@@ -357,6 +397,7 @@ typedef struct {
 
 static Command commands[] = {
 	{"list",    do_list,    help_list},
+	{"create",  do_create,  help_create},
 	{"extract", do_extract, help_extract},
 	{"dump",    do_dump,    help_dump},
 	{"compare", do_compare, help_compare},

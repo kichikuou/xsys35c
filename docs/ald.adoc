@@ -9,6 +9,7 @@ ald - ALD archive utility
 == Synopsis
 [verse]
 *ald list* _aldfile_...
+*ald create* _aldfile_ _file_...
 *ald extract* [_options_] _aldfile_... [--] [(_index_|_filename_)...]
 *ald dump* _aldfile_... [--] (_index_|_filename_)
 *ald compare* _aldfile1_ _aldfile2_
@@ -32,6 +33,12 @@ The following information are displayed for each file in the archive:
 * timestamp
 * size
 * filename
+
+=== ald create
+Usage: *ald create* _aldfile_ _file_...
+
+*ald create* creates a new ALD archive containing the specified files.
+Currently, creation of multi-volume ALD is not supported.
 
 === ald extract
 Usage: *ald extract* [_options_] _aldfile_... [--] [(_index_|_filename_)...]
