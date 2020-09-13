@@ -9,8 +9,10 @@ jobs:
         mingw: ["MINGW32", "MINGW64"]
         include:
         - mingw: "MINGW32"
+          package-prefix: "mingw-w64-i686"
           archive-suffix: "-32bit"
         - mingw: "MINGW64"
+          package-prefix: "mingw-w64-x86_64"
           archive-suffix: "-64bit"
     defaults:
       run:
@@ -30,6 +32,9 @@ jobs:
         uname
         echo PATH: $PATH
 
+    - name: Install Deps
+      run: pacman -S --noconfirm ${{ matrix.package-prefix }}-asciidoctor
+
     - name: Checkout
       uses: actions/checkout@v2
 
@@ -39,10 +44,14 @@ jobs:
     - name: Test
       run: make test
 
+    - name: Create HTML
+      run: make -C docs html
+
     - name: Create artifacts
       run: |
         mkdir artifacts
         cp */*.exe artifacts/
+        cp docs/*.html artifacts/
         cp COPYING artifacts/
         rm artifacts/*_tests.exe
 
