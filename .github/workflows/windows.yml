@@ -51,9 +51,12 @@ jobs:
       run: |
         mkdir artifacts
         cp */*.exe artifacts/
-        cp docs/*.html artifacts/
-        cp COPYING artifacts/
         rm artifacts/*_tests.exe
+        cp COPYING artifacts/
+        mkdir artifacts/docs
+        cp docs/*.html artifacts/docs
+        mkdir artifacts/docs/image
+        cp docs/image/* artifacts/docs/image
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v2

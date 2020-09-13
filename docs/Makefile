@@ -1,7 +1,7 @@
 PREFIX ?= /usr/local
 
 HTMLS := $(patsubst %.adoc,%.html,$(wildcard *.adoc))
-MANUALS := $(patsubst %.adoc,%.1,$(wildcard *.adoc))
+MANUALS := xsys35c.1 xsys35dc.1 ald.1
 
 all: html man
 html: $(HTMLS)
