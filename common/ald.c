@@ -17,6 +17,7 @@
 */
 
 #include "common.h"
+#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -133,6 +134,19 @@ static time_t to_unix_time(uint32_t wtime_l, uint32_t wtime_h) {
 	return (wtime - EPOCH_DIFF_100NS) / 10000000LL;
 }
 
+static int count_entries_for_volume(int volume, uint8_t *data, int size) {
+	uint8_t *link_sector = ald_sector(data, size, 0);
+	uint8_t *link_sector_end = ald_sector(data, size, 1);
+
+	int count = 0;
+	for (uint8_t *link = link_sector; link < link_sector_end; link += 3) {
+		uint8_t vol_nr = link[0];
+		if (vol_nr == volume)
+			count++;
+	}
+	return count;
+}
+
 static void ald_read_entries(Vector *entries, int volume, uint8_t *data, int size) {
 	uint8_t *link_sector = ald_sector(data, size, 0);
 	uint8_t *link_sector_end = ald_sector(data, size, 1);
@@ -187,7 +201,18 @@ Vector *ald_read(Vector *entries, const char *path) {
 	if (le32(footer) != ALD_SIGNATURE && le32(footer) != ALD_SIGNATURE2)
 		error("%s: invalid ALD signature", path);
 
-	ald_read_entries(entries, footer[8], p, sbuf.st_size);
+	int volume = footer[8];
+	int num_entries = footer[9] | footer[10] << 8;
+	// Some ALDs created with unofficial tools have incorrect volume id in footer.
+	if (count_entries_for_volume(volume, p, sbuf.st_size) != num_entries) {
+		fprintf(stderr, "Warning: %s has wrong volume id (%d) in footer\n", path, volume);
+		// Determine volume id from the filename.
+		volume = tolower(path[strlen(path) - 5]) - 'a' + 1;
+		if (count_entries_for_volume(volume, p, sbuf.st_size) != num_entries)
+			error("cannot determine volume id");
+	}
+
+	ald_read_entries(entries, volume, p, sbuf.st_size);
 
 	return entries;
 }
