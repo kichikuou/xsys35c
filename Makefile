@@ -5,7 +5,10 @@ PREFIX ?= /usr/local
 COMMANDS := \
 	compiler/xsys35c \
 	decompiler/xsys35dc \
-	tools/ald
+	tools/ald \
+	tools/vsp \
+	tools/pms \
+	tools/qnt
 
 TESTS := \
 	common/common_tests \
@@ -45,7 +48,10 @@ DECOMPILER_OBJS := \
 MAIN_OBJS := \
 	compiler/xsys35c.o \
 	decompiler/xsys35dc.o \
-	tools/ald.o
+	tools/ald.o \
+	tools/vsp.o \
+	tools/pms.o \
+	tools/qnt.o
 
 all: $(COMMANDS)
 
@@ -57,6 +63,12 @@ common/sjisutf.o: common/s2utbl.h
 compiler/xsys35c: compiler/xsys35c.o $(COMPILER_OBJS) $(COMMON_OBJS)
 decompiler/xsys35dc: decompiler/xsys35dc.o $(DECOMPILER_OBJS) $(COMMON_OBJS)
 tools/ald: tools/ald.o $(COMMON_OBJS)
+tools/vsp: tools/vsp.o $(COMMON_OBJS) tools/png_utils.o
+	$(CC) $^ -o $@ -lpng
+tools/pms: tools/pms.o $(COMMON_OBJS) tools/png_utils.o
+	$(CC) $^ -o $@ -lpng
+tools/qnt: tools/qnt.o $(COMMON_OBJS) tools/png_utils.o
+	$(CC) $^ -o $@ -lpng -lz
 
 common/common_tests: $(COMMON_TESTS_OBJS) $(COMMON_OBJS)
 compiler/compiler_tests: $(COMPILER_TESTS_OBJS) $(COMPILER_OBJS) $(COMMON_OBJS)
