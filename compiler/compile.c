@@ -711,8 +711,8 @@ static void for_loop(void) {
 }
 
 static void pragma(void) {
-	if (consume_keyword("ald_file_id")) {
-		compiler->scos[input_page].ald_file_id = get_number();
+	if (consume_keyword("ald_volume")) {
+		compiler->scos[input_page].ald_volume = get_number();
 		expect(':');
 	} else if (consume_keyword("address")) {
 		int address = get_number();
@@ -1451,7 +1451,7 @@ Sco *compile(Compiler *comp, const char *source, int pageno) {
 	compiling = true;
 	labels = new_map();
 
-	comp->scos[pageno].ald_file_id = 1;
+	comp->scos[pageno].ald_volume = 1;
 	out = new_buf();
 	sco_init(out, comp->src_names->data[pageno], pageno);
 

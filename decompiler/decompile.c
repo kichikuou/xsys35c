@@ -1725,8 +1725,8 @@ char *missing_adv_name(int page) {
 static void create_adv_for_missing_sco(const char *outdir, int page) {
 	dc.out = checked_fopen(path_join(outdir, missing_adv_name(page)), "w+");
 
-	// Set ald_file_id to zero so that xsys35c will not generate ALD for this.
-	fprintf(dc.out, "pragma ald_file_id 0:\n");
+	// Set ald_volume to zero so that xsys35c will not generate ALD for this.
+	fprintf(dc.out, "pragma ald_volume 0:\n");
 
 	for (HashItem *i = hash_iterate(dc.functions, NULL); i; i = hash_iterate(dc.functions, i)) {
 		Function *f = (Function *)i->val;
@@ -1879,8 +1879,8 @@ void decompile(Vector *scos, Ain *ain, const char *outdir, const char *ald_basen
 		if (config.verbose)
 			printf("Decompiling %s (page %d)...\n", sjis2utf(sco->sco_name), i);
 		dc.out = checked_fopen(path_join(outdir, sjis2utf(sco->src_name)), "w+");
-		if (sco->ald_file_id != 1)
-			fprintf(dc.out, "pragma ald_file_id %d:\n", sco->ald_file_id);
+		if (sco->ald_volume != 1)
+			fprintf(dc.out, "pragma ald_volume %d:\n", sco->ald_volume);
 		decompile_page(i);
 		if (config.utf8)
 			convert_to_utf8(dc.out);

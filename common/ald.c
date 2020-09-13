@@ -75,13 +75,13 @@ static void write_entry(AldEntry *entry, FILE *fp) {
 	fwrite(entry->data, entry->size, 1, fp);
 }
 
-void ald_write(Vector *entries, int disk, FILE *fp) {
+void ald_write(Vector *entries, int volume, FILE *fp) {
 	int sector = 0;
 
 	int ptr_count = 0;
 	for (int i = 0; i < entries->len; i++) {
 		AldEntry *entry = entries->data[i];
-		if (entry->disk == disk)
+		if (entry->volume == volume)
 			ptr_count++;
 	}
 
@@ -89,7 +89,7 @@ void ald_write(Vector *entries, int disk, FILE *fp) {
 	write_ptr(entries->len * 3, &sector, fp);
 	for (int i = 0; i < entries->len; i++) {
 		AldEntry *entry = entries->data[i];
-		if (entry->disk == disk)
+		if (entry->volume == volume)
 			write_ptr(entry_header_size(entry) + entry->size, &sector, fp);
 	}
 	pad(fp);
@@ -98,16 +98,16 @@ void ald_write(Vector *entries, int disk, FILE *fp) {
 	memset(link, 0, sizeof(link));
 	for (int i = 0; i < entries->len; i++) {
 		AldEntry *entry = entries->data[i];
-		fputc(entry->disk, fp);
-		link[entry->disk]++;
-		fputc(link[entry->disk] & 0xff, fp);
-		fputc(link[entry->disk] >> 8, fp);
+		fputc(entry->volume, fp);
+		link[entry->volume]++;
+		fputc(link[entry->volume] & 0xff, fp);
+		fputc(link[entry->volume] >> 8, fp);
 	}
 	pad(fp);
 
 	for (int i = 0; i < entries->len; i++) {
 		AldEntry *entry = entries->data[i];
-		if (entry->disk != disk)
+		if (entry->volume != volume)
 			continue;
 		write_entry(entry, fp);
 		pad(fp);
@@ -116,7 +116,7 @@ void ald_write(Vector *entries, int disk, FILE *fp) {
 	// Footer
 	write_dword(ALD_SIGNATURE, fp);
 	write_dword(0x10, fp);
-	write_dword(ptr_count << 8 | disk, fp);
+	write_dword(ptr_count << 8 | volume, fp);
 	write_dword(0, fp);
 }
 
@@ -130,18 +130,18 @@ static time_t to_unix_time(uint32_t wtime_l, uint32_t wtime_h) {
 	return (wtime - EPOCH_DIFF_100NS) / 10000000LL;
 }
 
-static void ald_read_entries(Vector *entries, int disk, uint8_t *data, int len) {
+static void ald_read_entries(Vector *entries, int volume, uint8_t *data, int len) {
 	uint8_t *link_sector = ald_sector(data, 0);
 	uint8_t *link_sector_end = ald_sector(data, 1);
 
 	for (uint8_t *link = link_sector; link < link_sector_end; link += 3) {
-		uint8_t file_nr = link[0];
+		uint8_t vol_nr = link[0];
 		uint16_t ptr_nr = link[1] | link[2] << 8;
-		if (file_nr != disk)
+		if (vol_nr != volume)
 			continue;
 		uint8_t *entry_ptr = ald_sector(data, ptr_nr);
 		AldEntry *e = calloc(1, sizeof(AldEntry));
-		e->disk = disk;
+		e->volume = volume;
 		e->name = (char *)entry_ptr + 16;
 		e->timestamp = to_unix_time(le32(entry_ptr + 8), le32(entry_ptr + 12));
 		e->data = entry_ptr + le32(entry_ptr);

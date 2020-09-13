@@ -116,7 +116,7 @@ typedef struct {
 
 typedef struct {
 	Buffer *buf;
-	int ald_file_id;
+	int ald_volume;
 } Sco;
 
 typedef struct {

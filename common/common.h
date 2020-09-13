@@ -133,10 +133,10 @@ typedef struct {
 	time_t timestamp;
 	const uint8_t *data;
 	int size;
-	int disk;
+	int volume;  // volume id (1 for *A.ALD, 2 for *B.ALD, ...)
 } AldEntry;
 
-void ald_write(Vector *entries, int disk, FILE *fp);
+void ald_write(Vector *entries, int volume, FILE *fp);
 Vector *ald_read(Vector *entries, const char *path);
 
 // System39.ain

@@ -51,12 +51,12 @@ static void version(void) {
 	puts("xsys35dc " VERSION);
 }
 
-Sco *sco_new(const char *name, const uint8_t *data, int len, int disk) {
+Sco *sco_new(const char *name, const uint8_t *data, int len, int volume) {
 	Sco *sco = calloc(1, sizeof(Sco));
 	sco->data = data;
 	sco->mark = calloc(1, len + 1);
 	sco->sco_name = name;
-	sco->ald_file_id = disk;
+	sco->ald_volume = volume;
 	if (!memcmp(data, "S350", 4))
 		sco->version = SCO_S350;
 	else if (!memcmp(data, "S351", 4))
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
 		AldEntry *e = scos->data[i];
 		if (!e)
 			continue;
-		Sco *sco = sco_new(e->name, e->data, e->size, e->disk);
+		Sco *sco = sco_new(e->name, e->data, e->size, e->volume);
 		scos->data[i] = sco;
 		if (seq) {
 			char buf[16];

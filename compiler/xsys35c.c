@@ -199,14 +199,14 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *a
 		const char *source = srcs->vals->data[i];
 		Sco *sco = compile(compiler, source, i);
 		AldEntry *e = calloc(1, sizeof(AldEntry));
-		e->disk = sco->ald_file_id;
+		e->volume = sco->ald_volume;
 		e->name = to_output_encoding(sconame(srcs->keys->data[i]));
 		e->timestamp = time(NULL);
 		e->data = sco->buf->buf;
 		e->size = sco->buf->len;
 		vec_push(ald, e);
-		if (0 < e->disk && e->disk <= 26)
-			ald_mask |= 1 << e->disk;
+		if (0 < e->volume && e->volume <= 26)
+			ald_mask |= 1 << e->volume;
 	}
 
 	if (config.sys_ver == SYSTEM39) {

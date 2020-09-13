@@ -115,7 +115,7 @@ static int do_list(int argc, char *argv[]) {
 		}
 		struct tm *t = localtime(&e->timestamp);
 		strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", t);
-		printf("%4d  %d  %s  %8d  %s\n", i + 1, e->disk, buf, e->size, sjis2utf(e->name));
+		printf("%4d  %d  %s  %8d  %s\n", i + 1, e->volume, buf, e->size, sjis2utf(e->name));
 	}
 	return 0;
 }
@@ -150,7 +150,7 @@ static int do_create(int argc, char *argv[]) {
 		e->timestamp = sbuf.st_mtime;
 		e->data = data;
 		e->size = sbuf.st_size;
-		e->disk = 1;
+		e->volume = 1;
 		vec_push(entries, e);
 	}
 	FILE *fp = checked_fopen(ald_path, "wb");

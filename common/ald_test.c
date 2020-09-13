@@ -42,14 +42,14 @@ static void test_read(void) {
 
 static void test_write(void) {
 	AldEntry e1 = {
-		.disk = 1,
+		.volume = 1,
 		.name = "a.txt",
 		.timestamp = TIMESTAMP,
 		.data = (const uint8_t *)"content",
 		.size = 7,
 	};
 	AldEntry e2 = {
-		.disk = 1,
+		.volume = 1,
 		.name = "very_long_file_name.txt",
 		.timestamp = TIMESTAMP,
 		.data = (const uint8_t *)"ok",
@@ -64,7 +64,7 @@ static void test_write(void) {
 	fclose(fp);
 }
 
-static void test_multidisk_read(void) {
+static void test_multivolume_read(void) {
 	Vector *es = new_vec();
 	ald_read(es, "testdata/expected_a.ald");
 	ald_read(es, "testdata/expected_b.ald");
@@ -81,13 +81,13 @@ static void test_multidisk_read(void) {
 	}
 }
 
-static void test_multidisk_write(void) {
+static void test_multivolume_write(void) {
 	Vector *es = new_vec();
 	for (int i = 0; i < 5; i++) {
 		char buf[20];
 		sprintf(buf, "%d.txt", i);
 		AldEntry *e = calloc(1, sizeof(AldEntry));
-		e->disk = i % 2 + 1;
+		e->volume = i % 2 + 1;
 		e->name = strdup(buf);
 		e->timestamp = TIMESTAMP;
 		e->data = (const uint8_t *)e->name;
@@ -98,9 +98,9 @@ static void test_multidisk_write(void) {
 		"testdata/actual_a.ald",
 		"testdata/actual_b.ald",
 	};
-	for (int disk = 0; disk < 2; disk++) {
-		FILE *fp = checked_fopen(aldname[disk], "wb");
-		ald_write(es, disk + 1, fp);
+	for (int volume = 0; volume < 2; volume++) {
+		FILE *fp = checked_fopen(aldname[volume], "wb");
+		ald_write(es, volume + 1, fp);
 		fclose(fp);
 	}
 }
@@ -108,6 +108,6 @@ static void test_multidisk_write(void) {
 void ald_test(void) {
 	test_read();
 	test_write();
-	test_multidisk_read();
-	test_multidisk_write();
+	test_multivolume_read();
+	test_multivolume_write();
 }
