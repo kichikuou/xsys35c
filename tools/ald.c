@@ -91,6 +91,8 @@ static AldEntry *find_entry(Vector *ald, const char *num_or_name) {
 	return NULL;
 }
 
+// ald list ----------------------------------------
+
 static void help_list(void) {
 	puts("Usage: ald list <aldfile>...");
 }
@@ -116,6 +118,8 @@ static int do_list(int argc, char *argv[]) {
 	}
 	return 0;
 }
+
+// ald extract ----------------------------------------
 
 static const char extract_short_options[] = "d:";
 static const struct option extract_long_options[] = {
@@ -196,6 +200,8 @@ static int do_extract(int argc, char *argv[]) {
 	return 0;
 }
 
+// ald dump ----------------------------------------
+
 static void help_dump(void) {
 	puts("Usage: ald dump <aldfile>... [--] <n>|<file>");
 }
@@ -261,6 +267,8 @@ static int do_dump(int argc, char *argv[]) {
 	return 0;
 }
 
+// ald compare ----------------------------------------
+
 static void help_compare(void) {
 	puts("Usage: ald compare <aldfile1> <aldfile2>");
 }
@@ -320,11 +328,15 @@ static int do_compare(int argc, char *argv[]) {
 	return differs ? 1 : 0;
 }
 
+// ald help ----------------------------------------
+
 static void help_help(void) {
 	puts("Usage: ald help <command>");
 }
 
-static int do_help(int argc, char *argv[]);
+static int do_help(int argc, char *argv[]);  // defined below
+
+// ald version ----------------------------------------
 
 static void help_version(void) {
 	puts("Usage: ald version");
@@ -335,13 +347,15 @@ static int do_version(int argc, char *argv[]) {
 	return 0;
 }
 
+// main ----------------------------------------
+
 typedef struct {
 	const char *name;
 	int (*func)(int argc, char *argv[]);
 	void (*help)(void);
 } Command;
 
-Command commands[] = {
+static Command commands[] = {
 	{"list",    do_list,    help_list},
 	{"extract", do_extract, help_extract},
 	{"dump",    do_dump,    help_dump},
@@ -351,6 +365,7 @@ Command commands[] = {
 	{NULL, NULL, NULL}
 };
 
+// Defined here because it accesses the commands table.
 static int do_help(int argc, char *argv[]) {
 	if (argc == 1) {
 		help_help();
