@@ -70,7 +70,10 @@ install: $(COMMANDS)
 	mkdir -p $(PREFIX)/bin
 	cp $(COMMANDS) $(PREFIX)/bin/
 
+install-man:
+	$(MAKE) -C docs install
+
 clean:
 	rm -rf *.o common/*.o compiler/*.o decompiler/*.o tools/*.o $(COMMANDS) $(TESTS)
 
-.PHONY: clean install test
+.PHONY: all clean install install-man test

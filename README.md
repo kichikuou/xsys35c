@@ -61,6 +61,8 @@ If you want to install them in a custom directory, specify `PREFIX=`. For exampl
 PREFIX=$HOME make install
 ```
 
+If you have [`asciidoctor`](https://asciidoctor.org/) command, you can install Unix manual pages with `make install-man`.
+
 ## Basic Workflow
 Here are the steps for decompiling a game, editing the source, and compiling back to the scenario file.
 
@@ -85,6 +87,6 @@ Using the "Unicode mode" of xsys35c and [xsystem35](https://github.com/kichikuou
 
 ## Command Documentations
 Here are the manuals for the commands:
-- [docs/xsys35c.md](docs/xsys35c.md)
-- [docs/xsys35dc.md](docs/xsys35dc.md)
-- [docs/ald.md](docs/ald.md)
+- [docs/xsys35c.adoc](docs/xsys35c.adoc)
+- [docs/xsys35dc.adoc](docs/xsys35dc.adoc)
+- [docs/ald.adoc](docs/ald.adoc)

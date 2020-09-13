@@ -1,0 +1,72 @@
+= ald(1)
+:doctype: manpage
+:manmanual: xsys35c manual
+:mansource: xsys35c
+
+== Name
+ald - ALD archive utility
+
+== Synopsis
+[verse]
+*ald list* _aldfile_...
+*ald extract* [_options_] _aldfile_... [--] [(_index_|_filename_)...]
+*ald dump* _aldfile_... [--] (_index_|_filename_)
+*ald compare* _aldfile1_ _aldfile2_
+*ald help* [_command_]
+*ald version*
+
+== Description
+`ald` manipulates ALD archive files.
+
+=== ald list
+Usage: *ald list* _aldfile_...
+
+*ald list* lists files in the ALD archive. Since an ALD archive may consist of
+multiple files (`xxxA.ALD`, `xxxB.ALD`, ...), multiple ALD files can be
+specified.
+
+The following information are displayed for each file in the archive:
+
+* index
+* volume id (1 for `xxxA.ALD`, 2 for `xxxB.ALD`, etc.)
+* timestamp
+* size
+* filename
+
+=== ald extract
+Usage: *ald extract* [_options_] _aldfile_... [--] [(_index_|_filename_)...]
+
+*ald extract* extracts files from an ALD archive. Optionally you can pass a list
+of archive members to be processed, specified by _index_ or _filename_.
+
+=== ald dump
+Usage: *ald dump* _aldfile_... [--] (_index_|_filename_)
+
+*ald dump* displays content of a file in the ALD archive, specified by _index_
+or _filename_, in hexadecimal bytes + SJIS-aware characters format.
+
+=== ald compare
+Usage: *ald compare* _aldfile1_ _aldfile2_
+
+*ald compare* compares contents of two ALD archives, ignoring timestamp
+differences and upper/lower case differences in file names.
+
+Exit status is 0 if the two archives are equivalent, 1 if different.
+
+=== ald help
+Usage: *ald help* [_command_]
+
+*ald help* displays help information about _command_ and exits.
+
+=== ald version
+Usage: *ald version*
+
+*ald version* displays the version number of `ald` and exits.
+
+== Options
+*-d, --directory*=_dir_::
+  (ald extract)
+  Extract files into _dir_. (default: `.`)
+
+== See also
+xref:xsys35c.adoc[*xsys35c(1)*], xref:xsys35dc.adoc[*xsys35dc(1)*]
