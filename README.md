@@ -13,6 +13,7 @@ The following games can be decompiled and then re-compiled to an ALD file that i
 - 闘神都市II
 - Dr.STOP!
 - DALK
+- 学園KING
 - 零式
 - いけないかつみ先生
 - かえるにょ・ぱにょ〜ん
