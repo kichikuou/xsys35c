@@ -51,7 +51,13 @@ To build the executables, run `make` command:
 ```
 make
 ```
-This creates three executables, `compiler/xsys35c`, `decompiler/xsys35dc` and `tools/ald`.
+This creates the following executables:
+- `compiler/xsys35c` -- System 3.x compiler
+- `decompiler/xsys35dc` -- System 3.x decompiler
+- `tools/ald` -- ALD archive utility
+- `tools/vsp` -- VSP image utility
+- `tools/pms` -- PMS image utility
+- `tools/qnt` -- QNT image utility
 
 `make install` will install them to `/usr/local/bin`:
 ```
@@ -91,3 +97,4 @@ Here are the manuals for the commands:
 - [docs/xsys35c.adoc](docs/xsys35c.adoc)
 - [docs/xsys35dc.adoc](docs/xsys35dc.adoc)
 - [docs/ald.adoc](docs/ald.adoc)
+- [docs/vsp.adoc](docs/vsp.adoc) (see this for `pms` and `qnt` commands too)
