@@ -64,11 +64,11 @@ compiler/xsys35c: compiler/xsys35c.o $(COMPILER_OBJS) $(COMMON_OBJS)
 decompiler/xsys35dc: decompiler/xsys35dc.o $(DECOMPILER_OBJS) $(COMMON_OBJS)
 tools/ald: tools/ald.o $(COMMON_OBJS)
 tools/vsp: tools/vsp.o $(COMMON_OBJS) tools/png_utils.o
-	$(CC) $^ -o $@ -lpng
+	$(CC) $^ -o $@ $(STATIC) -lpng -lz
 tools/pms: tools/pms.o $(COMMON_OBJS) tools/png_utils.o
-	$(CC) $^ -o $@ -lpng
+	$(CC) $^ -o $@ $(STATIC) -lpng -lz
 tools/qnt: tools/qnt.o $(COMMON_OBJS) tools/png_utils.o
-	$(CC) $^ -o $@ -lpng -lz
+	$(CC) $^ -o $@ $(STATIC) -lpng -lz
 
 common/common_tests: $(COMMON_TESTS_OBJS) $(COMMON_OBJS)
 compiler/compiler_tests: $(COMPILER_TESTS_OBJS) $(COMPILER_OBJS) $(COMMON_OBJS)

@@ -33,13 +33,13 @@ jobs:
         echo PATH: $PATH
 
     - name: Install Deps
-      run: pacman -S --noconfirm ${{ matrix.package-prefix }}-asciidoctor
+      run: pacman -S --noconfirm ${{ matrix.package-prefix }}-libpng ${{ matrix.package-prefix }}-asciidoctor
 
     - name: Checkout
       uses: actions/checkout@v2
 
     - name: Build
-      run: make
+      run: make STATIC=-static
 
     - name: Test
       run: make test
