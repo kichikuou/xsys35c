@@ -52,9 +52,39 @@ void destroy_png_writer(PngWriter* w) {
 	memset(w, 0, sizeof(PngWriter));
 }
 
+PngReader *create_png_reader(const char *path) {
+	FILE *fp = checked_fopen(path, "rb");
+	png_byte sig_bytes[8];
+	if (fread(sig_bytes, sizeof(sig_bytes), 1, fp) != 1)
+		return NULL;
+	if (png_sig_cmp(sig_bytes, 0, sizeof(sig_bytes)) != 0)
+		return NULL;
+
+	PngReader *r = calloc(1, sizeof(PngReader));
+	r->png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, handle_png_error, NULL);
+	if (!r->png)
+		error("png_create_read_struct failed");
+
+	r->info = png_create_info_struct(r->png);
+	if (!r->info)
+		error("png_create_info_struct failed");
+
+	r->fp = fp;
+	png_init_io(r->png, r->fp);
+	png_set_sig_bytes(r->png, sizeof(sig_bytes));
+
+	return r;
+}
+
+void destroy_png_reader(PngReader* r) {
+	png_destroy_read_struct(&r->png, &r->info, NULL);
+	fclose(r->fp);
+	memset(r, 0, sizeof(PngReader));
+}
+
 png_bytepp allocate_bitmap_buffer(int width, int height, int bytes_per_pixel) {
 	png_bytepp rows = malloc(sizeof(png_bytep) * height);
-	png_bytep buffer = malloc(height * width * bytes_per_pixel);
+	png_bytep buffer = calloc(1, height * width * bytes_per_pixel);
 	for (int y = 0; y < height; y++)
 		rows[y] = buffer + y * width * bytes_per_pixel;
 	return rows;
@@ -97,4 +127,11 @@ uint32_t fgetdw(FILE *fp) {
 	int lo = fgetw(fp);
 	int hi = fgetw(fp);
 	return lo | hi << 16;
+}
+
+void fputdw(uint32_t n, FILE *fp) {
+	fputc(n, fp);
+	fputc(n >> 8, fp);
+	fputc(n >> 16, fp);
+	fputc(n >> 24, fp);
 }

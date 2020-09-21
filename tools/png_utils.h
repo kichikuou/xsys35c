@@ -33,6 +33,15 @@ extern PngWriter *create_png_writer(const char *path);
 extern void write_png(PngWriter* w, png_bytepp rows, int transforms);
 extern void destroy_png_writer(PngWriter* w);
 
+typedef struct {
+	png_structp png;
+	png_infop info;
+	FILE *fp;
+} PngReader;
+
+extern PngReader *create_png_reader(const char *path);
+extern void destroy_png_reader(PngReader* w);
+
 extern png_bytepp allocate_bitmap_buffer(int width, int height, int bytes_per_pixel);
 extern void free_bitmap_buffer(png_bytepp rows);
 
@@ -42,5 +51,6 @@ extern char *replace_suffix(const char *path, const char *ext);
 
 extern uint16_t fgetw(FILE *fp);
 extern uint32_t fgetdw(FILE *fp);
+extern void fputdw(uint32_t n, FILE *fp);
 
 #endif // PNG_UTILS_H_
