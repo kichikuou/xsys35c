@@ -113,7 +113,7 @@ char *replace_suffix(const char *path, const char *ext) {
 		dot = path + strlen(path);
 	char *buf = malloc(dot - path + strlen(ext) + 1);
 	strncpy(buf, path, dot - path);
-	strcat(buf, ext);
+	strcpy(buf + (dot - path), ext);
 	return buf;
 }
 
@@ -127,6 +127,11 @@ uint32_t fgetdw(FILE *fp) {
 	int lo = fgetw(fp);
 	int hi = fgetw(fp);
 	return lo | hi << 16;
+}
+
+void fputw(uint16_t n, FILE *fp) {
+	fputc(n, fp);
+	fputc(n >> 8, fp);
 }
 
 void fputdw(uint32_t n, FILE *fp) {

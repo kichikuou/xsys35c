@@ -51,6 +51,7 @@ extern char *replace_suffix(const char *path, const char *ext);
 
 extern uint16_t fgetw(FILE *fp);
 extern uint32_t fgetdw(FILE *fp);
+extern void fputw(uint16_t n, FILE *fp);
 extern void fputdw(uint32_t n, FILE *fp);
 
 #endif // PNG_UTILS_H_
