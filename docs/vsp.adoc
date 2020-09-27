@@ -49,6 +49,12 @@ to `.png`, `.vsp`, `.pms` or `.qnt`, depending on the destination format.
   palette this 16-color image should use.  For example, an image with palette
   bank 15 uses system palette from 240 to 255.
 
+*--palette-mask*=_mask_::
+  (*pms*) When encoding, set the palette mask to _mask_. Palette mask is a
+  16-bit integer that specifies which area of this image's 256-color palette is
+  effective.  For example, an image with palette mask 0x7fff will overwrite the
+  system palette 0 to 239.
+
 == Examples
 
 The following converts _image.vsp_ to _image.png_:
