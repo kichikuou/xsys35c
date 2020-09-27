@@ -50,6 +50,7 @@ typedef struct {
 extern PngReader *create_png_reader(const char *path);
 extern void destroy_png_reader(PngReader *r);
 extern ImageOffset *get_png_image_offset(PngReader *r);
+extern png_unknown_chunkp get_png_unknown_chunk(PngReader *r, const char *name);
 
 extern png_bytepp allocate_bitmap_buffer(int width, int height, int bytes_per_pixel);
 extern void free_bitmap_buffer(png_bytepp rows);

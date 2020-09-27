@@ -103,6 +103,16 @@ ImageOffset *get_png_image_offset(PngReader *r) {
 	return &offs;
 }
 
+png_unknown_chunkp get_png_unknown_chunk(PngReader *r, const char *name) {
+	png_unknown_chunkp unknown;
+	const int n = png_get_unknown_chunks(r->png, r->info, &unknown);
+	for (int i = 0; i < n; i++, unknown++) {
+		if (strcmp((const char *)unknown->name, name) == 0)
+			return unknown;
+	}
+	return NULL;
+}
+
 png_bytepp allocate_bitmap_buffer(int width, int height, int bytes_per_pixel) {
 	png_bytepp rows = malloc(sizeof(png_bytep) * height);
 	png_bytep buffer = calloc(1, height * width * bytes_per_pixel);

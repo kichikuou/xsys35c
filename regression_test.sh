@@ -16,7 +16,7 @@ diff -uN --strip-trailing-cr testdata/source testdata/decompiled
 tmpfile=$(mktemp)
 
 diff -u --strip-trailing-cr - <(tools/vsp -i testdata/*.vsp) <<EOF
-testdata/16colors.vsp: 256x256, offset: (40, 20)
+testdata/16colors.vsp: 256x256, offset: (40, 20), palette bank: 7
 EOF
 tools/vsp testdata/16colors.vsp -o $tmpfile && cmp testdata/16colors.png $tmpfile
 tools/vsp -e testdata/16colors.png -o $tmpfile && cmp testdata/16colors.vsp $tmpfile

@@ -43,6 +43,12 @@ to `.png`, `.vsp`, `.pms` or `.qnt`, depending on the destination format.
 *-v, --version*::
   Display the version number and exit.
 
+*--palette-bank*=_bank_::
+  (*vsp*) When encoding, set the palette bank to _bank_. Palette bank is a
+  number between 0 and 15 that specifies which area of the system's 256-color
+  palette this 16-color image should use.  For example, an image with palette
+  bank 15 uses system palette from 240 to 255.
+
 == Examples
 
 The following converts _image.vsp_ to _image.png_:

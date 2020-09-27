@@ -38,26 +38,32 @@ struct vsp_header {
 	uint8_t  bank;     // default palette bank
 };
 
+enum {
+	LOPT_PALETTE_BANK = 256,
+};
+
 static const char short_options[] = "ehio:p:v";
 static const struct option long_options[] = {
-	{ "encode",    no_argument,       NULL, 'e' },
-	{ "help",      no_argument,       NULL, 'h' },
-	{ "info",      no_argument,       NULL, 'i' },
-	{ "output",    required_argument, NULL, 'o' },
-	{ "position",  required_argument, NULL, 'p' },
-	{ "version",   no_argument,       NULL, 'v' },
+	{ "encode",       no_argument,       NULL, 'e' },
+	{ "help",         no_argument,       NULL, 'h' },
+	{ "info",         no_argument,       NULL, 'i' },
+	{ "output",       required_argument, NULL, 'o' },
+	{ "palette-bank", required_argument, NULL, LOPT_PALETTE_BANK },
+	{ "position",     required_argument, NULL, 'p' },
+	{ "version",      no_argument,       NULL, 'v' },
 	{ 0, 0, 0, 0 }
 };
 
 static void usage(void) {
 	puts("Usage: vsp [options] file...");
 	puts("Options:");
-	puts("    -e, --encode          Convert PNG files to VSP");
-	puts("    -h, --help            Display this message and exit");
-	puts("    -i, --info            Display image information");
-	puts("    -o, --output <file>   Write output to <file>");
-	puts("    -p, --position <x,y>  (encode) Set default display position to (<x,y>)");
-	puts("    -v, --version         Print version information and exit");
+	puts("    -e, --encode            Convert PNG files to VSP");
+	puts("    -h, --help              Display this message and exit");
+	puts("    -i, --info              Display image information");
+	puts("    -o, --output=<file>     Write output to <file>");
+	puts("        --palette-bank=<n>  (encode) Set palette bank to <n> (0-15)");
+	puts("    -p, --position=<x,y>    (encode) Set default display position to (<x,y>)");
+	puts("    -v, --version           Print version information and exit");
 }
 
 static void version(void) {
@@ -415,7 +421,8 @@ static void vsp_to_png(const char *vsp_path, const char *png_path) {
 	free_bitmap_buffer(rows);
 }
 
-static void png_to_vsp(const char *png_path, const char *vsp_path, const ImageOffset *image_offset) {
+static void png_to_vsp(const char *png_path, const char *vsp_path,
+					   const ImageOffset *image_offset, int palette_bank) {
 	PngReader *r = create_png_reader(png_path);
 	if (!r) {
 		fprintf(stderr, "%s: not a PNG file\n", png_path);
@@ -456,12 +463,12 @@ static void png_to_vsp(const char *png_path, const char *vsp_path, const ImageOf
 		vsp.y = image_offset->y;
 	}
 
-	png_unknown_chunkp unknowns;
-	const int num_unknown_chunks = png_get_unknown_chunks(r->png, r->info, &unknowns);
-	for (int i = 0; i < num_unknown_chunks; i++) {
-		if (strcmp((const char *)unknowns[i].name, CHUNK_PBNK) == 0 && unknowns[i].size == 1) {
-			vsp.bank = unknowns[i].data[0];
-		}
+	if (palette_bank >= 0) {
+		vsp.bank = palette_bank;
+	} else {
+		png_unknown_chunkp pbnk = get_png_unknown_chunk(r, CHUNK_PBNK);
+		if (pbnk && pbnk->size == 1)
+			vsp.bank = pbnk->data[0];
 	}
 
 	FILE *fp = checked_fopen(vsp_path, "wb");
@@ -499,6 +506,7 @@ int main(int argc, char *argv[]) {
 	enum { DECODE, ENCODE, INFO } mode = DECODE;
 	const char *output_path = NULL;
 	ImageOffset *image_offset = NULL;
+	int palette_bank = -1;
 
 	int opt;
 	while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
@@ -525,6 +533,10 @@ int main(int argc, char *argv[]) {
 		case 'v':
 			version();
 			return 0;
+		case LOPT_PALETTE_BANK:
+			if (sscanf(optarg, "%d", &palette_bank) != 1 || palette_bank < 0 || palette_bank > 15)
+				error("vsp: invalid palette bank: %s", optarg);
+			break;
 		case '?':
 			usage();
 			return 1;
@@ -545,7 +557,8 @@ int main(int argc, char *argv[]) {
 			png_to_vsp(
 				argv[i],
 				output_path ? output_path : replace_suffix(argv[i], ".vsp"),
-				image_offset);
+				image_offset,
+				palette_bank);
 			break;
 		case INFO:
 			vsp_info(argv[i]);
