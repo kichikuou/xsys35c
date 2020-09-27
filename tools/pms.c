@@ -885,6 +885,10 @@ int main(int argc, char *argv[]) {
 	argc -= optind;
 	argv += optind;
 
+	if (argc == 0) {
+		usage();
+		return 1;
+	}
 	if (output_path && argc > 1)
 		error("pms: multiple input files with specified output filename");
 

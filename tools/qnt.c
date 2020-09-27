@@ -60,8 +60,8 @@ static void usage(void) {
 	puts("    -e, --encode          Convert PNG files to QNT");
 	puts("    -h, --help            Display this message and exit");
 	puts("    -i, --info            Display image information");
-	puts("    -o, --output <file>   Write output to <file>");
-	puts("    -p, --position <x,y>  (encode) Set default display position to (<x,y>)");
+	puts("    -o, --output=<file>   Write output to <file>");
+	puts("    -p, --position=<x,y>  (encode) Set default display position to (<x,y>)");
 	puts("    -v, --version         Print version information and exit");
 }
 
@@ -433,6 +433,10 @@ int main(int argc, char *argv[]) {
 	argc -= optind;
 	argv += optind;
 
+	if (argc == 0) {
+		usage();
+		return 1;
+	}
 	if (output_path && argc > 1)
 		error("qnt: multiple input files with specified output filename");
 
