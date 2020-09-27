@@ -43,11 +43,12 @@ struct qnt_header {
 	uint32_t alpha_size;  // compressed size of alpha data
 };
 
-static const char short_options[] = "ehiv";
+static const char short_options[] = "ehio:v";
 static const struct option long_options[] = {
 	{ "encode",    no_argument,       NULL, 'e' },
 	{ "help",      no_argument,       NULL, 'h' },
 	{ "info",      no_argument,       NULL, 'i' },
+	{ "output",    required_argument, NULL, 'o' },
 	{ "version",   no_argument,       NULL, 'v' },
 	{ 0, 0, 0, 0 }
 };
@@ -55,10 +56,11 @@ static const struct option long_options[] = {
 static void usage(void) {
 	puts("Usage: qnt [options] file...");
 	puts("Options:");
-	puts("    -e, --encode     Convert PNG files to QNT");
-	puts("    -h, --help       Display this message and exit");
-	puts("    -i, --info       Display image information");
-	puts("    -v, --version    Print version information and exit");
+	puts("    -e, --encode         Convert PNG files to QNT");
+	puts("    -h, --help           Display this message and exit");
+	puts("    -i, --info           Display image information");
+	puts("    -o, --output <file>  Write output to <file>");
+	puts("    -v, --version        Print version information and exit");
 }
 
 static void version(void) {
@@ -251,28 +253,28 @@ static void filter(png_bytepp rows, int width, int height) {
 	}
 }
 
-static void qnt_to_png(const char *path) {
-	FILE *fp = checked_fopen(path, "rb");
+static void qnt_to_png(const char *qnt_path, const char *png_path) {
+	FILE *fp = checked_fopen(qnt_path, "rb");
 
 	struct qnt_header qnt;
 	if (!qnt_read_header(&qnt, fp)) {
-		fprintf(stderr, "%s: not a QNT file\n", path);
+		fprintf(stderr, "%s: not a QNT file\n", qnt_path);
 		fclose(fp);
 		return;
 	}
 
 	if (fseek(fp, qnt.header_size, SEEK_SET) < 0)
-		error("%s: %s", path, strerror(errno));
+		error("%s: %s", qnt_path, strerror(errno));
 	png_bytepp rows = extract_pixels(&qnt, fp);
 	if (!rows) {
-		fprintf(stderr, "%s: broken image\n", path);
+		fprintf(stderr, "%s: broken image\n", qnt_path);
 		fclose(fp);
 		return;
 	}
 	if (qnt.alpha_size) {
 		png_bytepp alpha_rows = extract_alpha(&qnt, fp);
 		if (!alpha_rows) {
-			fprintf(stderr, "%s: broken alpha image\n", path);
+			fprintf(stderr, "%s: broken alpha image\n", qnt_path);
 			fclose(fp);
 			free_bitmap_buffer(rows);
 			return;
@@ -284,7 +286,7 @@ static void qnt_to_png(const char *path) {
 
 	unfilter(rows, qnt.width, qnt.height);
 
-	PngWriter *w = create_png_writer(replace_suffix(path, ".png"));
+	PngWriter *w = create_png_writer(png_path);
 
 	const int color_type = qnt.alpha_size ?
 		PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB;
@@ -303,10 +305,10 @@ static void qnt_to_png(const char *path) {
 	free_bitmap_buffer(rows);
 }
 
-static void png_to_qnt(const char *path) {
-	PngReader *r = create_png_reader(path);
+static void png_to_qnt(const char *png_path, const char *qnt_path) {
+	PngReader *r = create_png_reader(png_path);
 	if (!r) {
-		fprintf(stderr, "%s: not a PNG file\n", path);
+		fprintf(stderr, "%s: not a PNG file\n", png_path);
 		return;
 	}
 
@@ -352,7 +354,7 @@ static void png_to_qnt(const char *path) {
 	if (color_type == PNG_COLOR_TYPE_RGBA)
 		alpha_data = encode_alpha(&qnt, rows);
 
-	FILE *fp = checked_fopen(replace_suffix(path, ".qnt"), "wb");
+	FILE *fp = checked_fopen(qnt_path, "wb");
 	qnt_write_header(&qnt, fp);
 	fwrite(pixel_data, qnt.pixel_size, 1, fp);
 	if (alpha_data)
@@ -387,6 +389,8 @@ int main(int argc, char *argv[]) {
 	init(argc, argv);
 
 	enum { DECODE, ENCODE, INFO } mode = DECODE;
+	const char *output_path = NULL;
+
 	int opt;
 	while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
 		switch (opt) {
@@ -399,6 +403,9 @@ int main(int argc, char *argv[]) {
 		case 'i':
 			mode = INFO;
 			break;
+		case 'o':
+			output_path = optarg;
+			break;
 		case 'v':
 			version();
 			return 0;
@@ -410,13 +417,16 @@ int main(int argc, char *argv[]) {
 	argc -= optind;
 	argv += optind;
 
+	if (output_path && argc > 1)
+		error("qnt: multiple input files with specified output filename");
+
 	for (int i = 0; i < argc; i++) {
 		switch (mode) {
 		case DECODE:
-			qnt_to_png(argv[i]);
+			qnt_to_png(argv[i], output_path ? output_path : replace_suffix(argv[i], ".png"));
 			break;
 		case ENCODE:
-			png_to_qnt(argv[i]);
+			png_to_qnt(argv[i], output_path ? output_path : replace_suffix(argv[i], ".qnt"));
 			break;
 		case INFO:
 			qnt_info(argv[i]);

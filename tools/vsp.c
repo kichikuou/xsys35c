@@ -37,11 +37,12 @@ struct vsp_header {
 	uint8_t  bank;     // default palette bank
 };
 
-static const char short_options[] = "ehiv";
+static const char short_options[] = "ehio:v";
 static const struct option long_options[] = {
 	{ "encode",    no_argument,       NULL, 'e' },
 	{ "help",      no_argument,       NULL, 'h' },
 	{ "info",      no_argument,       NULL, 'i' },
+	{ "output",    required_argument, NULL, 'o' },
 	{ "version",   no_argument,       NULL, 'v' },
 	{ 0, 0, 0, 0 }
 };
@@ -49,10 +50,11 @@ static const struct option long_options[] = {
 static void usage(void) {
 	puts("Usage: vsp [options] file...");
 	puts("Options:");
-	puts("    -e, --encode     Convert PNG files to VSP");
-	puts("    -h, --help       Display this message and exit");
-	puts("    -i, --info       Display image information");
-	puts("    -v, --version    Print version information and exit");
+	puts("    -e, --encode         Convert PNG files to VSP");
+	puts("    -h, --help           Display this message and exit");
+	puts("    -i, --info           Display image information");
+	puts("    -o, --output <file>  Write output to <file>");
+	puts("    -v, --version        Print version information and exit");
 }
 
 static void version(void) {
@@ -360,12 +362,12 @@ static void vsp_encode(struct vsp_header *vsp, png_bytepp rows, FILE *fp) {
 	}
 }
 
-static void vsp_to_png(const char *path) {
-	FILE *fp = checked_fopen(path, "rb");
+static void vsp_to_png(const char *vsp_path, const char *png_path) {
+	FILE *fp = checked_fopen(vsp_path, "rb");
 
 	struct vsp_header vsp;
 	if (!vsp_read_header(&vsp, fp)) {
-		fprintf(stderr, "%s: not a VSP file\n", path);
+		fprintf(stderr, "%s: not a VSP file\n", vsp_path);
 		fclose(fp);
 		return;
 	}
@@ -376,11 +378,11 @@ static void vsp_to_png(const char *path) {
 	png_bytepp rows = vsp_extract(&vsp, fp);
 	fclose(fp);
 	if (!rows) {
-		fprintf(stderr, "%s: broken image\n", path);
+		fprintf(stderr, "%s: broken image\n", vsp_path);
 		return;
 	}
 
-	PngWriter *w = create_png_writer(replace_suffix(path, ".png"));
+	PngWriter *w = create_png_writer(png_path);
 
 	png_set_IHDR(w->png, w->info, vsp.width * 8, vsp.height, 4,
 				 PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
@@ -405,10 +407,10 @@ static void vsp_to_png(const char *path) {
 	free_bitmap_buffer(rows);
 }
 
-static void png_to_vsp(const char *path) {
-	PngReader *r = create_png_reader(path);
+static void png_to_vsp(const char *png_path, const char *vsp_path) {
+	PngReader *r = create_png_reader(png_path);
 	if (!r) {
-		fprintf(stderr, "%s: not a PNG file\n", path);
+		fprintf(stderr, "%s: not a PNG file\n", png_path);
 		return;
 	}
 
@@ -420,15 +422,15 @@ static void png_to_vsp(const char *path) {
 	png_get_IHDR(r->png, r->info, &width, &height, &bit_depth, &color_type, NULL, NULL, NULL);
 
 	if (color_type != PNG_COLOR_TYPE_PALETTE)
-		error("%s: not a 16-color image", path);
+		error("%s: not a 16-color image", png_path);
 	if (width % 8)
-		error("%s: image width must be a multiple of 8", path);
+		error("%s: image width must be a multiple of 8", png_path);
 
 	png_colorp palette;
 	int num_palette;
 	png_get_PLTE(r->png, r->info, &palette, &num_palette);
 	if (num_palette != 16)
-		error("%s: not a 16-color image", path);
+		error("%s: not a 16-color image", png_path);
 
 	struct vsp_header vsp = {
 		.width = width / 8,
@@ -440,9 +442,9 @@ static void png_to_vsp(const char *path) {
 		int unit_type;
 		png_get_oFFs(r->png, r->info, &offx, &offy, &unit_type);
 		if (unit_type != PNG_OFFSET_PIXEL)
-			error("%s: unit of image offset must be pixels");
+			error("%s: unit of image offset must be pixels", png_path);
 		if (offx % 8)
-			error("%s: image x-offset must be a multiple of 8", path);
+			error("%s: image x-offset must be a multiple of 8", png_path);
 		vsp.x = offx / 8;
 		vsp.y = offy;
 	}
@@ -455,7 +457,7 @@ static void png_to_vsp(const char *path) {
 		}
 	}
 
-	FILE *fp = checked_fopen(replace_suffix(path, ".vsp"), "wb");
+	FILE *fp = checked_fopen(vsp_path, "wb");
 	vsp_write_header(&vsp, fp);
 	vsp_write_palette(palette, fp);
 	vsp_encode(&vsp, png_get_rows(r->png, r->info), fp);
@@ -488,6 +490,8 @@ int main(int argc, char *argv[]) {
 	init(argc, argv);
 
 	enum { DECODE, ENCODE, INFO } mode = DECODE;
+	const char *output_path = NULL;
+
 	int opt;
 	while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
 		switch (opt) {
@@ -500,6 +504,9 @@ int main(int argc, char *argv[]) {
 		case 'i':
 			mode = INFO;
 			break;
+		case 'o':
+			output_path = optarg;
+			break;
 		case 'v':
 			version();
 			return 0;
@@ -511,13 +518,16 @@ int main(int argc, char *argv[]) {
 	argc -= optind;
 	argv += optind;
 
+	if (output_path && argc > 1)
+		error("vsp: multiple input files with specified output filename");
+
 	for (int i = 0; i < argc; i++) {
 		switch (mode) {
 		case DECODE:
-			vsp_to_png(argv[i]);
+			vsp_to_png(argv[i], output_path ? output_path : replace_suffix(argv[i], ".png"));
 			break;
 		case ENCODE:
-			png_to_vsp(argv[i]);
+			png_to_vsp(argv[i], output_path ? output_path : replace_suffix(argv[i], ".vsp"));
 			break;
 		case INFO:
 			vsp_info(argv[i]);

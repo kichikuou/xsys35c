@@ -49,11 +49,12 @@ struct pms_header {
 	uint32_t reserved3;    // must be zero
 };
 
-static const char short_options[] = "ehiv";
+static const char short_options[] = "ehio:v";
 static const struct option long_options[] = {
 	{ "encode",    no_argument,       NULL, 'e' },
 	{ "help",      no_argument,       NULL, 'h' },
 	{ "info",      no_argument,       NULL, 'i' },
+	{ "output",    required_argument, NULL, 'o' },
 	{ "version",   no_argument,       NULL, 'v' },
 	{ 0, 0, 0, 0 }
 };
@@ -61,10 +62,11 @@ static const struct option long_options[] = {
 static void usage(void) {
 	puts("Usage: pms [options] file...");
 	puts("Options:");
-	puts("    -e, --encode     Convert PNG files to PMS");
-	puts("    -h, --help       Display this message and exit");
-	puts("    -i, --info       Display image information");
-	puts("    -v, --version    Print version information and exit");
+	puts("    -e, --encode         Convert PNG files to PMS");
+	puts("    -h, --help           Display this message and exit");
+	puts("    -i, --info           Display image information");
+	puts("    -o, --output <file>  Write output to <file>");
+	puts("    -v, --version        Print version information and exit");
 }
 
 static void version(void) {
@@ -554,21 +556,21 @@ static void pms16_encode(struct pms_header *pms, png_bytepp rgb8888_rows, FILE *
 	free_bitmap_buffer(rows);
 }
 
-static void pms8_to_png(const char *path, struct pms_header *pms, FILE *fp) {
+static void pms8_to_png(struct pms_header *pms, FILE *fp, const char *pms_path, const char *png_path) {
 	png_color pal[256];
 	if (fseek(fp, pms->auxdata_off, SEEK_SET) < 0)
-		error("%s: %s", path, strerror(errno));
+		error("%s: %s", pms_path, strerror(errno));
 	pms_read_palette(pal, fp);
 
 	if (fseek(fp, pms->data_off, SEEK_SET) < 0)
-		error("%s: %s", path, strerror(errno));
+		error("%s: %s", pms_path, strerror(errno));
 	png_bytepp rows = pms8_extract(pms, fp);
 	if (!rows) {
-		fprintf(stderr, "%s: broken image\n", path);
+		fprintf(stderr, "%s: broken image\n", pms_path);
 		return;
 	}
 
-	PngWriter *w = create_png_writer(replace_suffix(path, ".png"));
+	PngWriter *w = create_png_writer(png_path);
 
 	png_set_IHDR(w->png, w->info, pms->width, pms->height, 8,
 				 PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
@@ -594,21 +596,21 @@ static void pms8_to_png(const char *path, struct pms_header *pms, FILE *fp) {
 	free_bitmap_buffer(rows);
 }
 
-static void pms16_to_png(const char *path, struct pms_header *pms, FILE *fp) {
+static void pms16_to_png(struct pms_header *pms, FILE *fp, const char *pms_path, const char *png_path) {
 	if (fseek(fp, pms->data_off, SEEK_SET) < 0)
-		error("%s: %s", path, strerror(errno));
+		error("%s: %s", pms_path, strerror(errno));
 	png_bytepp rows = pms16_extract(pms, fp);
 	if (!rows) {
-		fprintf(stderr, "%s: broken image\n", path);
+		fprintf(stderr, "%s: broken image\n", pms_path);
 		return;
 	}
 
 	if (pms->auxdata_off) {
 		if (fseek(fp, pms->auxdata_off, SEEK_SET) < 0)
-			error("%s: %s", path, strerror(errno));
+			error("%s: %s", pms_path, strerror(errno));
 		png_bytepp alpha_rows = pms8_extract(pms, fp);
 		if (!alpha_rows) {
-			fprintf(stderr, "%s: broken alpha image\n", path);
+			fprintf(stderr, "%s: broken alpha image\n", pms_path);
 			free_bitmap_buffer(rows);
 			return;
 		}
@@ -616,7 +618,7 @@ static void pms16_to_png(const char *path, struct pms_header *pms, FILE *fp) {
 		free_bitmap_buffer(alpha_rows);
 	}
 
-	PngWriter *w = create_png_writer(replace_suffix(path, ".png"));
+	PngWriter *w = create_png_writer(png_path);
 
 	const int color_type = pms->auxdata_off ?
 		PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB;
@@ -640,30 +642,30 @@ static void pms16_to_png(const char *path, struct pms_header *pms, FILE *fp) {
 	free_bitmap_buffer(rows);
 }
 
-static void pms_to_png(const char *path) {
-	FILE *fp = checked_fopen(path, "rb");
+static void pms_to_png(const char *pms_path, const char *png_path) {
+	FILE *fp = checked_fopen(pms_path, "rb");
 
 	struct pms_header pms;
 	if (!pms_read_header(&pms, fp)) {
-		fprintf(stderr, "%s: not a PMS file\n", path);
+		fprintf(stderr, "%s: not a PMS file\n", pms_path);
 		fclose(fp);
 		return;
 	}
 
 	switch (pms.bpp) {
 	case 8:
-		pms8_to_png(path, &pms, fp);
+		pms8_to_png(&pms, fp, pms_path, png_path);
 		break;
 	case 16:
-		pms16_to_png(path, &pms, fp);
+		pms16_to_png(&pms, fp, pms_path, png_path);
 		break;
 	default:
-		fprintf(stderr, "%s: invalid bpp %d", path, pms.bpp);
+		fprintf(stderr, "%s: invalid bpp %d", pms_path, pms.bpp);
 	}
 	fclose(fp);
 }
 
-static void png_to_pms8(PngReader *r, const char *path) {
+static void png_to_pms8(PngReader *r, const char *png_path, const char *pms_path) {
 	struct pms_header pms = {
 		.version      = 1,
 		.header_size  = PMS1_HEADER_SIZE,
@@ -679,14 +681,14 @@ static void png_to_pms8(PngReader *r, const char *path) {
 	int num_palette;
 	png_get_PLTE(r->png, r->info, &palette, &num_palette);
 	if (num_palette != 256)
-		error("%s: not a 256-color image", path);
+		error("%s: not a 256-color image", png_path);
 
 	if (png_get_valid(r->png, r->info, PNG_INFO_oFFs)) {
 		png_int_32 offx, offy;
 		int unit_type;
 		png_get_oFFs(r->png, r->info, &offx, &offy, &unit_type);
 		if (unit_type != PNG_OFFSET_PIXEL)
-			error("%s: unit of image offset must be pixels", path);
+			error("%s: unit of image offset must be pixels", png_path);
 		pms.x = offx;
 		pms.y = offy;
 	}
@@ -703,7 +705,7 @@ static void png_to_pms8(PngReader *r, const char *path) {
 	png_read_image(r->png, rows);
 	png_read_end(r->png, r->info);
 
-	FILE *fp = checked_fopen(replace_suffix(path, ".pms"), "wb");
+	FILE *fp = checked_fopen(pms_path, "wb");
 	pms_write_header(&pms, fp);
 	pms_write_palette(palette, fp);
 	pms8_encode(&pms, rows, fp);
@@ -712,7 +714,7 @@ static void png_to_pms8(PngReader *r, const char *path) {
 	free_bitmap_buffer(rows);
 }
 
-static void png_to_pms16(PngReader *r, const char *path) {
+static void png_to_pms16(PngReader *r, const char *png_path, const char *pms_path) {
 	png_set_strip_16(r->png);
 	png_set_packing(r->png);
 
@@ -735,14 +737,14 @@ static void png_to_pms16(PngReader *r, const char *path) {
 	if (png_get_valid(r->png, r->info, PNG_INFO_sBIT))
 		png_get_sBIT(r->png, r->info, &sig_bit);
 	if (!sig_bit || sig_bit->red != 5 || sig_bit->green != 6 || sig_bit->blue != 5)
-		fprintf(stderr, "%s: not an RGB565 image; conversion will be lossy.\n", path);
+		fprintf(stderr, "%s: not an RGB565 image; conversion will be lossy.\n", png_path);
 
 	if (png_get_valid(r->png, r->info, PNG_INFO_oFFs)) {
 		png_int_32 offx, offy;
 		int unit_type;
 		png_get_oFFs(r->png, r->info, &offx, &offy, &unit_type);
 		if (unit_type != PNG_OFFSET_PIXEL)
-			error("%s: unit of image offset must be pixels", path);
+			error("%s: unit of image offset must be pixels", png_path);
 		pms.x = offx;
 		pms.y = offy;
 	}
@@ -754,7 +756,7 @@ static void png_to_pms16(PngReader *r, const char *path) {
 	png_read_image(r->png, rows);
 	png_read_end(r->png, r->info);
 
-	FILE *fp = checked_fopen(replace_suffix(path, ".pms"), "wb");
+	FILE *fp = checked_fopen(pms_path, "wb");
 	pms_write_header(&pms, fp);
 
 	pms16_encode(&pms, rows, fp);
@@ -776,10 +778,10 @@ static void png_to_pms16(PngReader *r, const char *path) {
 	free_bitmap_buffer(rows);
 }
 
-static void png_to_pms(const char *path) {
-	PngReader *r = create_png_reader(path);
+static void png_to_pms(const char *png_path, const char *pms_path) {
+	PngReader *r = create_png_reader(png_path);
 	if (!r) {
-		fprintf(stderr, "%s: not a PNG file\n", path);
+		fprintf(stderr, "%s: not a PNG file\n", png_path);
 		return;
 	}
 	png_set_keep_unknown_chunks(r->png, PNG_HANDLE_CHUNK_ALWAYS, (const uint8_t *)CHUNK_PMSK, 1);
@@ -788,14 +790,14 @@ static void png_to_pms(const char *path) {
 
 	switch (png_get_color_type(r->png, r->info)) {
 	case PNG_COLOR_TYPE_PALETTE:
-		png_to_pms8(r, path);
+		png_to_pms8(r, png_path, pms_path);
 		break;
 	case PNG_COLOR_TYPE_RGB:
 	case PNG_COLOR_TYPE_RGBA:
-		png_to_pms16(r, path);
+		png_to_pms16(r, png_path, pms_path);
 		break;
 	default:
-		error("%s: grayscale png is not supported", path);
+		error("%s: grayscale png is not supported", png_path);
 	}
 	destroy_png_reader(r);
 }
@@ -832,6 +834,8 @@ int main(int argc, char *argv[]) {
 	init(argc, argv);
 
 	enum { DECODE, ENCODE, INFO } mode = DECODE;
+	const char *output_path = NULL;
+
 	int opt;
 	while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
 		switch (opt) {
@@ -844,6 +848,9 @@ int main(int argc, char *argv[]) {
 		case 'i':
 			mode = INFO;
 			break;
+		case 'o':
+			output_path = optarg;
+			break;
 		case 'v':
 			version();
 			return 0;
@@ -855,13 +862,16 @@ int main(int argc, char *argv[]) {
 	argc -= optind;
 	argv += optind;
 
+	if (output_path && argc > 1)
+		error("pms: multiple input files with specified output filename");
+
 	for (int i = 0; i < argc; i++) {
 		switch (mode) {
 		case DECODE:
-			pms_to_png(argv[i]);
+			pms_to_png(argv[i], output_path ? output_path : replace_suffix(argv[i], ".png"));
 			break;
 		case ENCODE:
-			png_to_pms(argv[i]);
+			png_to_pms(argv[i], output_path ? output_path : replace_suffix(argv[i], ".pms"));
 			break;
 		case INFO:
 			pms_info(argv[i]);
