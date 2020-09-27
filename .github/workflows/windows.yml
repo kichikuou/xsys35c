@@ -52,6 +52,7 @@ jobs:
         mkdir artifacts
         cp */*.exe artifacts/
         rm artifacts/*_tests.exe
+        strip artifacts/*.exe
         cp COPYING artifacts/
         mkdir artifacts/docs
         cp docs/*.html artifacts/docs
