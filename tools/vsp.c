@@ -20,6 +20,7 @@
 */
 #include "common.h"
 #include "png_utils.h"
+#include <assert.h>
 #include <errno.h>
 #include <getopt.h>
 #include <stdio.h>
@@ -37,12 +38,13 @@ struct vsp_header {
 	uint8_t  bank;     // default palette bank
 };
 
-static const char short_options[] = "ehio:v";
+static const char short_options[] = "ehio:p:v";
 static const struct option long_options[] = {
 	{ "encode",    no_argument,       NULL, 'e' },
 	{ "help",      no_argument,       NULL, 'h' },
 	{ "info",      no_argument,       NULL, 'i' },
 	{ "output",    required_argument, NULL, 'o' },
+	{ "position",  required_argument, NULL, 'p' },
 	{ "version",   no_argument,       NULL, 'v' },
 	{ 0, 0, 0, 0 }
 };
@@ -50,11 +52,12 @@ static const struct option long_options[] = {
 static void usage(void) {
 	puts("Usage: vsp [options] file...");
 	puts("Options:");
-	puts("    -e, --encode         Convert PNG files to VSP");
-	puts("    -h, --help           Display this message and exit");
-	puts("    -i, --info           Display image information");
-	puts("    -o, --output <file>  Write output to <file>");
-	puts("    -v, --version        Print version information and exit");
+	puts("    -e, --encode          Convert PNG files to VSP");
+	puts("    -h, --help            Display this message and exit");
+	puts("    -i, --info            Display image information");
+	puts("    -o, --output <file>   Write output to <file>");
+	puts("    -p, --position <x,y>  (encode) Set default display position to (<x,y>)");
+	puts("    -v, --version         Print version information and exit");
 }
 
 static void version(void) {
@@ -412,7 +415,7 @@ static void vsp_to_png(const char *vsp_path, const char *png_path) {
 	free_bitmap_buffer(rows);
 }
 
-static void png_to_vsp(const char *png_path, const char *vsp_path) {
+static void png_to_vsp(const char *png_path, const char *vsp_path, const ImageOffset *image_offset) {
 	PngReader *r = create_png_reader(png_path);
 	if (!r) {
 		fprintf(stderr, "%s: not a PNG file\n", png_path);
@@ -442,16 +445,15 @@ static void png_to_vsp(const char *png_path, const char *vsp_path) {
 		.height = height,
 	};
 
-	if (png_get_valid(r->png, r->info, PNG_INFO_oFFs)) {
-		png_int_32 offx, offy;
-		int unit_type;
-		png_get_oFFs(r->png, r->info, &offx, &offy, &unit_type);
-		if (unit_type != PNG_OFFSET_PIXEL)
-			error("%s: unit of image offset must be pixels", png_path);
-		if (offx % 8)
+	if (!image_offset) {
+		image_offset = get_png_image_offset(r);
+		if (image_offset && image_offset->x % 8)
 			error("%s: image x-offset must be a multiple of 8", png_path);
-		vsp.x = offx / 8;
-		vsp.y = offy;
+	}
+	if (image_offset) {
+		assert(image_offset->x % 8 == 0);
+		vsp.x = image_offset->x / 8;
+		vsp.y = image_offset->y;
 	}
 
 	png_unknown_chunkp unknowns;
@@ -496,6 +498,7 @@ int main(int argc, char *argv[]) {
 
 	enum { DECODE, ENCODE, INFO } mode = DECODE;
 	const char *output_path = NULL;
+	ImageOffset *image_offset = NULL;
 
 	int opt;
 	while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
@@ -511,6 +514,13 @@ int main(int argc, char *argv[]) {
 			break;
 		case 'o':
 			output_path = optarg;
+			break;
+		case 'p':
+			image_offset = parse_image_offset(optarg);
+			if (!image_offset)
+				error("vsp: invalid image position: %s", optarg);
+			if (image_offset->x % 8)
+				error("vsp: image x-offset must be a multiple of 8");
 			break;
 		case 'v':
 			version();
@@ -532,7 +542,10 @@ int main(int argc, char *argv[]) {
 			vsp_to_png(argv[i], output_path ? output_path : replace_suffix(argv[i], ".png"));
 			break;
 		case ENCODE:
-			png_to_vsp(argv[i], output_path ? output_path : replace_suffix(argv[i], ".vsp"));
+			png_to_vsp(
+				argv[i],
+				output_path ? output_path : replace_suffix(argv[i], ".vsp"),
+				image_offset);
 			break;
 		case INFO:
 			vsp_info(argv[i]);

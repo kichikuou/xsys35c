@@ -49,12 +49,13 @@ struct pms_header {
 	uint32_t reserved3;    // must be zero
 };
 
-static const char short_options[] = "ehio:v";
+static const char short_options[] = "ehio:p:v";
 static const struct option long_options[] = {
 	{ "encode",    no_argument,       NULL, 'e' },
 	{ "help",      no_argument,       NULL, 'h' },
 	{ "info",      no_argument,       NULL, 'i' },
 	{ "output",    required_argument, NULL, 'o' },
+	{ "position",  required_argument, NULL, 'p' },
 	{ "version",   no_argument,       NULL, 'v' },
 	{ 0, 0, 0, 0 }
 };
@@ -62,11 +63,12 @@ static const struct option long_options[] = {
 static void usage(void) {
 	puts("Usage: pms [options] file...");
 	puts("Options:");
-	puts("    -e, --encode         Convert PNG files to PMS");
-	puts("    -h, --help           Display this message and exit");
-	puts("    -i, --info           Display image information");
-	puts("    -o, --output <file>  Write output to <file>");
-	puts("    -v, --version        Print version information and exit");
+	puts("    -e, --encode          Convert PNG files to PMS");
+	puts("    -h, --help            Display this message and exit");
+	puts("    -i, --info            Display image information");
+	puts("    -o, --output <file>   Write output to <file>");
+	puts("    -p, --position <x,y>  (encode) Set default display position to (<x,y>)");
+	puts("    -v, --version         Print version information and exit");
 }
 
 static void version(void) {
@@ -670,7 +672,7 @@ static void pms_to_png(const char *pms_path, const char *png_path) {
 	fclose(fp);
 }
 
-static void png_to_pms8(PngReader *r, const char *png_path, const char *pms_path) {
+static void png_to_pms8(PngReader *r, const char *png_path, const char *pms_path, const ImageOffset *image_offset) {
 	struct pms_header pms = {
 		.version      = 1,
 		.header_size  = PMS1_HEADER_SIZE,
@@ -688,14 +690,11 @@ static void png_to_pms8(PngReader *r, const char *png_path, const char *pms_path
 	if (num_palette > 256)
 		error("%s: not a 256-color image", png_path);
 
-	if (png_get_valid(r->png, r->info, PNG_INFO_oFFs)) {
-		png_int_32 offx, offy;
-		int unit_type;
-		png_get_oFFs(r->png, r->info, &offx, &offy, &unit_type);
-		if (unit_type != PNG_OFFSET_PIXEL)
-			error("%s: unit of image offset must be pixels", png_path);
-		pms.x = offx;
-		pms.y = offy;
+	if (!image_offset)
+		image_offset = get_png_image_offset(r);
+	if (image_offset) {
+		pms.x = image_offset->x;
+		pms.y = image_offset->y;
 	}
 
 	png_unknown_chunkp unknowns;
@@ -719,7 +718,7 @@ static void png_to_pms8(PngReader *r, const char *png_path, const char *pms_path
 	free_bitmap_buffer(rows);
 }
 
-static void png_to_pms16(PngReader *r, const char *png_path, const char *pms_path) {
+static void png_to_pms16(PngReader *r, const char *png_path, const char *pms_path, const ImageOffset *image_offset) {
 	png_set_strip_16(r->png);
 	png_set_packing(r->png);
 
@@ -744,14 +743,11 @@ static void png_to_pms16(PngReader *r, const char *png_path, const char *pms_pat
 	if (!sig_bit || sig_bit->red != 5 || sig_bit->green != 6 || sig_bit->blue != 5)
 		fprintf(stderr, "%s: not an RGB565 image; conversion will be lossy.\n", png_path);
 
-	if (png_get_valid(r->png, r->info, PNG_INFO_oFFs)) {
-		png_int_32 offx, offy;
-		int unit_type;
-		png_get_oFFs(r->png, r->info, &offx, &offy, &unit_type);
-		if (unit_type != PNG_OFFSET_PIXEL)
-			error("%s: unit of image offset must be pixels", png_path);
-		pms.x = offx;
-		pms.y = offy;
+	if (!image_offset)
+		image_offset = get_png_image_offset(r);
+	if (image_offset) {
+		pms.x = image_offset->x;
+		pms.y = image_offset->y;
 	}
 
 	png_read_update_info(r->png, r->info);
@@ -783,7 +779,7 @@ static void png_to_pms16(PngReader *r, const char *png_path, const char *pms_pat
 	free_bitmap_buffer(rows);
 }
 
-static void png_to_pms(const char *png_path, const char *pms_path) {
+static void png_to_pms(const char *png_path, const char *pms_path, const ImageOffset *image_offset) {
 	PngReader *r = create_png_reader(png_path);
 	if (!r) {
 		fprintf(stderr, "%s: not a PNG file\n", png_path);
@@ -795,11 +791,11 @@ static void png_to_pms(const char *png_path, const char *pms_path) {
 
 	switch (png_get_color_type(r->png, r->info)) {
 	case PNG_COLOR_TYPE_PALETTE:
-		png_to_pms8(r, png_path, pms_path);
+		png_to_pms8(r, png_path, pms_path, image_offset);
 		break;
 	case PNG_COLOR_TYPE_RGB:
 	case PNG_COLOR_TYPE_RGBA:
-		png_to_pms16(r, png_path, pms_path);
+		png_to_pms16(r, png_path, pms_path, image_offset);
 		break;
 	default:
 		error("%s: grayscale png is not supported", png_path);
@@ -840,6 +836,7 @@ int main(int argc, char *argv[]) {
 
 	enum { DECODE, ENCODE, INFO } mode = DECODE;
 	const char *output_path = NULL;
+	ImageOffset *image_offset = NULL;
 
 	int opt;
 	while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
@@ -855,6 +852,11 @@ int main(int argc, char *argv[]) {
 			break;
 		case 'o':
 			output_path = optarg;
+			break;
+		case 'p':
+			image_offset = parse_image_offset(optarg);
+			if (!image_offset)
+				error("pms: invalid image position: %s", optarg);
 			break;
 		case 'v':
 			version();
@@ -876,7 +878,10 @@ int main(int argc, char *argv[]) {
 			pms_to_png(argv[i], output_path ? output_path : replace_suffix(argv[i], ".png"));
 			break;
 		case ENCODE:
-			png_to_pms(argv[i], output_path ? output_path : replace_suffix(argv[i], ".pms"));
+			png_to_pms(
+				argv[i],
+				output_path ? output_path : replace_suffix(argv[i], ".pms"),
+				image_offset);
 			break;
 		case INFO:
 			pms_info(argv[i]);

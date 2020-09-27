@@ -24,23 +24,32 @@
 #include <png.h>
 
 typedef struct {
+	int x;
+	int y;
+} ImageOffset;
+
+extern ImageOffset *parse_image_offset(const char *s);
+
+typedef struct {
 	png_structp png;
 	png_infop info;
 	FILE *fp;
 } PngWriter;
 
 extern PngWriter *create_png_writer(const char *path);
-extern void write_png(PngWriter* w, png_bytepp rows, int transforms);
-extern void destroy_png_writer(PngWriter* w);
+extern void write_png(PngWriter *w, png_bytepp rows, int transforms);
+extern void destroy_png_writer(PngWriter *w);
 
 typedef struct {
 	png_structp png;
 	png_infop info;
 	FILE *fp;
+	char *path;
 } PngReader;
 
 extern PngReader *create_png_reader(const char *path);
-extern void destroy_png_reader(PngReader* w);
+extern void destroy_png_reader(PngReader *r);
+extern ImageOffset *get_png_image_offset(PngReader *r);
 
 extern png_bytepp allocate_bitmap_buffer(int width, int height, int bytes_per_pixel);
 extern void free_bitmap_buffer(png_bytepp rows);

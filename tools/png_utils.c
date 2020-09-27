@@ -21,6 +21,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+ImageOffset *parse_image_offset(const char *s) {
+	static ImageOffset offs;
+	if (sscanf(s, "%d,%d", &offs.x, &offs.y) != 2)
+		return NULL;
+	return &offs;
+}
+
 static void handle_png_error(png_structp png, png_const_charp error_msg) {
 	error("PNG error: %s", error_msg);
 }
@@ -41,12 +48,12 @@ PngWriter *create_png_writer(const char *path) {
 	return w;
 }
 
-void write_png(PngWriter* w, png_bytepp rows, int transforms) {
+void write_png(PngWriter *w, png_bytepp rows, int transforms) {
 	png_set_rows(w->png, w->info, rows);
 	png_write_png(w->png, w->info, transforms, NULL);
 }
 
-void destroy_png_writer(PngWriter* w) {
+void destroy_png_writer(PngWriter *w) {
 	png_destroy_write_struct(&w->png, &w->info);
 	fclose(w->fp);
 	memset(w, 0, sizeof(PngWriter));
@@ -73,13 +80,27 @@ PngReader *create_png_reader(const char *path) {
 	png_init_io(r->png, r->fp);
 	png_set_sig_bytes(r->png, sizeof(sig_bytes));
 
+	r->path = strdup(path);
+
 	return r;
 }
 
-void destroy_png_reader(PngReader* r) {
+void destroy_png_reader(PngReader *r) {
 	png_destroy_read_struct(&r->png, &r->info, NULL);
 	fclose(r->fp);
+	free(r->path);
 	memset(r, 0, sizeof(PngReader));
+}
+
+ImageOffset *get_png_image_offset(PngReader *r) {
+	static ImageOffset offs;
+	if (!png_get_valid(r->png, r->info, PNG_INFO_oFFs))
+		return NULL;
+	int unit_type;
+	png_get_oFFs(r->png, r->info, &offs.x, &offs.y, &unit_type);
+	if (unit_type != PNG_OFFSET_PIXEL)
+		error("%s: unit of image offset must be pixels", r->path);
+	return &offs;
 }
 
 png_bytepp allocate_bitmap_buffer(int width, int height, int bytes_per_pixel) {

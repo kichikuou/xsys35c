@@ -16,14 +16,14 @@ diff -uN --strip-trailing-cr testdata/source testdata/decompiled
 tmpfile=$(mktemp)
 
 diff -u - <(tools/vsp -i testdata/*.vsp) <<EOF
-testdata/16colors.vsp: 256x256
+testdata/16colors.vsp: 256x256, offset: (40, 20)
 EOF
 tools/vsp testdata/16colors.vsp -o $tmpfile && cmp testdata/16colors.png $tmpfile
 tools/vsp -e testdata/16colors.png -o $tmpfile && cmp testdata/16colors.vsp $tmpfile
 
 diff -u - <(tools/pms -i testdata/*.pms) <<EOF
-testdata/256colors.pms: PMS 1, 256x256 8bpp
-testdata/highcolor.pms: PMS 1, 256x256 16bpp
+testdata/256colors.pms: PMS 1, 256x256 8bpp, offset: (50, 30)
+testdata/highcolor.pms: PMS 1, 256x256 16bpp, offset: (50, 30)
 testdata/highcolor_alpha.pms: PMS 1, 256x256 16bpp, 8bit alpha
 EOF
 tools/pms testdata/256colors.pms -o $tmpfile && cmp testdata/256colors.png $tmpfile
@@ -32,7 +32,7 @@ tools/pms testdata/highcolor_alpha.pms -o $tmpfile && cmp testdata/highcolor_alp
 tools/pms -e testdata/highcolor_alpha.png -o $tmpfile && cmp testdata/highcolor_alpha.pms $tmpfile
 
 diff -u - <(tools/qnt -i testdata/*.qnt) <<EOF
-testdata/truecolor.qnt: QNT 1, 256x256 24bpp
+testdata/truecolor.qnt: QNT 1, 256x256 24bpp, offset: (60, 40)
 testdata/truecolor_alpha.qnt: QNT 1, 256x256 24bpp + alpha
 EOF
 tools/qnt testdata/truecolor.qnt -o $tmpfile && cmp testdata/truecolor.png $tmpfile
