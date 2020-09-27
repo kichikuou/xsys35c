@@ -1,4 +1,5 @@
 CFLAGS = -Wall -Werror -O2 -Icommon
+LDLIBS = $(STATIC) -lpng -lz
 
 PREFIX ?= /usr/local
 
@@ -45,6 +46,9 @@ DECOMPILER_OBJS := \
 	decompiler/decompile.o \
 	decompiler/preprocess.o
 
+TOOLS_OBJS := \
+	tools/png_utils.o
+
 MAIN_OBJS := \
 	compiler/xsys35c.o \
 	decompiler/xsys35dc.o \
@@ -58,17 +62,16 @@ all: $(COMMANDS)
 $(COMMON_OBJS) $(COMMON_TESTS_OBJS) $(MAIN_OBJS): common/common.h
 $(COMPILER_OBJS) $(COMPILER_TESTS_OBJS): compiler/xsys35c.h common/common.h
 $(DECOMPILER_OBJS): decompiler/xsys35dc.h common/common.h
+$(TOOLS_OBJS): tools/png_utils.h common/common.h
+tools/vsp.o tools/pms.o tools/qnt.o: tools/png_utils.h
 common/sjisutf.o: common/s2utbl.h
 
 compiler/xsys35c: compiler/xsys35c.o $(COMPILER_OBJS) $(COMMON_OBJS)
 decompiler/xsys35dc: decompiler/xsys35dc.o $(DECOMPILER_OBJS) $(COMMON_OBJS)
 tools/ald: tools/ald.o $(COMMON_OBJS)
-tools/vsp: tools/vsp.o $(COMMON_OBJS) tools/png_utils.o
-	$(CC) $^ -o $@ $(STATIC) -lpng -lz
-tools/pms: tools/pms.o $(COMMON_OBJS) tools/png_utils.o
-	$(CC) $^ -o $@ $(STATIC) -lpng -lz
-tools/qnt: tools/qnt.o $(COMMON_OBJS) tools/png_utils.o
-	$(CC) $^ -o $@ $(STATIC) -lpng -lz
+tools/vsp: tools/vsp.o $(COMMON_OBJS) $(TOOLS_OBJS)
+tools/pms: tools/pms.o $(COMMON_OBJS) $(TOOLS_OBJS)
+tools/qnt: tools/qnt.o $(COMMON_OBJS) $(TOOLS_OBJS)
 
 common/common_tests: $(COMMON_TESTS_OBJS) $(COMMON_OBJS)
 compiler/compiler_tests: $(COMPILER_TESTS_OBJS) $(COMPILER_OBJS) $(COMMON_OBJS)
