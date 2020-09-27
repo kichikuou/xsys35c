@@ -8,18 +8,22 @@ vsp, pms, qnt - utilities for VSP, PMS, QNT images
 
 == Synopsis
 [verse]
-*vsp* [_options_] _pmsfile_...
-*pms* [_options_] _pmsfile_...
-*qnt* [_options_] _pmsfile_...
+*vsp* [_options_] _file_...
+*pms* [_options_] _file_...
+*qnt* [_options_] _file_...
 
 == Description
-The *vsp*, *pms* and *qnt* commands convert VSP, PMS and QNT image files to
-PNG format, respectively.
+By default, *vsp*, *pms* and *qnt* commands convert VSP, PMS and QNT image
+files to PNG format, respectively.  If `-e` option is specified, these commands
+convert PNG files to VSP, PMS or QNT.
 
 Output filename is the same as the input filename, with the extension changed
-to `.png`.
+to `.png`, `.vsp`, `.pms` or `.qnt`, depending on the destination format.
 
 == Options
+*-e, --encode*::
+  Encode PNG file(s) to VSP, PMS or QNT format.
+
 *-h, --help*::
   Display help message about the command and exit.
 
@@ -27,6 +31,14 @@ to `.png`.
   Print information about input files, such as image dimensions and default
   display positions.  If this option is given, no image format conversion is
   performed.
+
+*-o, --output*=_filename_::
+  Write the output to _filename_ (only valid if a single input file is
+  specified).
+
+*-p, --position*=_x_,_y_::
+  When encoding, set the default display position of the image to (_x_, _y_).
+  If omitted, the values in the `oFFs` chunk of the input PNG file is used.
 
 *-v, --version*::
   Display the version number and exit.
@@ -36,6 +48,11 @@ to `.png`.
 The following converts _image.vsp_ to _image.png_:
 
   vsp image.vsp
+
+The following converts _image.png_ to _image.vsp_, and sets the default
+position to (80, 50):
+
+  vsp -e image.png -p 80,50
 
 To view information for all PMS files in current directory:
 
