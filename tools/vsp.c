@@ -92,11 +92,16 @@ static void vsp_read_palette(png_color pal[16], FILE *fp) {
 	}
 }
 
-static void vsp_write_palette(png_color pal[16], FILE *fp) {
-	for (int i = 0; i < 16; i++) {
+static void vsp_write_palette(png_color pal[16], int n, FILE *fp) {
+	for (int i = 0; i < n; i++) {
 		fputc(pal[i].blue  >> 4, fp);
 		fputc(pal[i].red   >> 4, fp);
 		fputc(pal[i].green >> 4, fp);
+	}
+	for (int i = n; i < 16; i++) {
+		fputc(0, fp);
+		fputc(0, fp);
+		fputc(0, fp);
 	}
 }
 
@@ -429,7 +434,7 @@ static void png_to_vsp(const char *png_path, const char *vsp_path) {
 	png_colorp palette;
 	int num_palette;
 	png_get_PLTE(r->png, r->info, &palette, &num_palette);
-	if (num_palette != 16)
+	if (num_palette > 16)
 		error("%s: not a 16-color image", png_path);
 
 	struct vsp_header vsp = {
@@ -459,7 +464,7 @@ static void png_to_vsp(const char *png_path, const char *vsp_path) {
 
 	FILE *fp = checked_fopen(vsp_path, "wb");
 	vsp_write_header(&vsp, fp);
-	vsp_write_palette(palette, fp);
+	vsp_write_palette(palette, num_palette, fp);
 	vsp_encode(&vsp, png_get_rows(r->png, r->info), fp);
 	fclose(fp);
 

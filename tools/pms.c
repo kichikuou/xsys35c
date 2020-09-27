@@ -125,11 +125,16 @@ static void pms_read_palette(png_color pal[256], FILE *fp) {
 	}
 }
 
-static void pms_write_palette(png_color pal[256], FILE *fp) {
-	for (int i = 0; i < 256; i++) {
+static void pms_write_palette(png_color pal[256], int n, FILE *fp) {
+	for (int i = 0; i < n; i++) {
 		fputc(pal[i].red, fp);
 		fputc(pal[i].green, fp);
 		fputc(pal[i].blue, fp);
+	}
+	for (int i = n; i < 256; i++) {
+		fputc(0, fp);
+		fputc(0, fp);
+		fputc(0, fp);
 	}
 }
 
@@ -680,7 +685,7 @@ static void png_to_pms8(PngReader *r, const char *png_path, const char *pms_path
 	png_colorp palette;
 	int num_palette;
 	png_get_PLTE(r->png, r->info, &palette, &num_palette);
-	if (num_palette != 256)
+	if (num_palette > 256)
 		error("%s: not a 256-color image", png_path);
 
 	if (png_get_valid(r->png, r->info, PNG_INFO_oFFs)) {
@@ -707,7 +712,7 @@ static void png_to_pms8(PngReader *r, const char *png_path, const char *pms_path
 
 	FILE *fp = checked_fopen(pms_path, "wb");
 	pms_write_header(&pms, fp);
-	pms_write_palette(palette, fp);
+	pms_write_palette(palette, num_palette, fp);
 	pms8_encode(&pms, rows, fp);
 	fclose(fp);
 
