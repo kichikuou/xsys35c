@@ -119,8 +119,8 @@ static void vsp_write_palette(png_color pal[16], int n, FILE *fp) {
  * Based on xsystem35 implementation, with commentary by Nunuhara [1].
  * [1] https://haniwa.technology/tech/vsp.html
  */
-static png_bytepp vsp_extract(struct vsp_header *vsp, FILE *fp) {
-	png_bytepp rows = allocate_bitmap_buffer(vsp->width * 8, vsp->height, 1);
+static png_bytepp vsp_extract(FILE *fp, int width, int height) {
+	png_bytepp rows = allocate_bitmap_buffer(width * 8, height, 1);
 
 	// Extraction buffers. The planar image data is decompressed and read into
 	// these buffers before being converted to a chunky format.
@@ -128,8 +128,8 @@ static png_bytepp vsp_extract(struct vsp_header *vsp, FILE *fp) {
 	uint8_t *bp[4]; // the previous buffer
 
 	for (int i = 0; i < 4; i++) {
-		bc[i] = alloca(vsp->height);
-		bp[i] = alloca(vsp->height);
+		bc[i] = alloca(height);
+		bp[i] = alloca(height);
 	}
 
 	uint8_t mask = 0;
@@ -137,11 +137,11 @@ static png_bytepp vsp_extract(struct vsp_header *vsp, FILE *fp) {
 	// for each column...
 	// NOTE: Every byte contains 8 pixels worth of data for single plane, so
 	//       each column is actually 8 pixels wide.
-	for (int x = 0; x < vsp->width; x++) {
+	for (int x = 0; x < width; x++) {
 		// for each plane...
 		for (int pl = 0; pl < 4; pl++) {
 			// for each row...
-			for (int y = 0; y < vsp->height;) {
+			for (int y = 0; y < height;) {
 				// read a byte; if it's < 0x08, it's a command byte,
 				// otherwise it's image data
 				int c0 = fgetc(fp);
@@ -156,7 +156,7 @@ static png_bytepp vsp_extract(struct vsp_header *vsp, FILE *fp) {
 				// (compression for horizontal repetition)
 				else if (c0 == 0x00) {
 					int n = fgetc(fp) + 1;
-					if (y + n > vsp->height)
+					if (y + n > height)
 						goto err;
 					memcpy(bc[pl] + y, bp[pl] + y, n);
 					y += n;
@@ -165,7 +165,7 @@ static png_bytepp vsp_extract(struct vsp_header *vsp, FILE *fp) {
 				else if (c0 == 0x01) {
 					int n = fgetc(fp) + 1;
 					uint8_t b0 = fgetc(fp);
-					if (y + n > vsp->height)
+					if (y + n > height)
 						goto err;
 					memset(bc[pl] + y, b0, n);
 					y += n;
@@ -175,7 +175,7 @@ static png_bytepp vsp_extract(struct vsp_header *vsp, FILE *fp) {
 					int n = fgetc(fp) + 1;
 					uint8_t b0 = fgetc(fp);
 					uint8_t b1 = fgetc(fp);
-					if (y + n * 2 > vsp->height)
+					if (y + n * 2 > height)
 						goto err;
 					for (int i = 0; i < n; i++) {
 						bc[pl][y++] = b0;
@@ -185,7 +185,7 @@ static png_bytepp vsp_extract(struct vsp_header *vsp, FILE *fp) {
 				// copy n bytes from plane 0 XOR'd by the current mask
 				else if (c0 == 0x03) {
 					int n = fgetc(fp) + 1;
-					if (y + n > vsp->height)
+					if (y + n > height)
 						goto err;
 					for (int i = 0; i < n; i++) {
 						bc[pl][y] = bc[0][y] ^ mask;
@@ -196,7 +196,7 @@ static png_bytepp vsp_extract(struct vsp_header *vsp, FILE *fp) {
 				// copy n bytes from plane 1 XOR'd by the current mask
 				else if (c0 == 0x04) {
 					int n = fgetc(fp) + 1;
-					if (y + n > vsp->height)
+					if (y + n > height)
 						goto err;
 					for (int i = 0; i < n; i++) {
 						bc[pl][y] = bc[1][y] ^ mask;
@@ -207,7 +207,7 @@ static png_bytepp vsp_extract(struct vsp_header *vsp, FILE *fp) {
 				// copy n bytes from plane 2 XOR'd by the current mask
 				else if (c0 == 0x05) {
 					int n = fgetc(fp) + 1;
-					if (y + n > vsp->height)
+					if (y + n > height)
 						goto err;
 					for (int i = 0; i < n; i++) {
 						bc[pl][y] = bc[2][y] ^ mask;
@@ -227,7 +227,7 @@ static png_bytepp vsp_extract(struct vsp_header *vsp, FILE *fp) {
 			}
 		}
 		// planar -> chunky (bitmap) conversion
-		for (int y = 0; y < vsp->height; y++) {
+		for (int y = 0; y < height; y++) {
 			png_bytep dst = rows[y] + x * 8;
 			uint8_t b0 = bc[0][y];
 			uint8_t b1 = bc[1][y];
@@ -258,18 +258,18 @@ static png_bytepp vsp_extract(struct vsp_header *vsp, FILE *fp) {
 	return NULL;
 }
 
-static void vsp_encode(struct vsp_header *vsp, png_bytepp rows, FILE *fp) {
+static void vsp_encode(png_bytepp rows, int width, int height, FILE *fp) {
 	uint8_t *bc[4]; // the current buffer
 	uint8_t *bp[4]; // the previous buffer
 	for (int i = 0; i < 4; i++) {
-		bc[i] = alloca(vsp->height);
-		bp[i] = alloca(vsp->height);
+		bc[i] = alloca(height);
+		bp[i] = alloca(height);
 	}
 
 	// for each column...
-	for (int x = 0; x < vsp->width; x++) {
+	for (int x = 0; x < width; x++) {
 		// chunky (bitmap) -> planar conversion
-		for (int y = 0; y < vsp->height; y++) {
+		for (int y = 0; y < height; y++) {
 			png_bytep s = rows[y] + x * 8;
 			bc[0][y] = (s[0]<<7 & 128) | (s[1]<<6 & 64) | (s[2]<<5 & 32) | (s[3]<<4 & 16)
 					 | (s[4]<<3 &   8) | (s[5]<<2 &  4) | (s[6]<<1 &  2) | (s[7]    &  1);
@@ -283,7 +283,7 @@ static void vsp_encode(struct vsp_header *vsp, png_bytepp rows, FILE *fp) {
 		// for each plane...
 		for (int pl = 0; pl < 4; pl++) {
 			// for each row...
-			for (int y = 0; y < vsp->height;) {
+			for (int y = 0; y < height;) {
 				// Try each command and choose the one with best "saved bytes",
 				// i.e. maximum (decoded_length - encoded_length).
 				uint8_t code[4];
@@ -305,7 +305,7 @@ static void vsp_encode(struct vsp_header *vsp, png_bytepp rows, FILE *fp) {
 				// (compression for horizontal repetition)
 				if (x > 0) {
 					int n = 0;
-					while (n < 256 && y + n < vsp->height && bc[pl][y + n] == bp[pl][y + n])
+					while (n < 256 && y + n < height && bc[pl][y + n] == bp[pl][y + n])
 						n++;
 					if (n - 2 > rawlen - codelen) {
 						code[0] = 0x00; code[1] = n - 1;
@@ -315,23 +315,25 @@ static void vsp_encode(struct vsp_header *vsp, png_bytepp rows, FILE *fp) {
 				}
 
 				// b0 * n (1-byte RLE compression)
-				int n = 1;
-				while (n < 256 && y + n < vsp->height && bc[pl][y + n] == c)
-					n++;
-				if (n - 3 > rawlen - codelen) {
-					code[0] = 0x01; code[1] = n - 1; code[2] = c;
-					codelen = 3;
-					rawlen = n;
+				{
+					int n = 1;
+					while (n < 256 && y + n < height && bc[pl][y + n] == c)
+						n++;
+					if (n - 3 > rawlen - codelen) {
+						code[0] = 0x01; code[1] = n - 1; code[2] = c;
+						codelen = 3;
+						rawlen = n;
+					}
 				}
 
 				// b0,b1 * n (2-byte RLE compression)
-				if (y + 1 < vsp->height) {
+				if (y + 1 < height) {
 					int c2 = bc[pl][y+1];
 					int n = 1;
-					while (n < 256 && y + 2*n + 1 < vsp->height &&
+					while (n < 256 && y + 2*n + 1 < height &&
 						   bc[pl][y + 2*n] == c && bc[pl][y + 2*n + 1] == c2)
 						n++;
-					if (n*2 - 4 > rawlen - codelen) {
+					if (2*n - 4 > rawlen - codelen) {
 						code[0] = 0x02; code[1] = n - 1; code[2] = c; code[3] = c2;
 						codelen = 4;
 						rawlen = 2 * n;
@@ -341,7 +343,7 @@ static void vsp_encode(struct vsp_header *vsp, png_bytepp rows, FILE *fp) {
 				// copy n bytes from plane p
 				for (int p = 0; p < pl; p++) {
 					int n = 0;
-					while (n < 256 && y + n < vsp->height && bc[pl][y + n] == bc[p][y + n])
+					while (n < 256 && y + n < height && bc[pl][y + n] == bc[p][y + n])
 						n++;
 					if (n - 2 > rawlen - codelen) {
 						code[0] = 0x03 + p; code[1] = n - 1;
@@ -353,7 +355,7 @@ static void vsp_encode(struct vsp_header *vsp, png_bytepp rows, FILE *fp) {
 				// copy n bytes from plane p, bits inverted
 				for (int p = 0; p < pl; p++) {
 					int n = 0;
-					while (n < 256 && y + n < vsp->height && bc[pl][y + n] == (bc[0][y + n] ^ 0xff))
+					while (n < 256 && y + n < height && bc[pl][y + n] == (bc[0][y + n] ^ 0xff))
 						n++;
 					if (n - 3 > rawlen - codelen) {
 						code[0] = 0x06; code[1] = 0x03 + p; code[2] = n - 1;
@@ -389,7 +391,7 @@ static void vsp_to_png(const char *vsp_path, const char *png_path) {
 	png_color pal[16];
 	vsp_read_palette(pal, fp);
 
-	png_bytepp rows = vsp_extract(&vsp, fp);
+	png_bytepp rows = vsp_extract(fp, vsp.width, vsp.height);
 	fclose(fp);
 	if (!rows) {
 		fprintf(stderr, "%s: broken image\n", vsp_path);
@@ -406,14 +408,15 @@ static void vsp_to_png(const char *vsp_path, const char *png_path) {
 		png_set_oFFs(w->png, w->info, vsp.x * 8, vsp.y, PNG_OFFSET_PIXEL);
 
 	// Store palette bank in a private chunk named "pbNk".
-	png_unknown_chunk chunk = {
-		.name = CHUNK_PBNK,
-		.data = &vsp.bank,
-		.size = 1,
-		.location = PNG_HAVE_IHDR
-	};
-	if (vsp.bank)
+	if (vsp.bank) {
+		png_unknown_chunk chunk = {
+			.name = CHUNK_PBNK,
+			.data = &vsp.bank,
+			.size = 1,
+			.location = PNG_HAVE_IHDR
+		};
 		png_set_unknown_chunks(w->png, w->info, &chunk, 1);
+	}
 
 	write_png(w, rows, PNG_TRANSFORM_PACKING);
 
@@ -452,13 +455,11 @@ static void png_to_vsp(const char *png_path, const char *vsp_path,
 		.height = height,
 	};
 
-	if (!image_offset) {
+	if (!image_offset)
 		image_offset = get_png_image_offset(r);
-		if (image_offset && image_offset->x % 8)
-			error("%s: image x-offset must be a multiple of 8", png_path);
-	}
 	if (image_offset) {
-		assert(image_offset->x % 8 == 0);
+		if (image_offset->x % 8)
+			error("%s: image x-offset must be a multiple of 8", png_path);
 		vsp.x = image_offset->x / 8;
 		vsp.y = image_offset->y;
 	}
@@ -474,7 +475,7 @@ static void png_to_vsp(const char *png_path, const char *vsp_path,
 	FILE *fp = checked_fopen(vsp_path, "wb");
 	vsp_write_header(&vsp, fp);
 	vsp_write_palette(palette, num_palette, fp);
-	vsp_encode(&vsp, png_get_rows(r->png, r->info), fp);
+	vsp_encode(png_get_rows(r->png, r->info), vsp.width, vsp.height, fp);
 	fclose(fp);
 
 	destroy_png_reader(r);

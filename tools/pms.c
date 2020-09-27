@@ -151,13 +151,13 @@ static void pms_write_palette(png_color pal[256], int n, FILE *fp) {
  * Based on xsystem35 implementation, with commentary by Nunuhara [1].
  * [1] https://haniwa.technology/tech/pms8.html
  */
-static png_bytepp pms8_extract(struct pms_header *pms, FILE *fp) {
-	png_bytepp rows = allocate_bitmap_buffer(pms->width, pms->height, 1);
+static png_bytepp pms8_extract(FILE *fp, int width, int height) {
+	png_bytepp rows = allocate_bitmap_buffer(width, height, 1);
 
 	// for each line...
-	for (int y = 0; y < pms->height; y ++) {
+	for (int y = 0; y < height; y ++) {
 		// for each pixel...
-		for (int x = 0; x < pms->width; ) {
+		for (int x = 0; x < width; ) {
 			uint8_t *dst = rows[y] + x;
 			int c0 = fgetc(fp);
 			if (c0 == EOF)
@@ -170,7 +170,7 @@ static png_bytepp pms8_extract(struct pms_header *pms, FILE *fp) {
 			// copy n+3 pixels from previous line
 			else if (c0 == 0xff) {
 				int n = fgetc(fp) + 3;
-				if (y < 1 || x + n > pms->width)
+				if (y < 1 || x + n > width)
 					goto err;
 				memcpy(dst, rows[y - 1] + x, n);
 				x += n;
@@ -178,7 +178,7 @@ static png_bytepp pms8_extract(struct pms_header *pms, FILE *fp) {
 			// copy n+3 pixels from 2 lines previous
 			else if (c0 == 0xfe) {
 				int n = fgetc(fp) + 3;
-				if (y < 2 || x + n > pms->width)
+				if (y < 2 || x + n > width)
 					goto err;
 				memcpy(dst, rows[y - 2] + x, n);
 				x += n;
@@ -187,7 +187,7 @@ static png_bytepp pms8_extract(struct pms_header *pms, FILE *fp) {
 			else if (c0 == 0xfd) {
 				int n = fgetc(fp) + 4;
 				int c0 = fgetc(fp);
-				if (x + n > pms->width)
+				if (x + n > width)
 					goto err;
 				memset(dst, c0, n);
 				x += n;
@@ -197,7 +197,7 @@ static png_bytepp pms8_extract(struct pms_header *pms, FILE *fp) {
 				int n = fgetc(fp) + 3;
 				int c0 = fgetc(fp);
 				int c1 = fgetc(fp);
-				if (x + n * 2 > pms->width)
+				if (x + n * 2 > width)
 					goto err;
 				for (int i = 0; i < n; i++) {
 					*dst++ = c0;
@@ -219,11 +219,11 @@ static png_bytepp pms8_extract(struct pms_header *pms, FILE *fp) {
 	return NULL;
 }
 
-static void pms8_encode(struct pms_header *pms, png_bytepp rows, FILE *fp) {
+static void pms8_encode(png_bytepp rows, int width, int height, FILE *fp) {
 	// for each line...
-	for (int y = 0; y < pms->height; y ++) {
+	for (int y = 0; y < height; y ++) {
 		// for each pixel...
-		for (int x = 0; x < pms->width; ) {
+		for (int x = 0; x < width; ) {
 			// Try each command and choose the one with best "saved bytes",
 			// i.e. maximum (decoded_length - encoded_length).
 			uint8_t code[4];
@@ -244,7 +244,7 @@ static void pms8_encode(struct pms_header *pms, png_bytepp rows, FILE *fp) {
 			// copy n+3 pixels from previous line
 			if (y > 0) {
 				int n = 0;
-				while (n - 3 < 255 && x + n < pms->width && rows[y][x + n] == rows[y - 1][x + n])
+				while (n - 3 < 255 && x + n < width && rows[y][x + n] == rows[y - 1][x + n])
 					n++;
 				if (n >= 3 && n - 2 > rawlen - codelen) {
 					code[0] = 0xff; code[1] = n - 3;
@@ -256,7 +256,7 @@ static void pms8_encode(struct pms_header *pms, png_bytepp rows, FILE *fp) {
 			// copy n+3 pixels from 2 lines previous
 			if (y > 1) {
 				int n = 0;
-				while (n - 3 < 255 && x + n < pms->width && rows[y][x + n] == rows[y - 2][x + n])
+				while (n - 3 < 255 && x + n < width && rows[y][x + n] == rows[y - 2][x + n])
 					n++;
 				if (n >= 3 && n - 2 > rawlen - codelen) {
 					code[0] = 0xfe; code[1] = n - 3;
@@ -268,7 +268,7 @@ static void pms8_encode(struct pms_header *pms, png_bytepp rows, FILE *fp) {
 			// repeat 1 pixel n+4 times (1-byte RLE)
 			{
 				int n = 1;
-				while (n - 4 < 255 && x + n < pms->width && rows[y][x + n] == c)
+				while (n - 4 < 255 && x + n < width && rows[y][x + n] == c)
 					n++;
 				if (n >= 4 && n - 3 > rawlen - codelen) {
 					code[0] = 0xfd; code[1] = n - 4; code[2] = c;
@@ -278,10 +278,10 @@ static void pms8_encode(struct pms_header *pms, png_bytepp rows, FILE *fp) {
 			}
 
 			// repeat a sequence of 2 pixels n+3 times (2-byte RLE)
-			if (x + 1 < pms->width) {
+			if (x + 1 < width) {
 				int c2 = rows[y][x + 1];
 				int n = 1;
-				while (n - 3 < 255 && x + 2*n + 1 < pms->width &&
+				while (n - 3 < 255 && x + 2*n + 1 < width &&
 					   rows[y][x + 2*n] == c && rows[y][x + 2*n + 1] == c2)
 					n++;
 				if (n >= 3 && 2*n - 4 > rawlen - codelen) {
@@ -311,13 +311,13 @@ static uint32_t RGB565to888(uint16_t pc) {
 /*
  * Convert PMS16 image to RGB888 bitmap. Based on xsystem35 implementation.
  */
-static png_bytepp pms16_extract(struct pms_header *pms, FILE *fp) {
-	png_bytepp rows = allocate_bitmap_buffer(pms->width, pms->height, 4);
+static png_bytepp pms16_extract(FILE *fp, int width, int height) {
+	png_bytepp rows = allocate_bitmap_buffer(width, height, 4);
 
 	// for each line...
-	for (int y = 0; y < pms->height; y++) {
+	for (int y = 0; y < height; y++) {
 		// for each pixel...
-		for (int x = 0; x < pms->width;) {
+		for (int x = 0; x < width;) {
 			uint32_t *dst = (uint32_t *)rows[y] + x;
 			int c0 = fgetc(fp);
 			if (c0 == EOF)
@@ -331,7 +331,7 @@ static png_bytepp pms16_extract(struct pms_header *pms, FILE *fp) {
 			// copy n+2 pixels from previous line
 			else if (c0 == 0xff) {
 				int n = fgetc(fp) + 2;
-				if (y < 1 || x + n > pms->width)
+				if (y < 1 || x + n > width)
 					goto err;
 				memcpy(dst, (uint32_t *)rows[y - 1] + x, n * 4);
 				x += n;
@@ -339,7 +339,7 @@ static png_bytepp pms16_extract(struct pms_header *pms, FILE *fp) {
 			// copy n+2 pixels from 2 lines previous
 			else if (c0 == 0xfe) {
 				int n = fgetc(fp) + 2;
-				if (y < 2 || x + n > pms->width)
+				if (y < 2 || x + n > width)
 					goto err;
 				memcpy(dst, (uint32_t *)rows[y - 2] + x, n * 4);
 				x += n;
@@ -348,7 +348,7 @@ static png_bytepp pms16_extract(struct pms_header *pms, FILE *fp) {
 			else if (c0 == 0xfd) {
 				int n = fgetc(fp) + 3;
 				uint32_t pc = RGB565to888(fgetw(fp));
-				if (x + n > pms->width)
+				if (x + n > width)
 					goto err;
 				for (int i = 0; i < n; i++)
 					dst[i] = pc;
@@ -359,7 +359,7 @@ static png_bytepp pms16_extract(struct pms_header *pms, FILE *fp) {
 				int n = fgetc(fp) + 2;
 				uint32_t pc0 = RGB565to888(fgetw(fp));
 				uint32_t pc1 = RGB565to888(fgetw(fp));
-				if (x + n * 2 > pms->width)
+				if (x + n * 2 > width)
 					goto err;
 				for (int i = 0; i < n; i++) {
 					*dst++ = pc0;
@@ -376,7 +376,7 @@ static png_bytepp pms16_extract(struct pms_header *pms, FILE *fp) {
 			}
 			// copy the upper-right pixel
 			else if (c0 == 0xfa) {
-				if (y < 1 || x + 1 >= pms->width)
+				if (y < 1 || x + 1 >= width)
 					goto err;
 				*dst = ((uint32_t *)rows[y - 1])[x + 1];
 				x++;
@@ -386,7 +386,7 @@ static png_bytepp pms16_extract(struct pms_header *pms, FILE *fp) {
 				int n = fgetc(fp) + 1;
 				int c0 = fgetc(fp); // read the upper RGB323
 				int pc0 = ((c0 & 0xe0) << 8) + ((c0 & 0x18) << 6) + ((c0 & 0x07) << 2);
-				if (x + n > pms->width)
+				if (x + n > width)
 					goto err;
 				for (int i = 0; i < n; i++) {
 					int c1 = fgetc(fp); // read a lower RGB242
@@ -429,11 +429,11 @@ static void convert_rgba8888_to_alpha(png_bytepp src_rows, png_bytepp dst_rows, 
 
 // Write a run of raw pixel data, using the 0xf9 command when possible
 static void write_raw_pixel_run(uint16_t *pixels, int len, FILE *fp) {
-	for (int x = 0; x < len; ) {
+	while (len > 0) {
 		const int mask = 0xe61c;
-		int upper = pixels[x] & mask;
+		int upper = pixels[0] & mask;
 		int n = 1;
-		while (n - 1 < 255 && x + n < len && (pixels[x + n] & mask) == upper)
+		while (n - 1 < 255 && n < len && (pixels[n] & mask) == upper)
 			n++;
 		if (n > 2) {
 			// use common upper 3-2-3 bits of RGB565 in the next n+1 pixels
@@ -441,31 +441,32 @@ static void write_raw_pixel_run(uint16_t *pixels, int len, FILE *fp) {
 			fputc(n - 1, fp);
 			fputc((upper & 0xe000) >> 8 | (upper & 0x600) >> 6 | (upper & 0x1c) >> 2, fp);
 			for (int i = 0; i < n; i++) {
-				int c = pixels[x + i];
+				int c = pixels[i];
 				fputc((c & 0x1800) >> 5 | (c & 0x1e0) >> 3 | (c & 0x3), fp);
 			}
-			x += n;
+			pixels += n;
+			len -= n;
 		} else {
 			// 1-pixel raw data
 			// if the first byte is >= 0xf8, prepend 0xf8 to distinguish it from commands
-			if ((pixels[x] & 0xff) >= 0xf8)
+			if ((*pixels & 0xff) >= 0xf8)
 				fputc(0xf8, fp);
-			fputw(pixels[x], fp);
-			x++;
+			fputw(*pixels++, fp);
+			len--;
 		}
 	}
 }
 
-static void pms16_encode(struct pms_header *pms, png_bytepp rgb8888_rows, FILE *fp) {
-	png_bytepp rows = allocate_bitmap_buffer(pms->width, pms->height, 2);
-	convert_rgba8888_to_rgb565(rgb8888_rows, rows, pms->width, pms->height);
+static void pms16_encode(png_bytepp rgb8888_rows, int width, int height, FILE *fp) {
+	png_bytepp rows = allocate_bitmap_buffer(width, height, 2);
+	convert_rgba8888_to_rgb565(rgb8888_rows, rows, width, height);
 
 	// for each line...
-	for (int y = 0; y < pms->height; y ++) {
+	for (int y = 0; y < height; y ++) {
 		uint16_t *row = (uint16_t *)rows[y];
 		int raw_pixel_run_length = 0;
 		// for each pixel...
-		for (int x = 0; x < pms->width; ) {
+		for (int x = 0; x < width; ) {
 			// Try commands except for 0xf9, because greedy use of the 0xf9 command
 			// worsen the compression rate.
 			uint8_t code[6];
@@ -482,7 +483,7 @@ static void pms16_encode(struct pms_header *pms, png_bytepp rgb8888_rows, FILE *
 			// copy n+2 pixels from previous line
 			if (y > 0) {
 				int n = 0;
-				while (n - 2 < 255 && x + n < pms->width && row[x + n] == ((uint16_t *)rows[y - 1])[x + n])
+				while (n - 2 < 255 && x + n < width && row[x + n] == ((uint16_t *)rows[y - 1])[x + n])
 					n++;
 				if (n >= 2 && SCORE(n, 2) > SCORE(rawlen, codelen)) {
 					code[0] = 0xff; code[1] = n - 2;
@@ -494,7 +495,7 @@ static void pms16_encode(struct pms_header *pms, png_bytepp rgb8888_rows, FILE *
 			// copy n+2 pixels from 2 lines previous
 			if (y > 1) {
 				int n = 0;
-				while (n - 2 < 255 && x + n < pms->width && row[x + n] == ((uint16_t *)rows[y - 2])[x + n])
+				while (n - 2 < 255 && x + n < width && row[x + n] == ((uint16_t *)rows[y - 2])[x + n])
 					n++;
 				if (n >= 2 && SCORE(n, 2) > SCORE(rawlen, codelen)) {
 					code[0] = 0xfe; code[1] = n - 2;
@@ -506,7 +507,7 @@ static void pms16_encode(struct pms_header *pms, png_bytepp rgb8888_rows, FILE *
 			// repeat 1 pixel n+3 times (2-byte RLE)
 			{
 				int n = 1;
-				while (n - 3 < 255 && x + n < pms->width && row[x + n] == c)
+				while (n - 3 < 255 && x + n < width && row[x + n] == c)
 					n++;
 				if (n >= 3 && SCORE(n, 4) > SCORE(rawlen, codelen)) {
 					code[0] = 0xfd; code[1] = n - 3; code[2] = c & 0xff; code[3] = c >> 8;
@@ -516,10 +517,10 @@ static void pms16_encode(struct pms_header *pms, png_bytepp rgb8888_rows, FILE *
 			}
 
 			// repeat a sequence of 2 pixels n+2 times (4-byte RLE)
-			if (x + 1 < pms->width && c != row[x + 1]) {
+			if (x + 1 < width && c != row[x + 1]) {
 				int c2 = row[x + 1];
 				int n = 1;
-				while (n - 2 < 255 && x + 2*n + 1 < pms->width &&
+				while (n - 2 < 255 && x + 2*n + 1 < width &&
 					   row[x + 2*n] == c && row[x + 2*n + 1] == c2)
 					n++;
 				if (n >= 2 && SCORE(2 * n, 6) > SCORE(rawlen, codelen)) {
@@ -541,7 +542,7 @@ static void pms16_encode(struct pms_header *pms, png_bytepp rgb8888_rows, FILE *
 			}
 
 			// copy the upper-right pixel
-			if (y > 0 && x + 1 < pms->width &&
+			if (y > 0 && x + 1 < width &&
 				c == ((uint16_t *)rows[y-1])[x+1] &&
 				SCORE(1, 1) > SCORE(rawlen, codelen)) {
 				code[0] = 0xfa;
@@ -563,7 +564,7 @@ static void pms16_encode(struct pms_header *pms, png_bytepp rgb8888_rows, FILE *
 				x += rawlen;
 			}
 		}
-		write_raw_pixel_run(&row[pms->width - raw_pixel_run_length], raw_pixel_run_length, fp);
+		write_raw_pixel_run(&row[width - raw_pixel_run_length], raw_pixel_run_length, fp);
 	}
 
 	free_bitmap_buffer(rows);
@@ -577,7 +578,7 @@ static void pms8_to_png(struct pms_header *pms, FILE *fp, const char *pms_path, 
 
 	if (fseek(fp, pms->data_off, SEEK_SET) < 0)
 		error("%s: %s", pms_path, strerror(errno));
-	png_bytepp rows = pms8_extract(pms, fp);
+	png_bytepp rows = pms8_extract(fp, pms->width, pms->height);
 	if (!rows) {
 		fprintf(stderr, "%s: broken image\n", pms_path);
 		return;
@@ -593,15 +594,16 @@ static void pms8_to_png(struct pms_header *pms, FILE *fp, const char *pms_path, 
 		png_set_oFFs(w->png, w->info, pms->x, pms->y, PNG_OFFSET_PIXEL);
 
 	// Store palette mask in a private chunk named "pmSk".
-	uint8_t pmsk_data[2] = { pms->palette_mask >> 8, pms->palette_mask & 0xff };  // network byte order
-	png_unknown_chunk chunk = {
-		.name = CHUNK_PMSK,
-		.data = pmsk_data,
-		.size = 2,
-		.location = PNG_HAVE_IHDR
-	};
-	if (pms->palette_mask != 0xffff)
+	if (pms->palette_mask != 0xffff) {
+		uint8_t pmsk_data[2] = { pms->palette_mask >> 8, pms->palette_mask & 0xff };  // network byte order
+		png_unknown_chunk chunk = {
+			.name = CHUNK_PMSK,
+			.data = pmsk_data,
+			.size = 2,
+			.location = PNG_HAVE_IHDR
+		};
 		png_set_unknown_chunks(w->png, w->info, &chunk, 1);
+	}
 
 	write_png(w, rows, PNG_TRANSFORM_IDENTITY);
 
@@ -612,7 +614,7 @@ static void pms8_to_png(struct pms_header *pms, FILE *fp, const char *pms_path, 
 static void pms16_to_png(struct pms_header *pms, FILE *fp, const char *pms_path, const char *png_path) {
 	if (fseek(fp, pms->data_off, SEEK_SET) < 0)
 		error("%s: %s", pms_path, strerror(errno));
-	png_bytepp rows = pms16_extract(pms, fp);
+	png_bytepp rows = pms16_extract(fp, pms->width, pms->height);
 	if (!rows) {
 		fprintf(stderr, "%s: broken image\n", pms_path);
 		return;
@@ -621,7 +623,7 @@ static void pms16_to_png(struct pms_header *pms, FILE *fp, const char *pms_path,
 	if (pms->auxdata_off) {
 		if (fseek(fp, pms->auxdata_off, SEEK_SET) < 0)
 			error("%s: %s", pms_path, strerror(errno));
-		png_bytepp alpha_rows = pms8_extract(pms, fp);
+		png_bytepp alpha_rows = pms8_extract(fp, pms->width, pms->height);
 		if (!alpha_rows) {
 			fprintf(stderr, "%s: broken alpha image\n", pms_path);
 			free_bitmap_buffer(rows);
@@ -674,6 +676,7 @@ static void pms_to_png(const char *pms_path, const char *png_path) {
 		break;
 	default:
 		fprintf(stderr, "%s: invalid bpp %d", pms_path, pms.bpp);
+		break;
 	}
 	fclose(fp);
 }
@@ -719,7 +722,7 @@ static void png_to_pms8(PngReader *r, const char *png_path, const char *pms_path
 	FILE *fp = checked_fopen(pms_path, "wb");
 	pms_write_header(&pms, fp);
 	pms_write_palette(palette, num_palette, fp);
-	pms8_encode(&pms, rows, fp);
+	pms8_encode(rows, pms.width, pms.height, fp);
 	fclose(fp);
 
 	free_bitmap_buffer(rows);
@@ -767,14 +770,14 @@ static void png_to_pms16(PngReader *r, const char *png_path, const char *pms_pat
 	FILE *fp = checked_fopen(pms_path, "wb");
 	pms_write_header(&pms, fp);
 
-	pms16_encode(&pms, rows, fp);
+	pms16_encode(rows, pms.width, pms.height, fp);
 
 	if (color_type == PNG_COLOR_TYPE_RGBA) {
 		pms.auxdata_off = ftell(fp);
 
 		png_bytepp alpha_rows = allocate_bitmap_buffer(pms.width, pms.height, 1);
 		convert_rgba8888_to_alpha(rows, alpha_rows, pms.width, pms.height);
-		pms8_encode(&pms, alpha_rows, fp);
+		pms8_encode(alpha_rows, pms.width, pms.height, fp);
 		free_bitmap_buffer(alpha_rows);
 
 		fseek(fp, 0, SEEK_SET);

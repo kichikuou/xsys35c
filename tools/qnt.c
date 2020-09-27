@@ -364,8 +364,11 @@ static void png_to_qnt(const char *png_path, const char *qnt_path, const ImageOf
 	FILE *fp = checked_fopen(qnt_path, "wb");
 	qnt_write_header(&qnt, fp);
 	fwrite(pixel_data, qnt.pixel_size, 1, fp);
-	if (alpha_data)
+	free(pixel_data);
+	if (alpha_data) {
 		fwrite(alpha_data, qnt.alpha_size, 1, fp);
+		free(alpha_data);
+	}
 	fclose(fp);
 
 	destroy_png_reader(r);
