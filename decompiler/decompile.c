@@ -1754,8 +1754,11 @@ static void write_config(const char *path, const char *ald_basename) {
 	FILE *fp = checked_fopen(path, "w+");
 	if (ald_basename)
 		fprintf(fp, "ald_basename = %s\n", ald_basename);
-	if (dc.ain)
+	if (dc.ain) {
 		fprintf(fp, "output_ain = %s\n", dc.ain->filename);
+		if (dc.ain->version != 1)
+			fprintf(fp, "ain_version = %d\n", dc.ain->version);
+	}
 
 	fputs("hed = xsys35dc.hed\n", fp);
 	fputs("variables = variables.txt\n", fp);

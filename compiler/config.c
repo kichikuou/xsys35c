@@ -20,6 +20,7 @@
 #include <string.h>
 
 Config config = {
+	.ain_version = 1,
 	.sys_ver = SYSTEM39,
 	.sco_ver = SCO_S380,
 	.utf8 = true,
@@ -67,6 +68,7 @@ void load_config(FILE *fp, const char *cfg_dir) {
 	char line[256];
 	while (fgets(line, sizeof(line), fp)) {
 		char val[256];
+		int intval;
 		if (sscanf(line, "sys_ver = %s", val)) {
 			set_sys_ver(val);
 		} else if (sscanf(line, "encoding = %s", val)) {
@@ -92,6 +94,8 @@ void load_config(FILE *fp, const char *cfg_dir) {
 			config.ald_basename = path_join(cfg_dir, val);
 		} else if (sscanf(line, "output_ain = %s", val)) {
 			config.output_ain = path_join(cfg_dir, val);
+		} else if (sscanf(line, "ain_version = %d", &intval)) {
+			config.ain_version = intval;
 		} else if (sscanf(line, "unicode = %s", val)) {
 			config.unicode = to_bool(val);
 		}

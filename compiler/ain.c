@@ -115,9 +115,14 @@ static void ain_write_buf(Buffer *buf, FILE *fp) {
 }
 
 void ain_write(Compiler *compiler, FILE *fp) {
-	fputs("AINI", fp);
+	switch (config.ain_version) {
+	case 1: fputs("AINI", fp); break;
+	case 2: fputs("AIN2", fp); break;
+	default:
+		error("unknown ain version: %d", config.ain_version);
+	}
+	fputdw(config.ain_version, fp);
 	Buffer *out = new_buf();
-	emit_dword(out, 4);
 	ain_emit_HEL0(out, compiler->dlls);
 	ain_emit_FUNC(out, compiler->functions);
 	if (!config.disable_ain_variable)

@@ -29,6 +29,7 @@ typedef enum {
 typedef struct {
 	const char *ald_basename;
 	const char *output_ain;
+	uint32_t ain_version;
 
 	SysVer sys_ver;
 	ScoVer sco_ver;

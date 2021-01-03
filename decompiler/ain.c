@@ -123,7 +123,9 @@ Ain *ain_read(const char *path) {
 		error("%s: read error", path);
 	fclose(fp);
 
-	if (memcmp(input, "AINI", 4))
+	uint32_t version = le32(input + 4);
+	if ((version == 1 && memcmp(input, "AINI", 4)) ||
+		(version == 2 && memcmp(input, "AIN2", 4)))
 		error("%s: not an AIN file", path);
 
 	// Decrypt
@@ -132,6 +134,7 @@ Ain *ain_read(const char *path) {
 
 	Ain *ain = calloc(1, sizeof(Ain));
 	ain->filename = basename(path);
+	ain->version = version;
 
 	input += 8;
 	while (input < input_end) {

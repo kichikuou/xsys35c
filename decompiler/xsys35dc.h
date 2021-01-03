@@ -62,6 +62,7 @@ typedef struct {
 
 typedef struct {
 	const char *filename;
+	uint32_t version;
 	Map *dlls;           // dllname -> Vector<DLLFunc>
 	HashMap *functions;  // Function -> Function (itself)
 	Vector *variables;

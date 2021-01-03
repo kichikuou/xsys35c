@@ -125,3 +125,27 @@ int make_dir(const char *path) {
 	return mkdir(path, 0777);
 #endif
 }
+
+uint16_t fgetw(FILE *fp) {
+	int lo = fgetc(fp);
+	int hi = fgetc(fp);
+	return lo | hi << 8;
+}
+
+uint32_t fgetdw(FILE *fp) {
+	int lo = fgetw(fp);
+	int hi = fgetw(fp);
+	return lo | hi << 16;
+}
+
+void fputw(uint16_t n, FILE *fp) {
+	fputc(n, fp);
+	fputc(n >> 8, fp);
+}
+
+void fputdw(uint32_t n, FILE *fp) {
+	fputc(n, fp);
+	fputc(n >> 8, fp);
+	fputc(n >> 16, fp);
+	fputc(n >> 24, fp);
+}

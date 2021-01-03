@@ -49,6 +49,11 @@ char *dirname(const char *path);
 char *path_join(const char *dir, const char *path);
 int make_dir(const char *path);
 
+extern uint16_t fgetw(FILE *fp);
+extern uint32_t fgetdw(FILE *fp);
+extern void fputw(uint16_t n, FILE *fp);
+extern void fputdw(uint32_t n, FILE *fp);
+
 // sjisutf.c
 
 #define sjis2utf(s) sjis2utf_sub((s), -1)
