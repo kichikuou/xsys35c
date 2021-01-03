@@ -16,6 +16,7 @@
  *
 */
 #include "xsys35dc.h"
+#include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -197,4 +198,113 @@ void write_hels(Map *dlls, const char *dir) {
 		}
 		fclose(fp);
 	}
+}
+
+static void json_indent(int delta) {
+	static int lv = 0;
+	if (delta < 0)
+		lv += delta;
+	for (int i = 0; i < lv; i++)
+		fputs("  ", stdout);
+	if (delta > 0)
+		lv += delta;
+}
+
+static void json_string(const char *s) {
+	putchar('"');
+	while (*s) {
+		if (iscntrl(*s)) {
+			printf("\\u%04x", *s++);
+			continue;
+		}
+		if (*s == '"' || *s == '\\')
+			putchar('\\');
+		putchar(*s++);
+	}
+	putchar('"');
+}
+
+static void json_key(const char *s) {
+	json_string(s);
+	fputs(": ", stdout);
+}
+
+static void json_maybe_comma(bool comma) {
+	if (comma)
+		putchar(',');
+	putchar('\n');
+}
+
+static void json_open(const char *key, char ch) {
+	json_indent(1);
+	if (key)
+		json_key(key);
+	putchar(ch);
+	putchar('\n');
+}
+
+static void json_close(char ch, bool append_comma) {
+	json_indent(-1);
+	putchar(ch);
+	json_maybe_comma(append_comma);
+}
+
+void ain_dump(Ain *ain) {
+	json_open(NULL, '{');
+	if (ain->dlls) {
+		Map *dlls = ain->dlls;
+		json_open("HEL0", '{');
+		for (int i = 0; i < dlls->keys->len; i++) {
+			json_open(dlls->keys->data[i], '{');
+			Vector *funcs = dlls->vals->data[i];
+			for (int j = 0; j < funcs->len; j++) {
+				DLLFunc *func = funcs->data[j];
+				json_indent(0);
+				json_key(func->name);
+				putchar('[');
+				const char *sep = "";
+				for (int k = 0; k < func->argc; k++) {
+					printf("%s%d", sep, func->argtypes[k]);
+					sep = ", ";
+				}
+				putchar(']');
+				json_maybe_comma(j < funcs->len - 1);
+			}
+			json_close('}', i < dlls->keys->len - 1);
+		}
+		json_close('}', ain->functions || ain->variables || ain->messages);
+	}
+	if (ain->functions) {
+		json_open("FUNC", '{');
+		for (HashItem *i = hash_iterate(ain->functions, NULL); i;) {
+			Function *func = (Function *)i->val;
+			json_indent(0);
+			json_key(sjis2utf(func->name));
+			printf("{ \"page\": %d, \"addr\": %d }", func->page, func->addr);
+			i = hash_iterate(ain->functions, i);
+			json_maybe_comma(i);
+		}
+		json_close('}', ain->variables || ain->messages);
+	}
+	if (ain->variables) {
+		json_open("VARI", '[');
+		Vector *v = ain->variables;
+		for (int i = 0; i < v->len; i++) {
+			json_indent(0);
+			json_string(sjis2utf(v->data[i]));
+			json_maybe_comma(i < v->len - 1);
+		}
+		json_close(']', ain->messages);
+	}
+	if (ain->messages) {
+		json_open("MSGI", '[');
+		Vector *v = ain->messages;
+		for (int i = 0; i < v->len; i++) {
+			json_indent(0);
+			json_string(sjis2utf(v->data[i]));
+			json_maybe_comma(i < v->len - 1);
+		}
+		json_close(']', false);
+	}
+	json_close('}', false);
 }

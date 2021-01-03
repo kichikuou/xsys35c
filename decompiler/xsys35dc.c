@@ -22,9 +22,10 @@
 #include <string.h>
 #include <sys/stat.h>
 
-static const char short_options[] = "aE:ho:sVv";
+static const char short_options[] = "adE:ho:sVv";
 static const struct option long_options[] = {
 	{ "address",  no_argument,       NULL, 'a' },
+	{ "aindump",  no_argument,       NULL, 'd' },
 	{ "encoding", required_argument, NULL, 'E' },
 	{ "help",     no_argument,       NULL, 'h' },
 	{ "outdir",   required_argument, NULL, 'o' },
@@ -38,6 +39,7 @@ static void usage(void) {
 	puts("Usage: xsys35dc [options] aldfile(s) [ainfile]");
 	puts("Options:");
 	puts("    -a, --address             Prefix each line with address");
+	puts("    -d, --aindump             Dump System39.ain file");
 	puts("    -Es, --encoding=sjis      Output files in SJIS encoding");
 	puts("    -Eu, --encoding=utf8      Output files in UTF-8 encoding (default)");
 	puts("    -h, --help                Display this message and exit");
@@ -99,6 +101,7 @@ int main(int argc, char *argv[]) {
 	init(argc, argv);
 
 	const char *outdir = NULL;
+	bool aindump = false;
 	bool seq = false;
 
 	int opt;
@@ -106,6 +109,9 @@ int main(int argc, char *argv[]) {
 		switch (opt) {
 		case 'a':
 			config.address = true;
+			break;
+		case 'd':
+			aindump = true;
 			break;
 		case 'E':
 			switch (optarg[0]) {
@@ -157,6 +163,13 @@ int main(int argc, char *argv[]) {
 			s[len - 6] = '\0';
 			ald_basename = basename(s);
 		}
+	}
+
+	if (aindump) {
+		if (!ain)
+			error("ain file is not specified");
+		ain_dump(ain);
+		return 0;
 	}
 
 	for (int i = 0; i < scos->len; i++) {

@@ -19,6 +19,10 @@ with xref:xsys35c.adoc[*xsys35c(1)*] or the official System 3.x SDK.
 *-a, --address*::
   Prefix each line with address.
 
+*-d, --aindump*::
+  Dump the contents of _system39.ain_ file to standard output, in JSON format.
+  Decompilation will not be performed.
+
 *-E, --encoding*=_enc_::
   Specify text encoding of output files. Possible values are `sjis` and `utf8`
   (default).
