@@ -71,7 +71,7 @@ void ald_write(Vector *entries, int volume, FILE *fp) {
 	int ptr_count = 0;
 	for (int i = 0; i < entries->len; i++) {
 		AldEntry *entry = entries->data[i];
-		if (entry->volume == volume)
+		if (entry && entry->volume == volume)
 			ptr_count++;
 	}
 
@@ -79,7 +79,7 @@ void ald_write(Vector *entries, int volume, FILE *fp) {
 	write_ptr(entries->len * 3, &sector, fp);
 	for (int i = 0; i < entries->len; i++) {
 		AldEntry *entry = entries->data[i];
-		if (entry->volume == volume)
+		if (entry && entry->volume == volume)
 			write_ptr(entry_header_size(entry) + entry->size, &sector, fp);
 	}
 	pad(fp);
@@ -88,16 +88,18 @@ void ald_write(Vector *entries, int volume, FILE *fp) {
 	memset(link, 0, sizeof(link));
 	for (int i = 0; i < entries->len; i++) {
 		AldEntry *entry = entries->data[i];
-		fputc(entry->volume, fp);
-		link[entry->volume]++;
-		fputc(link[entry->volume] & 0xff, fp);
-		fputc(link[entry->volume] >> 8, fp);
+		int vol = entry ? entry->volume : 0;
+		fputc(vol, fp);
+		if (vol)
+			link[vol]++;
+		fputc(link[vol] & 0xff, fp);
+		fputc(link[vol] >> 8, fp);
 	}
 	pad(fp);
 
 	for (int i = 0; i < entries->len; i++) {
 		AldEntry *entry = entries->data[i];
-		if (entry->volume != volume)
+		if (!entry || entry->volume != volume)
 			continue;
 		write_entry(entry, fp);
 		pad(fp);

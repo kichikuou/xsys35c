@@ -25,9 +25,10 @@
 
 static void test_read(void) {
 	Vector *es = ald_read(NULL, "testdata/expected.ald");
-	assert(es->len == 2);
+	assert(es->len == 3);
 	AldEntry *e1 = es->data[0];
-	AldEntry *e2 = es->data[1];
+	assert(NULL == es->data[1]);
+	AldEntry *e2 = es->data[2];
 
 	assert(!strcmp(e1->name, "a.txt"));
 	assert(e1->timestamp == TIMESTAMP);
@@ -57,6 +58,7 @@ static void test_write(void) {
 	};
 	Vector *es = new_vec();
 	vec_push(es, &e1);
+	vec_push(es, NULL);
 	vec_push(es, &e2);
 	const char outfile[] = "testdata/actual.ald";
 	FILE *fp = checked_fopen(outfile, "wb");
