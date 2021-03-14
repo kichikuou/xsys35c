@@ -7,6 +7,7 @@ COMMANDS := \
 	compiler/xsys35c \
 	decompiler/xsys35dc \
 	tools/ald \
+	tools/alk \
 	tools/vsp \
 	tools/pms \
 	tools/qnt
@@ -53,6 +54,7 @@ MAIN_OBJS := \
 	compiler/xsys35c.o \
 	decompiler/xsys35dc.o \
 	tools/ald.o \
+	tools/alk.o \
 	tools/vsp.o \
 	tools/pms.o \
 	tools/qnt.o
@@ -69,6 +71,7 @@ common/sjisutf.o: common/s2utbl.h
 compiler/xsys35c: compiler/xsys35c.o $(COMPILER_OBJS) $(COMMON_OBJS)
 decompiler/xsys35dc: decompiler/xsys35dc.o $(DECOMPILER_OBJS) $(COMMON_OBJS)
 tools/ald: tools/ald.o $(COMMON_OBJS)
+tools/alk: tools/alk.o $(COMMON_OBJS)
 tools/vsp: tools/vsp.o $(COMMON_OBJS) $(TOOLS_OBJS)
 tools/pms: tools/pms.o $(COMMON_OBJS) $(TOOLS_OBJS)
 tools/qnt: tools/qnt.o $(COMMON_OBJS) $(TOOLS_OBJS)

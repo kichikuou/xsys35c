@@ -67,7 +67,3 @@ folder with the following contents (replace the file names):
 
   ttfont_gothic: your-sans-serif-font.ttf
   ttfont_mincho: your-serif-font.ttf
-
-== Bugs / Limitations
-- `xsys35c` does not yet support image replacement, so in order to translate
-image files, you may need to use other tools.

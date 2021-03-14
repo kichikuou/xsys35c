@@ -1,0 +1,59 @@
+= alk(1)
+:doctype: manpage
+:manmanual: xsys35c manual
+:mansource: xsys35c
+
+== Name
+alk - ALK archive utility
+
+== Synopsis
+[verse]
+*alk list* _alkfile_
+*alk create* _alkfile_ _file_...
+*alk extract* [_options_] _alkfile_ [_index_...]
+*alk help* [_command_]
+*alk version*
+
+== Description
+`alk` manipulates ALK archive files.
+
+=== alk list
+Usage: *alk list* _alkfile_
+
+*alk list* lists files in the ALK archive.
+
+The following information are displayed for each file in the archive:
+
+* index
+* file type (guessed from the content)
+* size
+
+=== alk create
+Usage: *alk create* _alkfile_ _file_...
+
+*alk create* creates a new ALK archive containing the specified files. The
+files are stored in the specified order.
+
+=== alk extract
+Usage: *alk extract* [_options_] _alkfile_ [_index_...]
+
+*alk extract* extracts files from an ALK archive. Optionally you can pass a list
+of archive members to be processed, specified by _index_.
+
+=== alk help
+Usage: *alk help* [_command_]
+
+*alk help* displays help information about _command_ and exits.
+
+=== alk version
+Usage: *alk version*
+
+*alk version* displays the version number of `alk` and exits.
+
+== Options
+*-d, --directory*=_dir_::
+  (alk extract)
+  Extract files into _dir_. (default: `.`)
+
+== See also
+xref:ald.adoc[*ald(1)*]

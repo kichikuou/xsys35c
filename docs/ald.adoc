@@ -76,4 +76,4 @@ Usage: *ald version*
   Extract files into _dir_. (default: `.`)
 
 == See also
-xref:xsys35c.adoc[*xsys35c(1)*], xref:xsys35dc.adoc[*xsys35dc(1)*]
+xref:alk.adoc[*alk(1)*]

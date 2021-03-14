@@ -55,6 +55,7 @@ This creates the following executables:
 - `compiler/xsys35c` -- System 3.x compiler
 - `decompiler/xsys35dc` -- System 3.x decompiler
 - `tools/ald` -- ALD archive utility
+- `tools/alk` -- ALK archive utility
 - `tools/vsp` -- VSP image utility
 - `tools/pms` -- PMS image utility
 - `tools/qnt` -- QNT image utility
@@ -97,4 +98,5 @@ Here are the manuals for the commands:
 - [docs/xsys35c.adoc](docs/xsys35c.adoc)
 - [docs/xsys35dc.adoc](docs/xsys35dc.adoc)
 - [docs/ald.adoc](docs/ald.adoc)
+- [docs/alk.adoc](docs/alk.adoc)
 - [docs/vsp.adoc](docs/vsp.adoc) (see this for `pms` and `qnt` commands too)
