@@ -21,10 +21,10 @@ EOF
 tools/vsp testdata/16colors.vsp -o $tmpfile && cmp testdata/16colors.png $tmpfile
 tools/vsp -e testdata/16colors.png -o $tmpfile && cmp testdata/16colors.vsp $tmpfile
 
-diff -u --strip-trailing-cr - <(tools/pms -i testdata/*.pms) <<EOF
+diff -u --strip-trailing-cr - <(TZ='' tools/pms -i testdata/*.pms) <<EOF
 testdata/256colors.pms: PMS 1, 256x256 8bpp, palette mask: 0xfffe, offset: (50, 30)
 testdata/highcolor.pms: PMS 1, 256x256 16bpp, offset: (50, 30)
-testdata/highcolor_alpha.pms: PMS 2, 256x256 16bpp, 8bit alpha, 2021-03-14 13:00:26
+testdata/highcolor_alpha.pms: PMS 2, 256x256 16bpp, 8bit alpha, 2021-03-14 04:00:26
 EOF
 tools/pms testdata/256colors.pms -o $tmpfile && cmp testdata/256colors.png $tmpfile
 tools/pms -e testdata/256colors.png -o $tmpfile && cmp testdata/256colors.pms $tmpfile
