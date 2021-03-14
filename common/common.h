@@ -27,6 +27,10 @@ static inline uint32_t le32(const uint8_t *p) {
 	return p[0] | p[1] << 8 | p[2] << 16 | p[3] << 24;
 }
 
+static inline uint64_t le64(const uint8_t *p) {
+	return le32(p) | (uint64_t)le32(p + 4) << 32;
+}
+
 typedef enum {
 	SCO_S350,
 	SCO_S351,
@@ -51,8 +55,13 @@ int make_dir(const char *path);
 
 extern uint16_t fgetw(FILE *fp);
 extern uint32_t fgetdw(FILE *fp);
+extern uint64_t fget64(FILE *fp);
 extern void fputw(uint16_t n, FILE *fp);
 extern void fputdw(uint32_t n, FILE *fp);
+extern void fput64(uint64_t n, FILE *fp);
+
+time_t win_filetime_to_time_t(uint64_t filetime);
+uint64_t time_t_to_win_filetime(time_t t);
 
 // sjisutf.c
 

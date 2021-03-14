@@ -21,6 +21,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <time.h>
 #include <png.h>
 
 typedef struct {
@@ -29,6 +30,7 @@ typedef struct {
 } ImageOffset;
 
 extern ImageOffset *parse_image_offset(const char *s);
+extern time_t from_png_time(const png_time *pt);
 
 typedef struct {
 	png_structp png;

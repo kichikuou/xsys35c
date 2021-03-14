@@ -28,6 +28,9 @@
 #include <sys/stat.h>
 #endif
 
+// 1970-01-01 - 1601-01-01 in 100ns
+#define EPOCH_DIFF_100NS 116444736000000000LL
+
 #ifdef _WIN32
 static char *native_to_utf8(const char *native) {
 	int native_len = strlen(native);
@@ -138,6 +141,12 @@ uint32_t fgetdw(FILE *fp) {
 	return lo | hi << 16;
 }
 
+uint64_t fget64(FILE *fp) {
+	uint32_t lo = fgetdw(fp);
+	uint32_t hi = fgetdw(fp);
+	return lo | (uint64_t)hi << 32;
+}
+
 void fputw(uint16_t n, FILE *fp) {
 	fputc(n, fp);
 	fputc(n >> 8, fp);
@@ -148,4 +157,17 @@ void fputdw(uint32_t n, FILE *fp) {
 	fputc(n >> 8, fp);
 	fputc(n >> 16, fp);
 	fputc(n >> 24, fp);
+}
+
+void fput64(uint64_t n, FILE *fp) {
+	fputdw(n, fp);
+	fputdw(n >> 32, fp);
+}
+
+time_t win_filetime_to_time_t(uint64_t t) {
+	return (t - EPOCH_DIFF_100NS) / 10000000LL;
+}
+
+uint64_t time_t_to_win_filetime(time_t t) {
+	return t * 10000000LL + EPOCH_DIFF_100NS;
 }

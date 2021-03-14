@@ -21,11 +21,27 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#define timegm _mkgmtime
+#endif
+
 ImageOffset *parse_image_offset(const char *s) {
 	static ImageOffset offs;
 	if (sscanf(s, "%d,%d", &offs.x, &offs.y) != 2)
 		return NULL;
 	return &offs;
+}
+
+time_t from_png_time(const png_time *pt) {
+	struct tm tm = {
+		.tm_year = pt->year - 1900,
+		.tm_mon  = pt->month - 1,
+		.tm_mday = pt->day,
+		.tm_hour = pt->hour,
+		.tm_min  = pt->minute,
+		.tm_sec  = pt->second
+	};
+	return timegm(&tm);
 }
 
 static void handle_png_error(png_structp png, png_const_charp error_msg) {

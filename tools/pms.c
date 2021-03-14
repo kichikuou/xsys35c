@@ -28,10 +28,11 @@
 #include <string.h>
 
 #define PMS1_HEADER_SIZE 48
+#define PMS2_HEADER_SIZE 64
 #define CHUNK_PMSK "pmSk"
 
 struct pms_header {
-	uint16_t version;      // PMS version
+	uint16_t version;      // PMS version (1 or 2)
 	uint16_t header_size;  // size of the header
 	uint8_t  bpp;          // bits per pixel, 8 or 16
 	uint8_t  alpha_bpp;    // alpha channel bit-depth, if exists
@@ -47,6 +48,10 @@ struct pms_header {
 	uint32_t auxdata_off;  // offset to palette or alpha
 	uint32_t comment_off;  // offset to comment
 	uint32_t reserved3;    // must be zero
+	// The fields below exist only in PMS version 2.
+	time_t   timestamp;    // storead as a Windows FILETIME
+	uint32_t reserved4;    // must be zero
+	uint32_t reserved5;    // must be zero
 };
 
 enum {
@@ -85,6 +90,7 @@ static bool pms_read_header(struct pms_header *pms, FILE *fp) {
 	if (fgetc(fp) != 'P' || fgetc(fp) != 'M')
 		return false;
 
+	memset(pms, 0, sizeof(struct pms_header));
 	pms->version      = fgetw(fp);
 	pms->header_size  = fgetw(fp);
 	pms->bpp          = fgetc(fp);
@@ -101,6 +107,11 @@ static bool pms_read_header(struct pms_header *pms, FILE *fp) {
 	pms->auxdata_off  = fgetdw(fp);
 	pms->comment_off  = fgetdw(fp);
 	pms->reserved3    = fgetdw(fp);
+	if (pms->version >= 2) {
+		pms->timestamp = win_filetime_to_time_t(fget64(fp));
+		pms->reserved4 = fgetdw(fp);
+		pms->reserved5 = fgetdw(fp);
+	}
 	return true;
 }
 
@@ -123,6 +134,11 @@ static void pms_write_header(struct pms_header *pms, FILE *fp) {
 	fputdw(pms->auxdata_off, fp);
 	fputdw(pms->comment_off, fp);
 	fputdw(pms->reserved3, fp);
+	if (pms->version >= 2) {
+		fput64(time_t_to_win_filetime(pms->timestamp), fp);
+		fputdw(pms->reserved4, fp);
+		fputdw(pms->reserved5, fp);
+	}
 }
 
 static void pms_read_palette(png_color pal[256], FILE *fp) {
@@ -593,6 +609,12 @@ static void pms8_to_png(struct pms_header *pms, FILE *fp, const char *pms_path, 
 	if (pms->x || pms->y)
 		png_set_oFFs(w->png, w->info, pms->x, pms->y, PNG_OFFSET_PIXEL);
 
+	if (pms->version >= 2) {
+		png_time pt;
+		png_convert_from_time_t(&pt, pms->timestamp);
+		png_set_tIME(w->png, w->info, &pt);
+	}
+
 	// Store palette mask in a private chunk named "pmSk".
 	if (pms->palette_mask != 0xffff) {
 		uint8_t pmsk_data[2] = { pms->palette_mask >> 8, pms->palette_mask & 0xff };  // network byte order
@@ -649,6 +671,12 @@ static void pms16_to_png(struct pms_header *pms, FILE *fp, const char *pms_path,
 	if (pms->x || pms->y)
 		png_set_oFFs(w->png, w->info, pms->x, pms->y, PNG_OFFSET_PIXEL);
 
+	if (pms->version >= 2) {
+		png_time pt;
+		png_convert_from_time_t(&pt, pms->timestamp);
+		png_set_tIME(w->png, w->info, &pt);
+	}
+
 	const int transforms = pms->auxdata_off ?
 		PNG_TRANSFORM_IDENTITY : PNG_TRANSFORM_STRIP_FILLER_AFTER;
 	write_png(w, rows, transforms);
@@ -690,9 +718,18 @@ static void png_to_pms8(PngReader *r, const char *png_path, const char *pms_path
 		.palette_mask = 0xffff,
 		.width        = png_get_image_width(r->png, r->info),
 		.height       = png_get_image_height(r->png, r->info),
-		.data_off     = PMS1_HEADER_SIZE + 3 * 256,
-		.auxdata_off  = PMS1_HEADER_SIZE,
 	};
+
+	if (png_get_valid(r->png, r->info, PNG_INFO_tIME)) {
+		pms.version = 2;
+		pms.header_size = PMS2_HEADER_SIZE;
+		png_timep pt;
+		png_get_tIME(r->png, r->info, &pt);
+		pms.timestamp = from_png_time(pt);
+	}
+
+	pms.data_off = pms.header_size + 3 * 256;
+	pms.auxdata_off = pms.header_size;
 
 	png_colorp palette;
 	int num_palette;
@@ -744,8 +781,17 @@ static void png_to_pms16(PngReader *r, const char *png_path, const char *pms_pat
 		.palette_mask = 0xffff,
 		.width        = png_get_image_width(r->png, r->info),
 		.height       = png_get_image_height(r->png, r->info),
-		.data_off     = PMS1_HEADER_SIZE,
 	};
+
+	if (png_get_valid(r->png, r->info, PNG_INFO_tIME)) {
+		pms.version = 2;
+		pms.header_size = PMS2_HEADER_SIZE;
+		png_timep pt;
+		png_get_tIME(r->png, r->info, &pt);
+		pms.timestamp = from_png_time(pt);
+	}
+
+	pms.data_off = pms.header_size;
 
 	png_color_8p sig_bit = NULL;
 	if (png_get_valid(r->png, r->info, PNG_INFO_sBIT))
@@ -839,6 +885,12 @@ static void pms_info(const char *path) {
 		printf(", offset: (%d, %d)", pms.x, pms.y);
 	if (pms.comment_off)
 		printf(", comment_off: %d", pms.comment_off);
+	if (pms.version >= 2) {
+		struct tm *t = localtime(&pms.timestamp);
+		char buf[30];
+		strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", t);
+		printf(", %s", buf);
+	}
 	putchar('\n');
 }
 

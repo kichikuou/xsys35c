@@ -34,16 +34,6 @@
 #define ALD_SIGNATURE  0x14c4e
 #define ALD_SIGNATURE2 0x12020
 
-// 1970-01-01 - 1601-01-01 in 100ns
-#define EPOCH_DIFF_100NS 116444736000000000LL
-
-static void write_dword(int n, FILE *fp) {
-	fputc(n & 0xff, fp);
-	fputc(n >> 8 & 0xff, fp);
-	fputc(n >> 16 & 0xff, fp);
-	fputc(n >> 24 & 0xff, fp);
-}
-
 static void write_ptr(int size, int *sector, FILE *fp) {
 	*sector += (size + 0xff) >> 8;
 	fputc(*sector & 0xff, fp);
@@ -64,12 +54,11 @@ static int entry_header_size(AldEntry *e) {
 }
 
 static void write_entry(AldEntry *entry, FILE *fp) {
-	uint64_t wtime = entry->timestamp * 10000000LL + EPOCH_DIFF_100NS;
+	uint64_t wtime = time_t_to_win_filetime(entry->timestamp);
 	int hdrlen = entry_header_size(entry);
-	write_dword(hdrlen, fp);
-	write_dword(entry->size, fp);
-	write_dword(wtime & 0xffffffff, fp);
-	write_dword(wtime >> 32, fp);
+	fputdw(hdrlen, fp);
+	fputdw(entry->size, fp);
+	fput64(wtime, fp);
 	fputs(entry->name, fp);
 	for (int i = 16 + strlen(entry->name); i < hdrlen; i++)
 		fputc(0, fp);
@@ -115,10 +104,10 @@ void ald_write(Vector *entries, int volume, FILE *fp) {
 	}
 
 	// Footer
-	write_dword(ALD_SIGNATURE, fp);
-	write_dword(0x10, fp);
-	write_dword(ptr_count << 8 | volume, fp);
-	write_dword(0, fp);
+	fputdw(ALD_SIGNATURE, fp);
+	fputdw(0x10, fp);
+	fputdw(ptr_count << 8 | volume, fp);
+	fputdw(0, fp);
 }
 
 static inline uint8_t *ald_sector(uint8_t *ald, int size, int index) {
@@ -127,11 +116,6 @@ static inline uint8_t *ald_sector(uint8_t *ald, int size, int index) {
 	if (offset + 256 > size)
 		error("sector offset out of range: %d", offset);
 	return ald + offset;
-}
-
-static time_t to_unix_time(uint32_t wtime_l, uint32_t wtime_h) {
-	uint64_t wtime = (uint64_t)wtime_h << 32 | wtime_l;
-	return (wtime - EPOCH_DIFF_100NS) / 10000000LL;
 }
 
 static int count_entries_for_volume(int volume, uint8_t *data, int size) {
@@ -160,7 +144,7 @@ static void ald_read_entries(Vector *entries, int volume, uint8_t *data, int siz
 		AldEntry *e = calloc(1, sizeof(AldEntry));
 		e->volume = volume;
 		e->name = (char *)entry_ptr + 16;
-		e->timestamp = to_unix_time(le32(entry_ptr + 8), le32(entry_ptr + 12));
+		e->timestamp = win_filetime_to_time_t(le64(entry_ptr + 8));
 		e->data = entry_ptr + le32(entry_ptr);
 		e->size = le32(entry_ptr + 4);
 		if (e->data + e->size > data + size)
