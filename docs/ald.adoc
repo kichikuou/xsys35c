@@ -10,6 +10,7 @@ ald - ALD archive utility
 [verse]
 *ald list* _aldfile_...
 *ald create* _aldfile_ _file_...
+*ald create* _aldfile_ -m _manifest-file_
 *ald extract* [_options_] _aldfile_... [--] [(_index_|_filename_)...]
 *ald dump* _aldfile_... [--] (_index_|_filename_)
 *ald compare* _aldfile1_ _aldfile2_
@@ -37,14 +38,30 @@ The following information are displayed for each file in the archive:
 === ald create
 Usage: *ald create* _aldfile_ _file_...
 
-*ald create* creates a new ALD archive containing the specified files.
-Currently, creation of multi-volume ALD is not supported.
+This form creates a new ALD archive containing the specified files.
+
+Usage: *ald create* _aldfile_ -m _manifest-file_
+
+This form creates a new ALD archive from the files listed in
+_manifest-file_. This form allows you to create multi-volume ALD archives.
+For example,
+
+  1,file1.pms
+  1,file2.pms
+  2,file3.pms
+
+This manifest specifies that `file1.pms` and `file2.pms` is stored in the first
+volume (...A.ALD) and `file3.pms` is stored in the second volume (...B.ALD). In
+this form, _aldfile_ must end with "a.ald" (i.e. it must be a valid filename as
+first volume).
 
 === ald extract
 Usage: *ald extract* [_options_] _aldfile_... [--] [(_index_|_filename_)...]
 
 *ald extract* extracts files from an ALD archive. Optionally you can pass a list
 of archive members to be processed, specified by _index_ or _filename_.
+
+If `-m` option is given, this also generates a manifest file for the archive.
 
 === ald dump
 Usage: *ald dump* _aldfile_... [--] (_index_|_filename_)
@@ -72,8 +89,12 @@ Usage: *ald version*
 
 == Options
 *-d, --directory*=_dir_::
-  (ald extract)
-  Extract files into _dir_. (default: `.`)
+  (ald extract) Extract files into _dir_. (default: `.`)
+
+*-m, --manifest*=_file_::
+  * (ald create) Read manifest file from _file_.
+  * (ald extract) Write manifest file to _file_. It can be used to recreate
+    the ALD archive from extracted files.
 
 == See also
 xref:alk.adoc[*alk(1)*]

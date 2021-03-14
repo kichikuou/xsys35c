@@ -92,6 +92,16 @@ static AldEntry *find_entry(Vector *ald, const char *num_or_name) {
 	return NULL;
 }
 
+static void write_manifest(Vector *ald, FILE *fp) {
+	for (int i = 0; i < ald->len; i++) {
+		AldEntry *e = ald->data[i];
+		if (e)
+			fprintf(fp, "%d,%s\n", e->volume, sjis2utf(e->name));
+		else
+			fputs("0\n", fp);
+	}
+}
+
 // ald list ----------------------------------------
 
 static void help_list(void) {
@@ -115,55 +125,135 @@ static int do_list(int argc, char *argv[]) {
 		}
 		struct tm *t = localtime(&e->timestamp);
 		strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", t);
-		printf("%4d  %d  %s  %8d  %s\n", i + 1, e->volume, buf, e->size, sjis2utf(e->name));
+		printf("%4d %2d  %s  %8d  %s\n", i + 1, e->volume, buf, e->size, sjis2utf(e->name));
 	}
 	return 0;
 }
 
 // ald create ----------------------------------------
 
+static const char create_short_options[] = "m:";
+static const struct option create_long_options[] = {
+	{ "manifest",  required_argument, NULL, 'm' },
+	{ 0, 0, 0, 0 }
+};
+
 static void help_create(void) {
 	puts("Usage: ald create <aldfile> <file>...");
+	puts("       ald create <aldfile> -m <manifest-file>");
+	puts("Options:");
+	puts("    -m, --manifest <file>    Read manifest from <file>");
+}
+
+static void add_file(Vector *ald, int volume, const char *path) {
+	FILE *fp = checked_fopen(path, "rb");
+	struct stat sbuf;
+	if (fstat(fileno(fp), &sbuf) < 0)
+		error("%s: %s", path, strerror(errno));
+	uint8_t *data = malloc(sbuf.st_size);
+	if (!data)
+		error("out of memory");
+	if (fread(data, sbuf.st_size, 1, fp) != 1)
+		error("%s: %s", path, strerror(errno));
+	fclose(fp);
+
+	AldEntry *e = calloc(1, sizeof(AldEntry));
+	e->name = strdup(basename(path));
+	e->timestamp = sbuf.st_mtime;
+	e->data = data;
+	e->size = sbuf.st_size;
+	e->volume = volume;
+	vec_push(ald, e);
+}
+
+static uint32_t add_files_from_manifest(Vector *ald, const char *manifest) {
+	FILE *fp = checked_fopen(manifest, "r");
+	char line[200];
+	int lineno = 0;
+	uint32_t vol_bits = 0;
+	while (fgets(line, sizeof(line), fp)) {
+		lineno++;
+		if (line[0] == '\n')
+			continue;
+		int volume;
+		char fname[200];
+		switch (sscanf(line, " %d, %s", &volume, fname)) {
+		case 0:
+			error("%s:%d manifest syntax error", manifest, lineno);
+			break;
+		case 1:
+			if (volume == 0)
+				vec_push(ald, NULL);
+			else
+				error("%s:%d manifest syntax error", manifest, lineno);
+			break;
+		case 2:
+			if (volume < 1 || volume > 26)
+				error("%s:%d invalid volume id", manifest, lineno);
+			vol_bits |= 1 << volume;
+			add_file(ald, volume, fname);
+			break;
+		}
+	}
+	fclose(fp);
+	return vol_bits;
 }
 
 static int do_create(int argc, char *argv[]) {
-	if (argc < 3) {
+	const char *manifest = NULL;
+	int opt;
+	while ((opt = getopt_long(argc, argv, create_short_options, create_long_options, NULL)) != -1) {
+		switch (opt) {
+		case 'm':
+			manifest = optarg;
+			break;
+		default:
+			help_create();
+			return 1;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+
+	if ((manifest && argc != 1) || (!manifest && argc <= 1)) {
 		help_create();
 		return 1;
 	}
-	const char *ald_path = argv[1];
+	char *ald_path = strdup(argv[0]);
 	Vector *entries = new_vec();
-	for (int i = 2; i < argc; i++) {
-		FILE *fp = checked_fopen(argv[i], "rb");
-		struct stat sbuf;
-		if (fstat(fileno(fp), &sbuf) < 0)
-			error("%s: %s", argv[1], strerror(errno));
-		uint8_t *data = malloc(sbuf.st_size);
-		if (!data)
-			error("out of memory");
-		if (fread(data, sbuf.st_size, 1, fp) != 1)
-			error("%s: %s", argv[1], strerror(errno));
-		fclose(fp);
 
-		AldEntry *e = calloc(1, sizeof(AldEntry));
-		e->name = basename(argv[i]);
-		e->timestamp = sbuf.st_mtime;
-		e->data = data;
-		e->size = sbuf.st_size;
-		e->volume = 1;
-		vec_push(entries, e);
+	if (manifest) {
+		int len = strlen(ald_path);
+		char *volume_letter = ald_path + len - 5;
+		if (strcasecmp(volume_letter, "a.ald"))
+			error("ald: output filename must end with \"a.ald\"");
+		char base = *volume_letter - 1;
+
+		uint32_t vol_bits = add_files_from_manifest(entries, manifest);
+		for (int vol = 1; vol <= 26; vol++) {
+			if ((vol_bits & 1 << vol) == 0)
+				continue;
+			*volume_letter = base + vol;
+			FILE *fp = checked_fopen(ald_path, "wb");
+			ald_write(entries, vol, fp);
+			fclose(fp);
+		}
+	} else {
+		for (int i = 1; i < argc; i++)
+			add_file(entries, 1, argv[i]);
+		FILE *fp = checked_fopen(ald_path, "wb");
+		ald_write(entries, 1, fp);
+		fclose(fp);
 	}
-	FILE *fp = checked_fopen(ald_path, "wb");
-	ald_write(entries, 1, fp);
-	fclose(fp);
 	return 0;
 }
 
 // ald extract ----------------------------------------
 
-static const char extract_short_options[] = "d:";
+static const char extract_short_options[] = "d:m:";
 static const struct option extract_long_options[] = {
 	{ "directory", required_argument, NULL, 'd' },
+	{ "manifest",  required_argument, NULL, 'm' },
 	{ 0, 0, 0, 0 }
 };
 
@@ -171,6 +261,7 @@ static void help_extract(void) {
 	puts("Usage: ald extract [options] <aldfile>... [--] [(<n>|<file>)...]");
 	puts("Options:");
 	puts("    -d, --directory <dir>    Extract files into <dir>");
+	puts("    -m, --manifest <file>    Write manifest to <file>");
 }
 
 static void extract_entry(AldEntry *e, const char *directory) {
@@ -200,11 +291,15 @@ static void extract_entry(AldEntry *e, const char *directory) {
 
 static int do_extract(int argc, char *argv[]) {
 	const char *directory = NULL;
+	const char *manifest = NULL;
 	int opt;
 	while ((opt = getopt_long(argc, argv, extract_short_options, extract_long_options, NULL)) != -1) {
 		switch (opt) {
 		case 'd':
 			directory = optarg;
+			break;
+		case 'm':
+			manifest = optarg;
 			break;
 		default:
 			help_extract();
@@ -222,6 +317,12 @@ static int do_extract(int argc, char *argv[]) {
 
 	if (directory && make_dir(directory) != 0 && errno != EEXIST)
 		error("cannot create directory %s: %s", directory, strerror(errno));
+
+	if (manifest) {
+		FILE *fp = checked_fopen(manifest, "w");
+		write_manifest(ald, fp);
+		fclose(fp);
+	}
 
 	if (!argc) {
 		// Extract all files.
