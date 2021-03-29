@@ -62,8 +62,9 @@ covers both Japanese and your language while translating.
 http://unifoundry.com/unifont/index.html[GNU Unifont] is a good candidate,
 which is used in the example at the top of this document.
 
-To change the font in xsystem35, create a file named `.xsys35rc` in the game
-folder with the following contents (replace the file names):
+To change the font in xsystem35, put the font files (`.ttf` or `.otf`) in the
+game folder (where `*.ALD` files are), and create a file named `.xsys35rc` in
+the same folder with the following contents (replace the file names):
 
   ttfont_gothic: your-sans-serif-font.ttf
   ttfont_mincho: your-serif-font.ttf
