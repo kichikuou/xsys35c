@@ -195,15 +195,20 @@ static png_bytepp extract_alpha(struct qnt_header *qnt, FILE *fp) {
 	return rows;
 }
 
-static uint8_t *encode_alpha(struct qnt_header *qnt, png_bytepp rows) {
+static uint8_t *encode_alpha(struct qnt_header *qnt, png_bytepp rows, bool alpha_only) {
 	int width = (qnt->width + 1) & ~1;
 	int height = (qnt->height + 1) & ~1;
 
 	const int bufsize = width * height;
 	uint8_t *buf = malloc(bufsize);
 	for (int y = 0; y < height; y++) {
-		for (int x = 0; x < width; x++)
-			buf[y * width + x] = rows[y][x * 4 + 3];
+		if (alpha_only) {
+			memcpy(&buf[y * width], rows[y], width);
+		} else {
+			for (int x = 0; x < width; x++) {
+				buf[y * width + x] = rows[y][x * 4 + 3];
+			}
+		}
 	}
 
 	unsigned long destsize = compressBound(bufsize);
@@ -217,41 +222,41 @@ static uint8_t *encode_alpha(struct qnt_header *qnt, png_bytepp rows) {
 	return compressed;
 }
 
-static void unfilter(png_bytepp rows, int width, int height) {
+static void unfilter(png_bytepp rows, int width, int height, int channels) {
 	for (int x = 1; x < width; x++) {
-		for (int c = 0; c < 4; c++)
-			rows[0][x*4+c] = rows[0][(x-1)*4+c] - rows[0][x*4+c];
+		for (int c = 0; c < channels; c++)
+			rows[0][x*channels+c] = rows[0][(x-1)*channels+c] - rows[0][x*channels+c];
 	}
 	for (int y = 1; y < height; y++) {
-		for (int c = 0; c < 4; c++)
+		for (int c = 0; c < channels; c++)
 			rows[y][c] = rows[y-1][c] - rows[y][c];
 
 		for (int x = 1; x < width; x++) {
-			for (int c = 0; c < 4; c++) {
-				int up = rows[y-1][x*4+c];
-				int left = rows[y][(x-1)*4+c];
-				rows[y][x*4+c] = ((up + left) >> 1) - rows[y][x*4+c];
+			for (int c = 0; c < channels; c++) {
+				int up = rows[y-1][x*channels+c];
+				int left = rows[y][(x-1)*channels+c];
+				rows[y][x*channels+c] = ((up + left) >> 1) - rows[y][x*channels+c];
 			}
 		}
 	}
 }
 
-static void filter(png_bytepp rows, int width, int height) {
+static void filter(png_bytepp rows, int width, int height, int channels) {
 	for (int y = height - 1; y > 0; y--) {
 		for (int x = width - 1; x > 0; x--) {
-			for (int c = 0; c < 4; c++) {
-				int up = rows[y-1][x*4+c];
-				int left = rows[y][(x-1)*4+c];
-				rows[y][x*4+c] = ((up + left) >> 1) - rows[y][x*4+c];
+			for (int c = 0; c < channels; c++) {
+				int up = rows[y-1][x*channels+c];
+				int left = rows[y][(x-1)*channels+c];
+				rows[y][x*channels+c] = ((up + left) >> 1) - rows[y][x*channels+c];
 			}
 		}
 
-		for (int c = 0; c < 4; c++)
+		for (int c = 0; c < channels; c++)
 			rows[y][c] = rows[y-1][c] - rows[y][c];
 	}
 	for (int x = width - 1; x > 0; x--) {
-		for (int c = 0; c < 4; c++)
-			rows[0][x*4+c] = rows[0][(x-1)*4+c] - rows[0][x*4+c];
+		for (int c = 0; c < channels; c++)
+			rows[0][x*channels+c] = rows[0][(x-1)*channels+c] - rows[0][x*channels+c];
 	}
 }
 
@@ -264,14 +269,17 @@ static void qnt_to_png(const char *qnt_path, const char *png_path) {
 		fclose(fp);
 		return;
 	}
-
 	if (fseek(fp, qnt.header_size, SEEK_SET) < 0)
 		error("%s: %s", qnt_path, strerror(errno));
-	png_bytepp rows = extract_pixels(&qnt, fp);
-	if (!rows) {
-		fprintf(stderr, "%s: broken image\n", qnt_path);
-		fclose(fp);
-		return;
+
+	png_bytepp rows = NULL;
+	if (qnt.pixel_size) {
+		rows = extract_pixels(&qnt, fp);
+		if (!rows) {
+			fprintf(stderr, "%s: broken image\n", qnt_path);
+			fclose(fp);
+			return;
+		}
 	}
 	if (qnt.alpha_size) {
 		png_bytepp alpha_rows = extract_alpha(&qnt, fp);
@@ -281,17 +289,29 @@ static void qnt_to_png(const char *qnt_path, const char *png_path) {
 			free_bitmap_buffer(rows);
 			return;
 		}
-		merge_alpha_channel(rows, alpha_rows, qnt.width, qnt.height);
-		free_bitmap_buffer(alpha_rows);
+		if (rows) {
+			merge_alpha_channel(rows, alpha_rows, qnt.width, qnt.height);
+			free_bitmap_buffer(alpha_rows);
+		} else {
+			rows = alpha_rows;
+		}
 	}
 	fclose(fp);
 
-	unfilter(rows, qnt.width, qnt.height);
+	if (!rows) {
+		fprintf(stderr, "%s: no pixel nor alpha data\n", qnt_path);
+		fclose(fp);
+		return;
+	}
+
+	unfilter(rows, qnt.width, qnt.height, qnt.pixel_size ? 4 : 1);
 
 	PngWriter *w = create_png_writer(png_path);
 
-	const int color_type = qnt.alpha_size ?
-		PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB;
+	const int color_type =
+		!qnt.pixel_size ? PNG_COLOR_TYPE_GRAY :
+		qnt.alpha_size ? PNG_COLOR_TYPE_RGBA :
+		PNG_COLOR_TYPE_RGB;
 	png_set_IHDR(w->png, w->info, qnt.width, qnt.height, 8,
 				 color_type, PNG_INTERLACE_NONE,
 				 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
@@ -299,8 +319,8 @@ static void qnt_to_png(const char *qnt_path, const char *png_path) {
 	if (qnt.x || qnt.y)
 		png_set_oFFs(w->png, w->info, qnt.x, qnt.y, PNG_OFFSET_PIXEL);
 
-	const int transforms = qnt.alpha_size ?
-		PNG_TRANSFORM_IDENTITY : PNG_TRANSFORM_STRIP_FILLER_AFTER;
+	const int transforms = (color_type == PNG_COLOR_TYPE_RGB) ?
+		PNG_TRANSFORM_STRIP_FILLER_AFTER : PNG_TRANSFORM_IDENTITY;
 	write_png(w, rows, transforms);
 
 	destroy_png_writer(w);
@@ -329,11 +349,21 @@ static void png_to_qnt(const char *png_path, const char *qnt_path, const ImageOf
 	png_set_packing(r->png);
 
 	int color_type = png_get_color_type(r->png, r->info);
-
-	if (color_type == PNG_COLOR_TYPE_RGB)
+	int bytes_per_pixel;
+	switch (color_type) {
+	case PNG_COLOR_TYPE_RGB:
 		png_set_filler(r->png, 0, PNG_FILLER_AFTER);
-	else if (color_type != PNG_COLOR_TYPE_RGBA)
-		error("qnt: only RGB and RGBA color types are supported");
+		bytes_per_pixel = 4;
+		break;
+	case PNG_COLOR_TYPE_RGBA:
+		bytes_per_pixel = 4;
+		break;
+	case PNG_COLOR_TYPE_GRAY:
+		bytes_per_pixel = 1;
+		break;
+	default:
+		error("%s: unsupported color type", png_path);
+	}
 
 	if (!image_offset)
 		image_offset = get_png_image_offset(r);
@@ -343,28 +373,34 @@ static void png_to_qnt(const char *png_path, const char *qnt_path, const ImageOf
 	}
 
 	png_read_update_info(r->png, r->info);
-	assert(png_get_rowbytes(r->png, r->info) == qnt.width * 4);
+	assert(png_get_rowbytes(r->png, r->info) == qnt.width * bytes_per_pixel);
 
 	// Allocate bitmap memory with the rounded-up size, so that encode_pixels()
 	// don't have to deal with boundary conditions.
 	int width = (qnt.width + 1) & ~1;
 	int height = (qnt.height + 1) & ~1;
-	png_bytepp rows = allocate_bitmap_buffer(width, height, 4);
+	png_bytepp rows = allocate_bitmap_buffer(width, height, bytes_per_pixel);
 
 	png_read_image(r->png, rows);
 	png_read_end(r->png, r->info);
 
-	filter(rows, qnt.width, qnt.height);
+	filter(rows, qnt.width, qnt.height, bytes_per_pixel);
 
-	uint8_t *pixel_data = encode_pixels(&qnt, rows);
+	uint8_t *pixel_data = NULL;
+	if (color_type != PNG_COLOR_TYPE_GRAY) {
+		pixel_data = encode_pixels(&qnt, rows);
+	}
 	uint8_t *alpha_data = NULL;
-	if (color_type == PNG_COLOR_TYPE_RGBA)
-		alpha_data = encode_alpha(&qnt, rows);
+	if (color_type != PNG_COLOR_TYPE_RGB) {
+		alpha_data = encode_alpha(&qnt, rows, color_type == PNG_COLOR_TYPE_GRAY);
+	}
 
 	FILE *fp = checked_fopen(qnt_path, "wb");
 	qnt_write_header(&qnt, fp);
-	fwrite(pixel_data, qnt.pixel_size, 1, fp);
-	free(pixel_data);
+	if (pixel_data) {
+		fwrite(pixel_data, qnt.pixel_size, 1, fp);
+		free(pixel_data);
+	}
 	if (alpha_data) {
 		fwrite(alpha_data, qnt.alpha_size, 1, fp);
 		free(alpha_data);
@@ -385,9 +421,14 @@ static void qnt_info(const char *path) {
 	}
 	fclose(fp);
 
-	printf("%s: QNT %d, %dx%d %dbpp", path, qnt.version, qnt.width, qnt.height, qnt.bpp);
-	if (qnt.alpha_size)
-		printf(" + alpha");
+	printf("%s: QNT %d, %dx%d", path, qnt.version, qnt.width, qnt.height);
+	if (qnt.pixel_size) {
+		printf(" %dbpp", qnt.bpp);
+		if (qnt.alpha_size)
+			printf(" + alpha");
+	} else {
+		printf(" alpha only");
+	}
 	if (qnt.x || qnt.y)
 		printf(", offset: (%d, %d)", qnt.x, qnt.y);
 	if (qnt.unknown != 1)

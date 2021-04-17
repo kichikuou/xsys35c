@@ -34,6 +34,7 @@ tools/pms testdata/highcolor_alpha.pms -o $tmpfile && cmp testdata/highcolor_alp
 tools/pms -e testdata/highcolor_alpha.png -o $tmpfile && cmp testdata/highcolor_alpha.pms $tmpfile
 
 diff -u --strip-trailing-cr - <(tools/qnt -i testdata/*.qnt) <<EOF
+testdata/alphaonly.qnt: QNT 1, 256x256 alpha only
 testdata/truecolor.qnt: QNT 1, 256x256 24bpp, offset: (60, 40)
 testdata/truecolor_alpha.qnt: QNT 1, 256x256 24bpp + alpha
 EOF
@@ -41,5 +42,7 @@ tools/qnt testdata/truecolor.qnt -o $tmpfile && cmp testdata/truecolor.png $tmpf
 tools/qnt -e testdata/truecolor.png -o $tmpfile && cmp testdata/truecolor.qnt $tmpfile
 tools/qnt testdata/truecolor_alpha.qnt -o $tmpfile && cmp testdata/truecolor_alpha.png $tmpfile
 tools/qnt -e testdata/truecolor_alpha.png -o $tmpfile && cmp testdata/truecolor_alpha.qnt $tmpfile
+tools/qnt testdata/alphaonly.qnt -o $tmpfile && cmp testdata/alphaonly.png $tmpfile
+tools/qnt -e testdata/alphaonly.png -o $tmpfile && cmp testdata/alphaonly.qnt $tmpfile
 
 rm $tmpfile
