@@ -27,10 +27,11 @@
 #define DEFAULT_ALD_BASENAME "out"
 #define DEFAULT_OUTPUT_AIN "System39.ain"
 
-static const char short_options[] = "a:E:hi:o:p:s:uV:v";
+static const char short_options[] = "a:E:ghi:o:p:s:uV:v";
 static const struct option long_options[] = {
 	{ "ain",       required_argument, NULL, 'a' },
 	{ "ald",       required_argument, NULL, 'o' },
+	{ "debug",     no_argument,       NULL, 'g' },
 	{ "encoding",  required_argument, NULL, 'E' },
 	{ "hed",       required_argument, NULL, 'i' },
 	{ "help",      no_argument,       NULL, 'h' },
@@ -47,6 +48,7 @@ static void usage(void) {
 	puts("Options:");
 	puts("    -a, --ain <file>          Write .ain output to <file> (default: " DEFAULT_OUTPUT_AIN ")");
 	puts("    -o, --ald <name>          Write output to <name>SA.ALD, <name>SB.ALD, ... (default: " DEFAULT_ALD_BASENAME ")");
+	puts("    -g, --debug               Generate debug information");
 	puts("    -Es, --encoding=sjis      Set input coding system to SJIS");
 	puts("    -Eu, --encoding=utf8      Set input coding system to UTF-8 (default)");
 	puts("    -i, --hed <file>          Read compile header (.hed) from <file>");
@@ -186,6 +188,9 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *a
 
 	Compiler *compiler = new_compiler(srcs->keys, variables, dlls);
 
+	if (config.debug)
+		compiler->dbg_info = new_debug_info(srcs);
+
 	for (int i = 0; i < srcs->keys->len; i++) {
 		const char *source = srcs->vals->data[i];
 		preprocess(compiler, source, i);
@@ -224,6 +229,14 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *a
 		ald_write(ald, i, fp);
 		fclose(fp);
 	}
+
+	if (config.debug) {
+		char symbols_path[PATH_MAX+1];
+		snprintf(symbols_path, sizeof(symbols_path), "%sSA.ALD.symbols", ald_basename);
+		FILE *fp = checked_fopen(symbols_path, "wb");
+		debug_info_write(compiler->dbg_info, compiler, fp);
+		fclose(fp);
+	}
 }
 
 int main(int argc, char *argv[]) {
@@ -247,6 +260,9 @@ int main(int argc, char *argv[]) {
 			case 'u': case 'U': config.utf8 = true; break;
 			default: error("Unknown encoding %s", optarg);
 			}
+			break;
+		case 'g':
+			config.debug = true;
 			break;
 		case 'h':
 			usage();

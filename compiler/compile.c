@@ -737,6 +737,9 @@ static int subcommand_num(void) {
 
 static bool command(void) {
 	skip_whitespaces();
+	if (out && compiler->dbg_info)
+		debug_line_add(compiler->dbg_info, input_line, current_address(out));
+
 	const char *command_top = input;
 	int cmd = get_command(out);
 
@@ -1454,6 +1457,8 @@ Sco *compile(Compiler *comp, const char *source, int pageno) {
 	comp->scos[pageno].ald_volume = 1;
 	out = new_buf();
 	sco_init(out, comp->src_names->data[pageno], pageno);
+	if (comp->dbg_info)
+		debug_init_page(comp->dbg_info, pageno);
 
 	toplevel();
 
@@ -1462,6 +1467,8 @@ Sco *compile(Compiler *comp, const char *source, int pageno) {
 	check_undefined_labels();
 
 	sco_finalize(out);
+	if (comp->dbg_info)
+		debug_finish_page(comp->dbg_info);
 	comp->scos[pageno].buf = out;
 	out = NULL;
 	return &comp->scos[pageno];

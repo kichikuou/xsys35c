@@ -31,6 +31,7 @@ COMPILER_OBJS := \
 	compiler/ain.o \
 	compiler/compile.o \
 	compiler/config.o \
+	compiler/debuginfo.o \
 	compiler/hel.o \
 	compiler/lexer.o \
 	compiler/sco.o

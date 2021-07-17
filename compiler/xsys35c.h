@@ -36,6 +36,7 @@ typedef struct {
 	const char *hed;
 	const char *var_list;
 
+	bool debug;
 	bool unicode;
 	bool utf8;
 	bool disable_else;
@@ -120,6 +121,8 @@ typedef struct {
 	int ald_volume;
 } Sco;
 
+struct DebugInfo;
+
 typedef struct {
 	Vector *src_names;
 	Vector *variables;
@@ -129,6 +132,7 @@ typedef struct {
 	Buffer *msg_buf;
 	int msg_count;
 	Sco *scos;
+	struct DebugInfo *dbg_info;
 } Compiler;
 
 Compiler *new_compiler(Vector *src_names, Vector *variables, Map *dlls);
@@ -143,3 +147,11 @@ void ain_write(Compiler *compiler, FILE *fp);
 // hel.c
 
 Vector *parse_hel(const char* hel, const char *name);
+
+// debuginfo.c
+
+struct DebugInfo *new_debug_info(Map *srcs);
+void debug_init_page(struct DebugInfo *di, int page);
+void debug_line_add(struct DebugInfo *di, int line, int addr);
+void debug_finish_page(struct DebugInfo *di);
+void debug_info_write(struct DebugInfo *di, Compiler *compiler, FILE *fp);
