@@ -71,7 +71,6 @@
 	MHH 0, 0, 0:
 	menuSetCbkInit cmd2f_20:
 	menuClearCbkInit:
-	
 	]
 	sysOpenShell "a":
 	sysAddWebMenu "a", "a":

@@ -775,7 +775,11 @@ static int get_command(void) {
 		case 0x44: dc_puts("MHH"); return COMMAND_MHH;
 		case 0x45: dc_puts("menuSetCbkInit"); return COMMAND_menuSetCbkInit;
 		case 0x46: dc_puts("menuClearCbkInit"); return COMMAND_menuClearCbkInit;
-		case 0x47: return COMMAND_menu;
+		case 0x47:
+			if (*dc.p != ']')
+				error_at(dc.p - 2, "command 2F47 not followed by ']'");
+			dc_putc(*dc.p++);
+			return COMMAND_menu;
 		case 0x48: dc_puts("sysOpenShell"); return COMMAND_sysOpenShell;
 		case 0x49: dc_puts("sysAddWebMenu"); return COMMAND_sysAddWebMenu;
 		case 0x4a: dc_puts("iptSetMoveCursorTime"); return COMMAND_iptSetMoveCursorTime;
