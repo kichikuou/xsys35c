@@ -28,17 +28,52 @@ typedef struct {
 	int addr;
 } LineInfo;
 
+typedef struct {
+	const char *name;
+	int page;
+	int addr;
+	bool is_local;
+} FuncInfo;
+
 typedef struct DebugInfo {
 	Map *srcs;
 	Buffer *line_section;
 	Vector *linemap;
 	int nr_files;
+	Vector *functions;
 } DebugInfo;
 
 struct DebugInfo *new_debug_info(Map *srcs) {
 	DebugInfo *di = calloc(1, sizeof(DebugInfo));
 	di->srcs = srcs;
+	di->functions = new_vec();
 	return di;
+}
+
+static void add_local_functions(struct DebugInfo *di, Map *labels, int page) {
+	for (int i = 0; i < labels->keys->len; i++) {
+		Label *label = labels->vals->data[i];
+		if (!label->is_function)
+			continue;
+		FuncInfo *fi = calloc(1, sizeof(FuncInfo));
+		fi->name = labels->keys->data[i];
+		fi->page = page;
+		fi->addr = label->addr;
+		fi->is_local = true;
+		vec_push(di->functions, fi);
+	}
+}
+
+static void add_global_functions(struct DebugInfo *di, HashMap *functions) {
+	for (HashItem *i = hash_iterate(functions, NULL); i; i = hash_iterate(functions, i)) {
+		Function *f = i->val;
+		FuncInfo *fi = calloc(1, sizeof(FuncInfo));
+		fi->name = f->name;
+		fi->page = f->page - 1;  // 1-based to 0-based index
+		fi->addr = f->addr;
+		fi->is_local = false;
+		vec_push(di->functions, fi);
+	}
 }
 
 void debug_init_page(DebugInfo *di, int page) {
@@ -78,7 +113,9 @@ void debug_line_add(DebugInfo *di, int line, int addr) {
 	return;
 }
 
-void debug_finish_page(DebugInfo *di) {
+void debug_finish_page(DebugInfo *di, Map *labels) {
+	add_local_functions(di, labels, di->nr_files);
+
 	Vector *linemap = di->linemap;
 	assert(linemap);
 
@@ -113,7 +150,42 @@ static void write_string_array_section(const char *tag, Vector *vec, FILE *fp) {
 	}
 }
 
+int funcinfo_compare(const void *a, const void *b) {
+	const FuncInfo *fa = *(const FuncInfo **)a;
+	const FuncInfo *fb = *(const FuncInfo **)b;
+	if (fa->page != fb->page)
+		return fa->page - fb->page;
+	else
+		return fa->addr - fb->addr;
+}
+
+static void write_func_section(Vector *functions, FILE *fp) {
+	fputs("FUNC", fp);
+	long section_length_offset = ftell(fp);
+	fputdw(0, fp);
+
+	// Sort by address.
+	qsort(functions->data, functions->len, sizeof(void *), funcinfo_compare);
+
+	fputdw(functions->len, fp);
+	for (int i = 0; i < functions->len; i++) {
+		FuncInfo *fi = functions->data[i];
+		fputs(fi->name, fp);
+		fputc(0, fp);
+		fputw(fi->page, fp);
+		fputdw(fi->addr, fp);
+		fputc(fi->is_local, fp);
+	}
+
+	long section_length = ftell(fp) - section_length_offset + 4;
+	fseek(fp, section_length_offset, SEEK_SET);
+	fputdw(section_length, fp);
+	fseek(fp, 0, SEEK_END);
+}
+
 void debug_info_write(struct DebugInfo *di, Compiler *compiler, FILE *fp) {
+	add_global_functions(di, compiler->functions);
+
 	fputs("DSYM", fp);
 	fputdw(DSYM_VERSION, fp);
 	fputdw(4, fp);  // nr_sections
@@ -121,5 +193,6 @@ void debug_info_write(struct DebugInfo *di, Compiler *compiler, FILE *fp) {
 	write_string_array_section("SRCS", di->srcs->keys, fp);
 	write_string_array_section("SCNT", di->srcs->vals, fp);
 	fwrite(di->line_section->buf, di->line_section->len, 1, fp);
+	write_func_section(di->functions, fp);
 	write_string_array_section("VARI", compiler->variables, fp);
 }

@@ -135,6 +135,13 @@ typedef struct {
 	struct DebugInfo *dbg_info;
 } Compiler;
 
+typedef struct {
+	uint32_t addr;
+	uint32_t hole_addr;
+	const char *source_loc;
+	bool is_function;
+} Label;
+
 Compiler *new_compiler(Vector *src_names, Vector *variables, Map *dlls);
 void preprocess(Compiler *comp, const char *source, int pageno);
 void preprocess_done(Compiler *comp);
@@ -153,5 +160,5 @@ Vector *parse_hel(const char* hel, const char *name);
 struct DebugInfo *new_debug_info(Map *srcs);
 void debug_init_page(struct DebugInfo *di, int page);
 void debug_line_add(struct DebugInfo *di, int line, int addr);
-void debug_finish_page(struct DebugInfo *di);
+void debug_finish_page(struct DebugInfo *di, Map *labels);
 void debug_info_write(struct DebugInfo *di, Compiler *compiler, FILE *fp);

@@ -43,12 +43,6 @@ static Symbol *new_symbol(SymbolType type, int value) {
 	return s;
 }
 
-typedef struct {
-	uint32_t addr;
-	uint32_t hole_addr;
-	const char *source_loc;
-} Label;
-
 static Map *labels;
 
 static Buffer *out;
@@ -278,10 +272,10 @@ static void add_label(void) {
 		l->hole_addr = swap_dword(out, l->hole_addr, l->addr);
 }
 
-static void label(void) {
+static Label *label(void) {
 	char *id = get_label();
 	if (!compiling)
-		return;
+		return NULL;
 	Label *l = lookup_label(id);
 	if (!l->addr) {
 		emit_dword(out, l->hole_addr);
@@ -290,6 +284,7 @@ static void label(void) {
 		assert(!l->hole_addr);
 		emit_dword(out, l->addr);
 	}
+	return l;
 }
 
 // defun ::= '**' name (var (',' var)*)? ':'
@@ -807,8 +802,11 @@ static bool command(void) {
 		emit(out, cmd);
 		if (consume('0'))
 			emit_dword(out, 0);  // Return
-		else
-			label();
+		else {
+			Label *l = label();
+			if (l)
+				l->is_function = true;
+		}
 		expect(':');
 		break;
 
@@ -1468,7 +1466,7 @@ Sco *compile(Compiler *comp, const char *source, int pageno) {
 
 	sco_finalize(out);
 	if (comp->dbg_info)
-		debug_finish_page(comp->dbg_info);
+		debug_finish_page(comp->dbg_info, labels);
 	comp->scos[pageno].buf = out;
 	out = NULL;
 	return &comp->scos[pageno];
