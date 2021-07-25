@@ -36,6 +36,9 @@ xsys35c - System 3.x compiler
 *-o, --ald*=_name_::
   Write ALD output to __name__``SA.ALD``, __name__``SB.ALD``, ... (default: `out`)
 
+*-g, --debug*::
+  Generate debug information for xsystem35-sdl2.
+
 *-E, --encoding*=_enc_::
   Specify text encoding of input files. Possible values are `sjis` and `utf8`
   (default).
