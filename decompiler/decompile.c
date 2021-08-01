@@ -97,28 +97,50 @@ static void dc_printf(const char *fmt, ...) {
 	vfprintf(dc.out, fmt, args);
 }
 
-static void maybe_escape(char c) {
-	if (c == '\\' || c == '\'' || c == '"' || c == '<')
-		dc_putc('\\');
-}
+enum dc_put_string_flags {
+	STRING_ESCAPE = 1 << 0,
+	STRING_EXPAND = 1 << 1,
+};
 
-static void dc_puts_escaped(const char *s, char terminator) {
+static void dc_put_string_n(const char *s, int len, unsigned flags) {
 	if (!dc.out)
 		return;
-	while (*s != terminator) {
-		if (is_valid_sjis(s[0], s[1])) {
-			if (config.utf8 && !is_unicode_safe(s[0], s[1])) {
-				dc_printf("<0x%04X>", (uint8_t)s[0] << 8 | (uint8_t)s[1]);
-				s += 2;
+
+	const char *end = s + len;
+	while (s < end) {
+		uint8_t c = *s++;
+		if (isgraph(c)) {
+			if (flags & STRING_ESCAPE && (c == '\\' || c == '\'' || c == '"' || c == '<'))
+				dc_putc('\\');
+			dc_putc(c);
+		} else if (is_compacted_sjis(c)) {
+			if (flags & STRING_EXPAND) {
+				uint16_t full = expand_sjis(c);
+				dc_putc(full >> 8);
+				dc_putc(full & 0xff);
 			} else {
-				dc_putc(*s++);
-				dc_putc(*s++);
+				dc_putc(c);
 			}
+		} else if (c == 0xde || c == 0xdf) {  // Halfwidth (semi-)voiced sound mark
+			dc_putc(c);
 		} else {
-			maybe_escape(*s);
-			dc_putc(*s++);
+			assert(is_sjis_byte1(c));
+			uint8_t c2 = *s++;
+			if (config.utf8 && (flags & STRING_ESCAPE) && !is_unicode_safe(c, c2)) {
+				dc_printf("<0x%04X>", c << 8 | c2);
+			} else {
+				dc_putc(c);
+				dc_putc(c2);
+			}
 		}
 	}
+}
+
+static const void *dc_put_string(const char *s, int terminator, unsigned flags) {
+	const char *end = strchr(s, terminator);
+	assert(end);
+	dc_put_string_n(s, end - s, flags);
+	return end + 1;
 }
 
 static void print_address(void) {
@@ -208,32 +230,9 @@ static void data_block(const uint8_t *end) {
 		if (is_string_data(dc.p, end, should_expand) ||
 			(*dc.p == '\0' && (prefer_string || is_string_data(dc.p + 1, end, should_expand)))) {
 			dc_putc('"');
-			while (*dc.p) {
-				uint8_t c = *dc.p++;
-				if (isgraph(c)) {
-					maybe_escape(c);
-					dc_putc(c);
-				} else if (is_compacted_sjis(c)) {
-					if (should_expand) {
-						uint16_t full = expand_sjis(c);
-						dc_putc(full >> 8);
-						dc_putc(full & 0xff);
-					} else {
-						dc_putc(c);
-					}
-				} else {
-					assert(is_sjis_byte1(c));
-					uint8_t c2 = *dc.p++;
-					if (config.utf8 && !is_unicode_safe(c, c2)) {
-						dc_printf("<0x%04X>", c << 8 | c2);
-					} else {
-						dc_putc(c);
-						dc_putc(c2);
-					}
-				}
-			}
+			unsigned flags = STRING_ESCAPE | (should_expand ? STRING_EXPAND : 0);
+			dc.p = dc_put_string((const char *)dc.p, '\0', flags);
 			dc_puts("\"\n");
-			dc.p++;
 			prefer_string = true;
 			continue;
 		}
@@ -664,25 +663,26 @@ static void arguments(const char *sig) {
 			{
 				uint8_t terminator = *sig == 'z' ? 0 : ':';
 				if (current_sco()->version <= SCO_S360) {
-					while (*dc.p != terminator)
-						dc_putc(*dc.p++);
-					dc.p++;
+					dc.p = dc_put_string((const char *)dc.p, terminator, 0);
 				} else {
 					dc_putc('"');
-					dc_puts_escaped((const char *)dc.p, terminator);
-					dc.p = (const uint8_t *)strchr((const char *)dc.p, terminator) + 1;
+					dc.p = dc_put_string((const char *)dc.p, terminator, STRING_ESCAPE);
 					dc_putc('"');
 				}
 			}
 			break;
 		case 'o':  // obfuscated string
-			if (*dc.p != 0)
-				error_at(dc.p, "0x00 expected");
-			dc_putc('"');
-			while (*++dc.p)
-				dc_putc(*dc.p >> 4 | *dc.p << 4);
-			dc.p++;  // skip '\0'
-			dc_putc('"');
+			{
+				if (*dc.p != 0)
+					error_at(dc.p, "0x00 expected");
+				dc_putc('"');
+				char *buf = strdup((const char *)++dc.p);
+				for (uint8_t *p = (uint8_t *)buf; *p; p++)
+					*p = *p >> 4 | *p << 4;
+				dc_put_string(buf, '\0', 0);
+				dc.p += strlen(buf) + 1;
+				dc_putc('"');
+			}
 			break;
 		case 'F':
 			{
@@ -911,21 +911,9 @@ static bool inline_menu_string(void) {
 	if (*end != '$')
 		return false;
 
-	while (dc.p < end) {
-		uint8_t c = *dc.p++;
-		if (is_compacted_sjis(c)) {
-			uint16_t full = expand_sjis(c);
-			dc_putc(full >> 8);
-			dc_putc(full & 0xff);
-		} else {
-			dc_putc(c);
-			if (is_sjis_byte1(c))
-				dc_putc(*dc.p++);
-		}
-	}
-	if (*dc.p != '$')
-		error_at(dc.p, "'$' expected");
-	dc_putc(*dc.p++);
+	dc_put_string_n((const char *)dc.p, end - dc.p, STRING_EXPAND);
+	dc.p = end;
+	dc_putc(*dc.p++);  // '$'
 	return true;
 }
 
@@ -944,7 +932,7 @@ static void ain_msg(const char *cmd, const char *args) {
 			error_at(dc.p - 6, "Unexpected non-empty message id %d", id);
 	} else {
 		dc_putc('\'');
-		dc_puts_escaped(dc.ain->messages->data[id], '\0');
+		dc_put_string(dc.ain->messages->data[id], '\0', STRING_ESCAPE);
 		dc_putc('\'');
 	}
 }
@@ -995,8 +983,7 @@ static void dll_call(void) {
 			dc_puts(sep);
 			sep = ", ";
 			dc_putc('"');
-			dc_puts_escaped((const char *)dc.p, '\0');
-			dc.p += strlen((const char *)dc.p) + 1;
+			dc.p = dc_put_string((const char *)dc.p, '\0', STRING_ESCAPE);
 			dc_putc('"');
 			break;
 		default:
@@ -1078,24 +1065,13 @@ static void decompile_page(int page) {
 		if (*dc.p == 0 || *dc.p == 0x20 || *dc.p > 0x80) {
 			uint8_t *mark_at_string_start = &sco->mark[dc.p - sco->data];
 			dc_putc('\'');
+			const uint8_t *begin = dc.p;
 			while (*dc.p == 0x20 || *dc.p > 0x80) {
-				uint8_t c = *dc.p++;
-				if (is_compacted_sjis(c)) {
-					uint16_t full = expand_sjis(c);
-					dc_putc(full >> 8);
-					dc_putc(full & 0xff);
-				} else {
-					if (config.utf8 && !is_unicode_safe(c, *dc.p)) {
-						dc_printf("<0x%04X>", c << 8 | *dc.p++);
-					} else {
-						dc_putc(c);
-						if (is_sjis_byte1(c))
-							dc_putc(*dc.p++);
-					}
-				}
+				dc.p += is_sjis_byte1(*dc.p) ? 2 : 1;
 				if (*mark_at(dc.page, dc_addr()) != 0)
 					break;
 			}
+			dc_put_string_n((const char *)begin, dc.p - begin, STRING_ESCAPE | STRING_EXPAND);
 			dc_puts("'\n");
 			if (*dc.p == '\0') {
 				// String data in code area. This happens when the author
@@ -1574,8 +1550,7 @@ static void decompile_page(int page) {
 		case COMMAND_msg:
 			dc.disable_ain_message = true;
 			dc_putc('\'');
-			dc_puts_escaped((const char *)dc.p, '\0');
-			dc.p += strlen((const char *)dc.p) + 1;
+			dc.p = dc_put_string((const char *)dc.p, '\0', STRING_ESCAPE);
 			dc_putc('\'');
 			break;
 		case COMMAND_newHH: arguments("ne"); break;
