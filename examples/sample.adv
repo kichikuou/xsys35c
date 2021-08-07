@@ -5,7 +5,7 @@
 	!RND:0!
 	!D01:0!!D02:0!!D03:0!!D04:0!!D05:0!!D06:0!!D07:0!!D08:0!!D09:0!!D10:0!
 	!D11:0!!D12:0!!D13:0!!D14:0!!D15:0!!D16:0!!D17:0!!D18:0!!D19:0!!D20:0!
-	!X:0!!Y:0!!W:0!!H:0!!C:0!
+	!X:0!!Y:0!!W:0!!H:0!!C:0!!R:0!!G:0!!B:0!
 
 	; Scrren / window size
 	WW 640,480,16:
@@ -28,13 +28,23 @@
 	]
 
 *graphics:
+	; Initialize color palette
+	!D01:0!
+	<R,0,7,1,1:
+		<G,0,7,1,1:
+			<B,0,3,1,1:
+				PS D01, R*36+R/2, G*36+G/2, B*85:
+				inc D01:
+			>
+		>
+	>
 	; Draw 100 random rectangles
 	<D01,0,100,1,1:
 		Y4,640-16: !X:RND!
 		Y4,640-16: {X>RND: !D02:RND! !RND:X! !X:D02!} !W:RND-X!
 		Y4,480-16: !Y:RND!
 		Y4,480-16: {Y>RND: !D02:RND! !RND:Y! !Y:D02!} !H:RND-Y!
-		Y4,65535: !C:RND!
+		Y4,255: !C:RND!
 		CF X+8,Y+8,W,H,C:
 	>
 	@menu:
