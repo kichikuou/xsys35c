@@ -25,7 +25,7 @@
 #include <string.h>
 
 Config config = {
-	.utf8 = true,
+	.utf8_output = true,
 };
 
 static inline void annotate(uint8_t* mark, int type) {
@@ -79,6 +79,16 @@ static uint8_t *mark_at(int page, int addr) {
 	return &sco->mark[addr];
 }
 
+static const uint8_t *advance_char(const uint8_t *s) {
+	if (config.utf8_input) {
+		while (UTF8_TRAIL_BYTE(*++s))
+			;
+	} else {
+		s += is_sjis_byte1(*s) ? 2 : 1;
+	}
+	return s;
+}
+
 static void dc_putc(int c) {
 	if (dc.out)
 		fputc(c, dc.out);
@@ -113,6 +123,10 @@ static void dc_put_string_n(const char *s, int len, unsigned flags) {
 			if (flags & STRING_ESCAPE && (c == '\\' || c == '\'' || c == '"' || c == '<'))
 				dc_putc('\\');
 			dc_putc(c);
+		} else if (config.utf8_input) {
+			dc_putc(c);
+			while (UTF8_TRAIL_BYTE(*s))
+				dc_putc(*s++);
 		} else if (is_compacted_sjis(c)) {
 			if (flags & STRING_EXPAND) {
 				uint16_t full = expand_sjis(c);
@@ -126,7 +140,7 @@ static void dc_put_string_n(const char *s, int len, unsigned flags) {
 		} else {
 			assert(is_sjis_byte1(c));
 			uint8_t c2 = *s++;
-			if (config.utf8 && (flags & STRING_ESCAPE) && !is_unicode_safe(c, c2)) {
+			if (config.utf8_output && (flags & STRING_ESCAPE) && !is_unicode_safe(c, c2)) {
 				dc_printf("<0x%04X>", c << 8 | c2);
 			} else {
 				dc_putc(c);
@@ -206,12 +220,33 @@ static bool is_string_data(const uint8_t *begin, const uint8_t *end, bool should
 	for (const uint8_t *p = begin; p < end;) {
 		if (*p == '\0')
 			return p - begin >= 2;
-		if (is_valid_sjis(p[0], p[1]))
-			p += 2;
-		else if (isprint(*p) || (should_expand && is_compacted_sjis(*p)))
-			p++;
-		else
-			break;
+		if (config.utf8_input) {
+			const uint8_t *next;
+			if (*p <= 0x7f) {
+				next = p + 1;
+			} else if (p[0] <= 0xdf) {
+				next = p + 2;
+			} else if (p[0] <= 0xef) {
+				next = p + 3;
+			} else if (p[0] <= 0xf7) {
+				next = p + 4;
+			} else {
+				return false;
+			}
+			if (next > end)
+				return false;
+			while (++p < next) {
+				if (!UTF8_TRAIL_BYTE(*p))
+					return false;
+			}
+		} else {
+			if (is_valid_sjis(p[0], p[1]))
+				p += 2;
+			else if (isprint(*p) || (should_expand && is_compacted_sjis(*p)))
+				p++;
+			else
+				break;
+		}
 	}
 	return false;
 }
@@ -907,7 +942,7 @@ static int get_command(void) {
 static bool inline_menu_string(void) {
 	const uint8_t *end = dc.p;
 	while (*end == 0x20 || *end > 0x80)
-		end += is_sjis_byte1(*end) ? 2 : 1;
+		end = advance_char(end);
 	if (*end != '$')
 		return false;
 
@@ -1067,7 +1102,7 @@ static void decompile_page(int page) {
 			dc_putc('\'');
 			const uint8_t *begin = dc.p;
 			while (*dc.p == 0x20 || *dc.p > 0x80) {
-				dc.p += is_sjis_byte1(*dc.p) ? 2 : 1;
+				dc.p = advance_char(dc.p);
 				if (*mark_at(dc.page, dc_addr()) != 0)
 					break;
 			}
@@ -1512,6 +1547,10 @@ static void decompile_page(int page) {
 				goto unknown_command;
 			}
 			break;
+		case CMD2('Z', 'U'): arguments("e");
+			if (!config.utf8_input)
+				fputs("ZU command is found. Try -u option to decompile this ALD with the Unicode mode.\n", stderr);
+			break;
 		case CMD2('Z', 'W'): arguments("e"); break;
 		case CMD2('Z', 'Z'): arguments("ne"); break;
 		case COMMAND_TOC: arguments(""); break;
@@ -1675,7 +1714,7 @@ static void decompile_page(int page) {
 		default:
 		unknown_command:
 			if (dc.out)
-				error("%s:%x: unknown command '%.*s'", sjis2utf(sco->sco_name), topaddr, dc_addr() - topaddr, sco->data + topaddr);
+				error("%s:%x: unknown command '%.*s'", to_utf8(sco->sco_name), topaddr, dc_addr() - topaddr, sco->data + topaddr);
 			// If we're in the analyze phase, retry as a data block.
 			dc.p = sco->data + topaddr;
 			sco->mark[topaddr] &= ~CODE;
@@ -1722,7 +1761,7 @@ static void create_adv_for_missing_sco(const char *outdir, int page) {
 		}
 	}
 
-	if (config.utf8)
+	if (!config.utf8_input && config.utf8_output)
 		convert_to_utf8(dc.out);
 	fclose(dc.out);
 }
@@ -1763,7 +1802,9 @@ static void write_config(const char *path, const char *ald_basename) {
 		}
 	}
 
-	fprintf(fp, "encoding = %s\n", config.utf8 ? "utf8" : "sjis");
+	fprintf(fp, "encoding = %s\n", config.utf8_output ? "utf8" : "sjis");
+	if (config.utf8_input)
+		fprintf(fp, "unicode = true\n");
 
 	fclose(fp);
 }
@@ -1783,7 +1824,7 @@ static void write_hed(const char *path, Map *dlls) {
 			fprintf(fp, "%s.%s\n", (char *)dlls->keys->data[i], funcs->len ? "HEL" : "DLL");
 		}
 	}
-	if (config.utf8)
+	if (!config.utf8_input && config.utf8_output)
 		convert_to_utf8(fp);
 	fclose(fp);
 }
@@ -1794,7 +1835,7 @@ static void write_variables(const char *path) {
 		const char *s = dc.variables->data[i];
 		fprintf(fp, "%s\n", s ? s : "");
 	}
-	if (config.utf8)
+	if (!config.utf8_input && config.utf8_output)
 		convert_to_utf8(fp);
 	fclose(fp);
 }
@@ -1803,7 +1844,7 @@ noreturn void error_at(const uint8_t *pos, char *fmt, ...) {
 	Sco *sco = dc.scos->data[dc.page];
 	assert(sco->data <= pos);
 	assert(pos < sco->data + sco->filesize);;
-	fprintf(stderr, "%s:%x: ", sjis2utf(sco->sco_name), (unsigned)(pos - sco->data));
+	fprintf(stderr, "%s:%x: ", to_utf8(sco->sco_name), (unsigned)(pos - sco->data));
 	va_list args;
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
@@ -1815,7 +1856,7 @@ void warning_at(const uint8_t *pos, char *fmt, ...) {
 	Sco *sco = dc.scos->data[dc.page];
 	assert(sco->data <= pos);
 	assert(pos < sco->data + sco->filesize);;
-	fprintf(stderr, "Warning: %s:%x: ", sjis2utf(sco->sco_name), (unsigned)(pos - sco->data));
+	fprintf(stderr, "Warning: %s:%x: ", to_utf8(sco->sco_name), (unsigned)(pos - sco->data));
 	va_list args;
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
@@ -1844,7 +1885,7 @@ void decompile(Vector *scos, Ain *ain, const char *outdir, const char *ald_basen
 			if (!sco || sco->analyzed)
 				continue;
 			if (config.verbose)
-				printf("Analyzing %s (page %d)...\n", sjis2utf(sco->sco_name), i);
+				printf("Analyzing %s (page %d)...\n", to_utf8(sco->sco_name), i);
 			done = false;
 			sco->analyzed = true;
 			decompile_page(i);
@@ -1859,12 +1900,12 @@ void decompile(Vector *scos, Ain *ain, const char *outdir, const char *ald_basen
 			continue;
 		}
 		if (config.verbose)
-			printf("Decompiling %s (page %d)...\n", sjis2utf(sco->sco_name), i);
-		dc.out = checked_fopen(path_join(outdir, sjis2utf(sco->src_name)), "w+");
+			printf("Decompiling %s (page %d)...\n", to_utf8(sco->sco_name), i);
+		dc.out = checked_fopen(path_join(outdir, to_utf8(sco->src_name)), "w+");
 		if (sco->ald_volume != 1)
 			fprintf(dc.out, "pragma ald_volume %d:\n", sco->ald_volume);
 		decompile_page(i);
-		if (config.utf8)
+		if (!config.utf8_input && config.utf8_output)
 			convert_to_utf8(dc.out);
 		fclose(dc.out);
 	}

@@ -99,7 +99,8 @@ void preprocess(Vector *scos, Ain *ain);
 
 typedef struct {
 	bool address;
-	bool utf8;
+	bool utf8_input;
+	bool utf8_output;
 	bool verbose;
 } Config;
 
@@ -111,3 +112,4 @@ void warning_at(const uint8_t *pos, char *fmt, ...);
 
 // xsys35dc.c
 void convert_to_utf8(FILE *fp);
+const char *to_utf8(const char *s);

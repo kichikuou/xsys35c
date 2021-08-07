@@ -279,7 +279,7 @@ void ain_dump(Ain *ain) {
 		for (HashItem *i = hash_iterate(ain->functions, NULL); i;) {
 			Function *func = (Function *)i->val;
 			json_indent(0);
-			json_key(sjis2utf(func->name));
+			json_key(to_utf8(func->name));
 			printf("{ \"page\": %d, \"addr\": %d }", func->page, func->addr);
 			i = hash_iterate(ain->functions, i);
 			json_maybe_comma(i);
@@ -291,7 +291,7 @@ void ain_dump(Ain *ain) {
 		Vector *v = ain->variables;
 		for (int i = 0; i < v->len; i++) {
 			json_indent(0);
-			json_string(sjis2utf(v->data[i]));
+			json_string(to_utf8(v->data[i]));
 			json_maybe_comma(i < v->len - 1);
 		}
 		json_close(']', ain->messages);
@@ -301,7 +301,7 @@ void ain_dump(Ain *ain) {
 		Vector *v = ain->messages;
 		for (int i = 0; i < v->len; i++) {
 			json_indent(0);
-			json_string(sjis2utf(v->data[i]));
+			json_string(to_utf8(v->data[i]));
 			json_maybe_comma(i < v->len - 1);
 		}
 		json_close(']', false);

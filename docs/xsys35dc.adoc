@@ -38,6 +38,9 @@ with xref:xsys35c.adoc[*xsys35c(1)*] or the official System 3.x SDK.
   Output ADV files with sequential filenames (`0.adv`, `1.adv`, ...) instead of
   their original names.
 
+*-u, --unicode*::
+  Decompile scenario files compiled with xref:unicode.adoc[Unicode Mode].
+
 *-V, --verbose*::
   Turn on verbose output.
 
@@ -54,10 +57,6 @@ reconstructed by this command:
 
 If you want to use the official System 3.x SDK, specify the generated
 `xsys35dc.hed` file in the `DIR.HED` file of your project directory.
-
-== Bugs
-`xsys35dc` cannot decompile scenario files compiled with
-xref:unicode.adoc[Unicode Mode].
 
 == See also
 xref:xsys35c.adoc[*xsys35c(1)*], xref:ald.adoc[*ald(1)*]
