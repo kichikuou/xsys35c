@@ -143,7 +143,7 @@ HashItem *hash_iterate(HashMap *m, HashItem *item);
 // ald.c
 
 typedef struct {
-	const char *name;
+	const char *name;  // in SJIS
 	time_t timestamp;
 	const uint8_t *data;
 	int size;
