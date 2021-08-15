@@ -188,7 +188,7 @@ void debug_info_write(struct DebugInfo *di, Compiler *compiler, FILE *fp) {
 
 	fputs("DSYM", fp);
 	fputdw(DSYM_VERSION, fp);
-	fputdw(4, fp);  // nr_sections
+	fputdw(5, fp);  // nr_sections
 
 	write_string_array_section("SRCS", di->srcs->keys, fp);
 	write_string_array_section("SCNT", di->srcs->vals, fp);
