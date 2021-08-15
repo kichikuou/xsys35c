@@ -56,6 +56,7 @@ struct pms_header {
 
 enum {
 	LOPT_PALETTE_MASK = 256,
+	LOPT_SYSTEM2,
 };
 
 static const char short_options[] = "ehio:p:v";
@@ -66,6 +67,7 @@ static const struct option long_options[] = {
 	{ "output",       required_argument, NULL, 'o' },
 	{ "palette-mask", required_argument, NULL, LOPT_PALETTE_MASK },
 	{ "position",     required_argument, NULL, 'p' },
+	{ "system2",      no_argument,       NULL, LOPT_SYSTEM2 },
 	{ "version",      no_argument,       NULL, 'v' },
 	{ 0, 0, 0, 0 }
 };
@@ -79,16 +81,51 @@ static void usage(void) {
 	puts("    -o, --output=<file>     Write output to <file>");
 	puts("        --palette-mask=<n>  (encode) Set palette mask to <n> (0-0xffff)");
 	puts("    -p, --position=<x,y>    (encode) Set default display position to (<x,y>)");
+	puts("        --system2           Read/write in the old PMS format used in System2/3");
 	puts("    -v, --version           Print version information and exit");
 }
+
+static bool system2_pms = false;
 
 static void version(void) {
 	puts("pms " VERSION);
 }
 
-static bool pms_read_header(struct pms_header *pms, FILE *fp) {
-	if (fgetc(fp) != 'P' || fgetc(fp) != 'M')
+static bool system2_pms_read_header(int first_word, struct pms_header *pms, FILE *fp) {
+	int sx = first_word;
+	int sy = fgetw(fp);
+	int ex = fgetw(fp);
+	int ey = fgetw(fp);
+	if (sx >= 640 || sy >= 480 || ex >= 640 || ey >= 480 || sx > ex || sy > ey)
 		return false;
+
+	int flag = fgetc(fp);  // 256-color flag, but zero in Super DPS
+	if (flag > 1)
+		return false;
+	for (int i = 9; i < 0x20; i++) {
+		if (fgetc(fp) != 0)
+			return false;
+	}
+
+	memset(pms, 0, sizeof(struct pms_header));
+	pms->x            = sx;
+	pms->y            = sy;
+	pms->width        = ex - sx + 1;
+	pms->height       = ey - sy + 1;
+	pms->bpp          = 8;
+	pms->palette_mask = 0xffff;
+	pms->auxdata_off  = 0x20;
+	pms->data_off     = 0x320;
+	return true;
+}
+
+static bool pms_read_header(struct pms_header *pms, FILE *fp) {
+	int head = fgetw(fp);
+	if (head != ('P' | 'M' << 8)) {
+		if (system2_pms)
+			return system2_pms_read_header(head, pms, fp);
+		return false;
+	}
 
 	memset(pms, 0, sizeof(struct pms_header));
 	pms->version      = fgetw(fp);
@@ -115,7 +152,22 @@ static bool pms_read_header(struct pms_header *pms, FILE *fp) {
 	return true;
 }
 
+static void system2_pms_write_header(struct pms_header *pms, FILE *fp) {
+	fputw(pms->x, fp);
+	fputw(pms->y, fp);
+	fputw(pms->x + pms->width - 1, fp);
+	fputw(pms->y + pms->height - 1, fp);
+	fputc(1, fp); // 256-color flag
+	for (int i = 9; i < 0x20; i++)
+		fputc(0, fp);
+}
+
 static void pms_write_header(struct pms_header *pms, FILE *fp) {
+	if (system2_pms) {
+		system2_pms_write_header(pms, fp);
+		return;
+	}
+
 	fputc('P', fp);
 	fputc('M', fp);
 	fputw(pms->version, fp);
@@ -766,6 +818,11 @@ static void png_to_pms8(PngReader *r, const char *png_path, const char *pms_path
 }
 
 static void png_to_pms16(PngReader *r, const char *png_path, const char *pms_path, const ImageOffset *image_offset) {
+	if (system2_pms) {
+		fprintf(stderr, "%s: not a 8-bit png\n", png_path);
+		return;
+	}
+
 	png_set_strip_16(r->png);
 	png_set_packing(r->png);
 
@@ -928,6 +985,9 @@ int main(int argc, char *argv[]) {
 		case LOPT_PALETTE_MASK:
 			if (sscanf(optarg, "%i", &palette_mask) != 1 || palette_mask < 0 || palette_mask > 0xffff)
 				error("pms: invalid palette mask: %s", optarg);
+			break;
+		case LOPT_SYSTEM2:
+			system2_pms = true;
 			break;
 		case '?':
 			usage();
