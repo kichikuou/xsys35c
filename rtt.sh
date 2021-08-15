@@ -31,6 +31,7 @@ Exit() {
 ./compiler/xsys35c -p "$out"/xsys35c.cfg || Exit 1
 
 for file in "$@"; do
+	[[ "$file" == -* ]] && continue
 	base=$(basename "$file")
 	if [[ "$file" == *.ALD ]]; then
 		./tools/ald compare "$file" "$out"/"$base" || Exit 1
