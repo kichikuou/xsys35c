@@ -113,6 +113,10 @@ void debug_line_add(DebugInfo *di, int line, int addr) {
 	return;
 }
 
+void debug_line_reset(DebugInfo *di) {
+	di->linemap->len = 0;
+}
+
 void debug_finish_page(DebugInfo *di, Map *labels) {
 	add_local_functions(di, labels, di->nr_files);
 

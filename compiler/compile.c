@@ -716,6 +716,11 @@ static void pragma(void) {
 				out->len = address;
 			while (out->len < address)
 				emit(out, 0);
+			// Addresses in LINE debug table must be monotonically increasing,
+			// but address pragma breaks this condition. So clear the LINE info
+			// for this page.
+			if (compiler->dbg_info)
+				debug_line_reset(compiler->dbg_info);
 		}
 		expect(':');
 	} else {
