@@ -1805,6 +1805,7 @@ static void write_config(const char *path, const char *ald_basename) {
 	fprintf(fp, "encoding = %s\n", config.utf8_output ? "utf8" : "sjis");
 	if (config.utf8_input)
 		fprintf(fp, "unicode = true\n");
+	fputs("debug = true\n", fp);
 
 	fclose(fp);
 }

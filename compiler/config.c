@@ -98,6 +98,8 @@ void load_config(FILE *fp, const char *cfg_dir) {
 			config.ain_version = intval;
 		} else if (sscanf(line, "unicode = %s", val)) {
 			config.unicode = to_bool(val);
+		} else if (sscanf(line, "debug = %s", val)) {
+			config.debug = to_bool(val);
 		}
 	}
 }
