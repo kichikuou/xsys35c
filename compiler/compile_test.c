@@ -114,6 +114,14 @@ void compile_test(void) {
 	TEST("message-cp",
 		 "'<0x8148>'",
 		 "\x81\x48");
+	config.unicode = true;
+	TEST("msg-unicode",
+		 "'シィル'",
+		 "\xE3\x82\xB7\xE3\x82\xA3\xE3\x83\xAB");
+	TEST("msg-cp-unicode",
+		 "'<0x8356>'",
+		 "\xE3\x82\xB7");
+	config.unicode = false;
 
 	TEST("menu-item",
 		 "$l$シィル$ *l:",

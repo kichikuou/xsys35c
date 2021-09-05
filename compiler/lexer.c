@@ -219,13 +219,26 @@ static void compile_multibyte_string(Buffer *b, bool compact) {
 	}
 }
 
+void compile_sjis_codepoint(Buffer *b) {
+	const char *top = input;
+	expect('<');
+	int code = get_number();
+	if (config.unicode) {
+		char buf[3] = { code >> 8, code & 0xff, 0 };
+		if (!is_valid_sjis(buf[0], buf[1]))
+			error_at(top, "Invalid SJIS code 0x%x", code);
+		emit_string(b, sjis2utf(buf));
+	} else {
+		emit_word_be(b, code);
+	}
+	expect('>');
+}
+
 void compile_string(Buffer *b, char terminator, bool compact, bool forbid_ascii) {
 	const char *top = input;
 	while (*input != terminator) {
 		if (*input == '<') {
-			input++;
-			emit_word_be(b, get_number());
-			expect('>');
+			compile_sjis_codepoint(b);
 			continue;
 		}
 		if (*input == '\\')
@@ -246,9 +259,7 @@ void compile_message(Buffer *b) {
 	const char *top = input;
 	while (*input && *input != '\'') {
 		if (*input == '<') {
-			input++;
-			emit_word_be(b, get_number());
-			expect('>');
+			compile_sjis_codepoint(b);
 			continue;
 		}
 		if (*input == '\\')
