@@ -101,8 +101,8 @@ static void expr_prim(void) {
 	} else if (consume('#')) {
 		const char *top = input;
 		char *fname = get_filename();
-		for (int i = 0; i < compiler->src_names->len; i++) {
-			if (!strcasecmp(fname, compiler->src_names->data[i])) {
+		for (int i = 0; i < compiler->src_paths->len; i++) {
+			if (!strcasecmp(fname, basename(compiler->src_paths->data[i]))) {
 				emit_number(out, i);
 				return;
 			}
@@ -1403,14 +1403,14 @@ static void toplevel(void) {
 		error_at(input, "unexpected '%c'", *input);
 }
 
-Compiler *new_compiler(Vector *src_names, Vector *variables, Map *dlls) {
+Compiler *new_compiler(Vector *src_paths, Vector *variables, Map *dlls) {
 	Compiler *comp = calloc(1, sizeof(Compiler));
-	comp->src_names = src_names;
+	comp->src_paths = src_paths;
 	comp->variables = variables ? variables : new_vec();
 	comp->symbols = new_string_hash();
 	comp->functions = new_string_hash();
 	comp->dlls = dlls ? dlls : new_map();
-	comp->scos = calloc(src_names->len, sizeof(Sco));
+	comp->scos = calloc(src_paths->len, sizeof(Sco));
 
 	for (int i = 0; i < comp->variables->len; i++)
 		hash_put(comp->symbols, comp->variables->data[i], new_symbol(VARIABLE, i));
@@ -1420,7 +1420,7 @@ Compiler *new_compiler(Vector *src_names, Vector *variables, Map *dlls) {
 
 static void prepare(Compiler *comp, const char *source, int pageno) {
 	compiler = comp;
-	lexer_init(source, comp->src_names->data[pageno], pageno);
+	lexer_init(source, comp->src_paths->data[pageno], pageno);
 	menu_item_start = NULL;
 	branch_end_stack = (config.sys_ver == SYSTEM35) ? new_vec() : NULL;
 }
@@ -1459,7 +1459,7 @@ Sco *compile(Compiler *comp, const char *source, int pageno) {
 
 	comp->scos[pageno].ald_volume = 1;
 	out = new_buf();
-	sco_init(out, comp->src_names->data[pageno], pageno);
+	sco_init(out, basename(comp->src_paths->data[pageno]), pageno);
 	if (comp->dbg_info)
 		debug_init_page(comp->dbg_info, pageno);
 

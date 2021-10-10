@@ -124,7 +124,7 @@ typedef struct {
 struct DebugInfo;
 
 typedef struct {
-	Vector *src_names;
+	Vector *src_paths;
 	Vector *variables;
 	HashMap *symbols;   // variables and constants
 	HashMap *functions;
@@ -142,7 +142,7 @@ typedef struct {
 	bool is_function;
 } Label;
 
-Compiler *new_compiler(Vector *src_names, Vector *variables, Map *dlls);
+Compiler *new_compiler(Vector *src_paths, Vector *variables, Map *dlls);
 void preprocess(Compiler *comp, const char *source, int pageno);
 void preprocess_done(Compiler *comp);
 Sco *compile(Compiler *comp, const char *source, int pageno);

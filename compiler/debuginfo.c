@@ -45,7 +45,9 @@ typedef struct DebugInfo {
 
 struct DebugInfo *new_debug_info(Map *srcs) {
 	DebugInfo *di = calloc(1, sizeof(DebugInfo));
-	di->srcs = srcs;
+	di->srcs = new_map();
+	for (int i = 0; i < srcs->keys->len; i++)
+		map_put(di->srcs, basename(srcs->keys->data[i]), srcs->vals->data[i]);
 	di->functions = new_vec();
 	return di;
 }

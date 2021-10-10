@@ -182,8 +182,7 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *a
 	Map *srcs = new_map();
 	for (int i = 0; i < src_paths->len; i++) {
 		char *path = src_paths->data[i];
-		const char *name = basename(path);
-		map_put(srcs, name, read_file(path));
+		map_put(srcs, path, read_file(path));
 	}
 
 	Compiler *compiler = new_compiler(srcs->keys, variables, dlls);
@@ -205,7 +204,7 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *a
 		Sco *sco = compile(compiler, source, i);
 		AldEntry *e = calloc(1, sizeof(AldEntry));
 		e->volume = sco->ald_volume;
-		e->name = utf2sjis_sub(sconame(srcs->keys->data[i]), '?');
+		e->name = utf2sjis_sub(sconame(basename(srcs->keys->data[i])), '?');
 		e->timestamp = time(NULL);
 		e->data = sco->buf->buf;
 		e->size = sco->buf->len;
