@@ -35,7 +35,7 @@ noreturn void error_at(const char *pos, char *fmt, ...) {
 			end = strchr(begin, '\0');
 		if (pos <= end) {
 			int col = pos - begin;
-			fprintf(stderr, "%s line %d column %d: ", input_name, line, col);
+			fprintf(stderr, "%s line %d column %d: ", input_name, line, col + 1);
 			va_list args;
 			va_start(args, fmt);
 			vfprintf(stderr, fmt, args);
