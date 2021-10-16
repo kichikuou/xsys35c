@@ -100,24 +100,46 @@ int checked_open(const char *path_utf8, int oflag) {
 }
 
 const char *basename(const char *path) {
-	char *p = strrchr(path, PATH_SEPARATOR);
+	char *p = strrchr(path, '/');
+#ifdef _WIN32
+	char *pp = strrchr(path, '\\');
+	if (pp && (!p || p < pp))
+		p = pp;
+#endif
 	if (!p)
 		return path;
 	return p + 1;
 }
 
 char *dirname(const char *path) {
-	char *p = strrchr(path, PATH_SEPARATOR);
+	char *p = strrchr(path, '/');
+#ifdef _WIN32
+	char *pp = strrchr(path, '\\');
+	if (pp && (!p || p < pp))
+		p = pp;
+#endif
 	if (!p)
 		return ".";
 	return strndup_(path, p - path);
 }
 
+static bool is_absolute_path(const char *path) {
+#ifdef _WIN32
+	if (path[0] && path[1] == ':')
+		path += 2;
+	if (path[0] == '\\')
+		return true;
+#endif
+	if (path[0] == '/')
+		return true;
+	return false;
+}
+
 char *path_join(const char *dir, const char *path) {
-	if (!dir || path[0] == PATH_SEPARATOR)
+	if (!dir || is_absolute_path(path))
 		return strdup(path);
 	char *buf = malloc(strlen(dir) + strlen(path) + 2);
-	sprintf(buf, "%s%c%s", dir, PATH_SEPARATOR, path);
+	sprintf(buf, "%s/%s", dir, path);
 	return buf;
 }
 

@@ -47,7 +47,6 @@ noreturn void error(char *fmt, ...);
 FILE *checked_fopen(const char *path_utf8, const char *mode);
 int checked_open(const char *path_utf8, int oflag);
 
-#define PATH_SEPARATOR '/'
 const char *basename(const char *path);
 char *dirname(const char *path);
 char *path_join(const char *dir, const char *path);
