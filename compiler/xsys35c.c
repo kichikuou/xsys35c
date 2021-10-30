@@ -313,10 +313,16 @@ int main(int argc, char *argv[]) {
 		hed = config.hed;
 	if (!var_list && config.var_list)
 		var_list = config.var_list;
-	if (!ald_basename)
-		ald_basename = config.ald_basename ? config.ald_basename : DEFAULT_ALD_BASENAME;
-	if (!output_ain)
-		output_ain = config.output_ain ? config.output_ain : DEFAULT_OUTPUT_AIN;
+	if (!ald_basename) {
+		ald_basename = config.ald_basename ? config.ald_basename
+			: project ? path_join(dirname(project), DEFAULT_ALD_BASENAME)
+			: DEFAULT_ALD_BASENAME;
+	}
+	if (!output_ain) {
+		output_ain = config.output_ain ? config.output_ain
+			: project ? path_join(dirname(project), DEFAULT_OUTPUT_AIN)
+			: DEFAULT_OUTPUT_AIN;
+	}
 
 	Vector *srcs = new_vec();
 	Map *dlls = new_map();
