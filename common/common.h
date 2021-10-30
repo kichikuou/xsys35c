@@ -73,6 +73,10 @@ uint16_t expand_sjis(uint8_t c);
 bool is_valid_sjis(uint8_t c1, uint8_t c2);
 bool is_unicode_safe(uint8_t c1, uint8_t c2);
 
+// Returns NULL if s is a valid UTF-8 string. Otherwise, returns the first
+// invalid character.
+const char *validate_utf8(const char *s);
+
 static inline bool is_sjis_half_kana(uint8_t c) {
 	return 0xa1 <= c && c <= 0xdf;
 }

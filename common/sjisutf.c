@@ -252,6 +252,31 @@ char *utf2sjis_sub(const char *str, int substitution_char) {
 	return (char*)dst;
 }
 
+const char *validate_utf8(const char *s) {
+	while (*s) {
+		if ((uint8_t)*s <= 0x7f) {
+			s++;
+		} else if ((uint8_t)*s <= 0xbf) {
+			return s;
+		} else if ((uint8_t)*s <= 0xdf) {
+			if (!UTF8_TRAIL_BYTE(s[1]))
+				return s;
+			s += 2;
+		} else if ((uint8_t)*s <= 0xef) {
+			if (!UTF8_TRAIL_BYTE(s[1]) || !UTF8_TRAIL_BYTE(s[2]))
+				return s;
+			s += 3;
+		} else if ((uint8_t)*s <= 0xf4) {
+			if (!UTF8_TRAIL_BYTE(s[1]) || !UTF8_TRAIL_BYTE(s[2]) || !UTF8_TRAIL_BYTE(s[3]))
+				return s;
+			s += 4;
+		} else {
+			return s;
+		}
+	}
+	return NULL;
+}
+
 uint8_t compact_sjis(uint8_t c1, uint8_t c2) {
 	return c1 == 0x81 ? hankaku81[c2 - 0x40] :
 		   c1 == 0x82 ? hankaku82[c2 - 0x40] : 0;

@@ -64,11 +64,18 @@ static void version(void) {
 	puts("xsys35c " VERSION);
 }
 
-static char *read_line(FILE *fp) {
-	char buf[256];
-	if (!fgets(buf, sizeof(buf), fp))
+static char *next_line(char **buf) {
+	if (!**buf)
 		return NULL;
-	return config.utf8 ? strdup(buf) : sjis2utf(buf);
+	char *line = *buf;
+	char *p = strchr(line, '\n');
+	if (p) {
+		*p = '\0';
+		*buf = p + 1;
+	} else {
+		*buf += strlen(line);
+	}
+	return line;
 }
 
 static char *read_file(const char *path) {
@@ -85,7 +92,23 @@ static char *read_file(const char *path) {
 		error("%s: read error", path);
 	fclose(fp);
 	buf[size] = '\0';
-	return config.utf8 ? buf : sjis2utf(buf);
+
+	if (config.utf8) {
+		const char *err = validate_utf8(buf);
+		if (err) {
+			lexer_init(buf, path, -1);
+			error_at(err, "Invalid UTF-8 character");
+		}
+		return buf;
+	} else {
+		char *utf = sjis2utf_sub(buf, 0xfffd);  // U+FFFD REPLACEMENT CHARACTER
+		char *err = strstr(utf, u8"\ufffd");
+		if (err) {
+			lexer_init(utf, path, -1);
+			error_at(err, "Invalid Shift_JIS character");
+		}
+		return sjis2utf(buf);
+	}
 }
 
 static char *trim_right(char *str) {
@@ -95,22 +118,21 @@ static char *trim_right(char *str) {
 }
 
 static Vector *read_var_list(const char *path) {
-	FILE *fp = checked_fopen(path, "r");
+	char *buf = read_file(path);
 	Vector *vars = new_vec();
 	char *line;
-	while ((line = read_line(fp)) != NULL)
+	while ((line = next_line(&buf)) != NULL)
 		vec_push(vars, trim_right(line));
-	fclose(fp);
 	return vars;
 }
 
 static void read_hed(const char *path, Vector *sources, Map *dlls) {
-	FILE *fp = checked_fopen(path, "r");
+	char *buf = read_file(path);
 	char *dir = dirname(path);
 	enum { INITIAL, SYSTEM35, DLLHeader } section = INITIAL;
 
 	char *line;
-	while ((line = read_line(fp)) != NULL) {
+	while ((line = next_line(&buf)) != NULL) {
 		if (line[0] == '\x1a')  // DOS EOF
 			break;
 		if (line[0] == '#') {  // Section header
@@ -153,7 +175,6 @@ static void read_hed(const char *path, Vector *sources, Map *dlls) {
 			break;
 		}
 	}
-	fclose(fp);
 }
 
 static char *sconame(const char *advname) {
