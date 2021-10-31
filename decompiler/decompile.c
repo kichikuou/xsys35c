@@ -425,13 +425,13 @@ static Function *get_function(uint16_t page, uint32_t addr) {
 	f = calloc(1, sizeof(Function));
 	if (page < dc.scos->len && dc.scos->data[page]) {
 		Sco *sco = dc.scos->data[page];
-		char *name = malloc(strlen(sco->sco_name) + 10);
-		strcpy(name, sco->sco_name);
-		char *p = strrchr(name, '.');
+		char *name_sjis = malloc(strlen(sco->sco_name) + 10);
+		strcpy(name_sjis, sco->sco_name);
+		char *p = strrchr(name_sjis, '.');
 		if (!p)
-			p = name + strlen(name);
+			p = name_sjis + strlen(name_sjis);
 		sprintf(p, "_%x", addr);
-		f->name = name;
+		f->name = config.utf8_input ? sjis2utf(name_sjis) : name_sjis;
 	} else {
 		char name[16];
 		sprintf(name, "F_%d_%05x", page, addr);
@@ -1714,7 +1714,7 @@ static void decompile_page(int page) {
 		default:
 		unknown_command:
 			if (dc.out)
-				error("%s:%x: unknown command '%.*s'", to_utf8(sco->sco_name), topaddr, dc_addr() - topaddr, sco->data + topaddr);
+				error("%s:%x: unknown command '%.*s'", sjis2utf(sco->sco_name), topaddr, dc_addr() - topaddr, sco->data + topaddr);
 			// If we're in the analyze phase, retry as a data block.
 			dc.p = sco->data + topaddr;
 			sco->mark[topaddr] &= ~CODE;
@@ -1844,7 +1844,7 @@ noreturn void error_at(const uint8_t *pos, char *fmt, ...) {
 	Sco *sco = dc.scos->data[dc.page];
 	assert(sco->data <= pos);
 	assert(pos < sco->data + sco->filesize);;
-	fprintf(stderr, "%s:%x: ", to_utf8(sco->sco_name), (unsigned)(pos - sco->data));
+	fprintf(stderr, "%s:%x: ", sjis2utf(sco->sco_name), (unsigned)(pos - sco->data));
 	va_list args;
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
@@ -1856,7 +1856,7 @@ void warning_at(const uint8_t *pos, char *fmt, ...) {
 	Sco *sco = dc.scos->data[dc.page];
 	assert(sco->data <= pos);
 	assert(pos < sco->data + sco->filesize);;
-	fprintf(stderr, "Warning: %s:%x: ", to_utf8(sco->sco_name), (unsigned)(pos - sco->data));
+	fprintf(stderr, "Warning: %s:%x: ", sjis2utf(sco->sco_name), (unsigned)(pos - sco->data));
 	va_list args;
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
@@ -1885,7 +1885,7 @@ void decompile(Vector *scos, Ain *ain, const char *outdir, const char *ald_basen
 			if (!sco || sco->analyzed)
 				continue;
 			if (config.verbose)
-				printf("Analyzing %s (page %d)...\n", to_utf8(sco->sco_name), i);
+				printf("Analyzing %s (page %d)...\n", sjis2utf(sco->sco_name), i);
 			done = false;
 			sco->analyzed = true;
 			decompile_page(i);
@@ -1900,7 +1900,7 @@ void decompile(Vector *scos, Ain *ain, const char *outdir, const char *ald_basen
 			continue;
 		}
 		if (config.verbose)
-			printf("Decompiling %s (page %d)...\n", to_utf8(sco->sco_name), i);
+			printf("Decompiling %s (page %d)...\n", sjis2utf(sco->sco_name), i);
 		dc.out = checked_fopen(path_join(outdir, to_utf8(sco->src_name)), "w+");
 		if (sco->ald_volume != 1)
 			fprintf(dc.out, "pragma ald_volume %d:\n", sco->ald_volume);
