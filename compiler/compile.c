@@ -1205,7 +1205,12 @@ static bool command(void) {
 			goto unknown_command;
 		}
 		break;
-	case CMD2('Z', 'U'): arguments("e"); break;
+	case CMD2('Z', 'U'):
+		get_number();
+		expect(':');
+		if (!compiling)
+			warn_at(command_top, "Warning: The ZU command is deprecated. Now it is not needed.");
+		break;
 	case CMD2('Z', 'W'): arguments("e"); break;
 	case CMD2('Z', 'Z'): arguments("ne"); break;
 
@@ -1398,6 +1403,17 @@ static void commands(void) {
 
 // toplevel ::= commands
 static void toplevel(void) {
+	if (config.unicode && input_page == 0) {
+		// Inject "ZU 1:" command.
+		skip_whitespaces();
+		if (out && compiler->dbg_info)
+			debug_line_add(compiler->dbg_info, input_line, current_address(out));
+		emit(out, 'Z');
+		emit(out, 'U');
+		emit(out, 0x41);
+		emit(out, 0x7f);
+	}
+
 	commands();
 	if (*input)
 		error_at(input, "unexpected '%c'", *input);

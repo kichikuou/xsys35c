@@ -15,19 +15,6 @@ encoding. The generated scenario does not work on the original System 3.x, but
 it works on xsystem35 and in which you can use languages other than Japanese or
 English.
 
-== The `ZU` command
-
-The `ZU` command tells xsystem35 that strings in the scenario are encoded in
-UTF-8. This command must be executed before the first string is displayed in the
-game. The command syntax is as follows:
-
-  ZU 1:
-
-`ZU 0:` will turn off the UTF-8 mode, but probably you won't use it.
-
-The original System 3.x does not understand this command and hangs up if
-executed.
-
 == Translation workflow
 
 1. Decompile the game with xref:xsys35dc.adoc[`xsys35dc`].
@@ -36,21 +23,14 @@ executed.
 
      unicode = true
 
-3. Open `xsys35dc.hed` file in the same folder, to find out which source file
-   (.ADV) is the first one to be executed. The file listed on the next line of
-   `#SYSTEM35` is the first source file.
-4. Open that ADV file, and add the following line to the beginning:
-
-     ZU 1:
-
-5. Build the scenario file with xref:xsys35c.adoc[`xsys35c`]. The generated
+3. Build the scenario file with xref:xsys35c.adoc[`xsys35c`]. The generated
    scenario file has the same contents as the original, but is encoded in
    UTF-8.
-6. Overwrite the original scenario file with the generated one (don't forget to
+4. Overwrite the original scenario file with the generated one (don't forget to
    back up the original file), and run it with `xsystem35`. It should just work
    as before. (If not, report a bug!)
-7. Now you can put strings in the source files, in any languages. Modify the
-   source files and repeat the steps 5-6.
+5. Now you can put strings in the source files, in any languages. Modify the
+   source files and repeat the steps 3-4.
 
 == Fonts
 

@@ -1037,6 +1037,10 @@ static void decompile_page(int page) {
 	Vector *branch_end_stack = new_vec();
 	uint32_t next_funcall_top_candidate = 0;
 
+	// Skip the "ZU 1:" command of unicode SCO.
+	if (config.utf8_input && page == 0 && !memcmp(dc.p, "ZU\x41\x7f", 4))
+		dc.p += 4;
+
 	while (dc.p < sco->data + sco->filesize) {
 		int topaddr = dc.p - sco->data;
 		uint8_t mark = sco->mark[dc.p - sco->data];
@@ -1546,10 +1550,6 @@ static void decompile_page(int page) {
 			default:
 				goto unknown_command;
 			}
-			break;
-		case CMD2('Z', 'U'): arguments("e");
-			if (!config.utf8_input)
-				fputs("ZU command is found. Try -u option to decompile this ALD with the Unicode mode.\n", stderr);
 			break;
 		case CMD2('Z', 'W'): arguments("e"); break;
 		case CMD2('Z', 'Z'): arguments("ne"); break;

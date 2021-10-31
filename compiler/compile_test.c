@@ -117,10 +117,10 @@ void compile_test(void) {
 	config.unicode = true;
 	TEST("msg-unicode",
 		 "'シィル'",
-		 "\xE3\x82\xB7\xE3\x82\xA3\xE3\x83\xAB");
+		 "ZU\x41\x7f\xE3\x82\xB7\xE3\x82\xA3\xE3\x83\xAB");
 	TEST("msg-cp-unicode",
 		 "'<0x8356>'",
-		 "\xE3\x82\xB7");
+		 "ZU\x41\x7f\xE3\x82\xB7");
 	config.unicode = false;
 
 	TEST("menu-item",

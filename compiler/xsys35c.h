@@ -89,7 +89,8 @@ extern const char *input_buf;
 extern const char *input;
 extern int input_line;
 
-noreturn void error_at(const char *pos, char *fmt, ...);
+#define error_at(...) (warn_at(__VA_ARGS__), exit(1))
+void warn_at(const char *pos, char *fmt, ...);
 void lexer_init(const char *source, const char *name, int pageno);
 void skip_whitespaces(void);
 char next_char(void);

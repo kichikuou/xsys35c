@@ -7,9 +7,6 @@
 ;
 ; See docs/unicode.md for more information.
 
-	; Turn on the unicode mode
-	ZU 1:
-
 	; Title
 	MT Multilingualization sample:
 

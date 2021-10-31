@@ -27,7 +27,7 @@ const char *input_buf;
 const char *input;
 int input_line;
 
-noreturn void error_at(const char *pos, char *fmt, ...) {
+void warn_at(const char *pos, char *fmt, ...) {
 	int line = 1;
 	for (const char *begin = input_buf;; line++) {
 		const char *end = strchr(begin, '\n');
@@ -50,7 +50,6 @@ noreturn void error_at(const char *pos, char *fmt, ...) {
 			error("BUG: cannot find error location");
 		begin = end + 1;
 	}
-	exit(1);
 }
 
 void lexer_init(const char *source, const char *name, int pageno) {
@@ -483,6 +482,10 @@ int get_command(Buffer *b) {
 			cmd |= *input++ << 8;
 		if (cmd == CMD2('N', 'D') && strchr("+-*/", *input))
 			cmd |= *input++ << 16;
+
+		// Do not generate code for the deprecated 'ZU' command.
+		if (cmd == CMD2('Z', 'U'))
+			return cmd;
 
 		cmd = replace_command(cmd);
 		emit_command(b, cmd);
