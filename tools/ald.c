@@ -119,10 +119,8 @@ static int do_list(int argc, char *argv[]) {
 	char buf[30];
 	for (int i = 0; i < ald->len; i++) {
 		AldEntry *e = ald->data[i];
-		if (!e) {
-			printf("%4d  (missing)\n", i + 1);
+		if (!e)
 			continue;
-		}
 		struct tm *t = localtime(&e->timestamp);
 		strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", t);
 		printf("%4d %2d  %s  %8d  %s\n", i + 1, e->volume, buf, e->size, sjis2utf(e->name));
