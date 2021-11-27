@@ -488,9 +488,13 @@ static void analyze_args(Function *func, uint32_t topaddr_candidate, uint32_t fu
 	}
 	Sco *sco = dc.scos->data[dc.page];
 
-	// Count the number of preceding variable assignments
+	// Count the number of preceding variable assignments.
 	int argc = 0;
 	for (int addr = topaddr_candidate; addr < funcall_addr; addr++) {
+		// Clear DATA mark that may have been incorrectly set by the
+		// scan_for_data_tables heuristic.
+		sco->mark[addr] &= ~DATA;
+
 		if (sco->mark[addr]) {
 			assert(sco->data[addr] == '!');
 			argc++;
