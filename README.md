@@ -33,6 +33,8 @@ The following games can be decompiled and then re-compiled to an ALD file that i
 - SeeIn青
 - 20世紀アリス (かえるにょ国にょアリス / これDPS?)
 - 夜が来る!
+- 王子さまLv1
+- 王子さまLv1.5
 - 大悪司
 - 超昂天使エスカレイヤー
 - Only You -リ・クルス-
@@ -89,6 +91,10 @@ Once you've finished editing the source files, you can compile them back to the 
 ```
 xsys35c -p decompiled/xsys35c.cfg -o out.ALD -a out.ain
 ```
+
+Alternatively, you can use `xsys35c` and `xsys35dc` from
+[Visual Studio Code](https://code.visualstudio.com/). See
+[`vscode-system3x`](https://github.com/kichikuou/vscode-system3x).
 
 ## Unicode mode
 Using the "Unicode mode" of xsys35c and [xsystem35](https://github.com/kichikuou/xsystem35-sdl2) (an open source implementation of System 3.x), you can translate games into many languages that are not supported by original System 3.x. See [docs/unicode.adoc](docs/unicode.adoc) for more information.
