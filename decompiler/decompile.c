@@ -119,7 +119,7 @@ static void dc_put_string_n(const char *s, int len, unsigned flags) {
 	const char *end = s + len;
 	while (s < end) {
 		uint8_t c = *s++;
-		if (isgraph(c)) {
+		if (isgraph(c) || c == '\t') {
 			if (flags & STRING_ESCAPE && (c == '\\' || c == '\'' || c == '"' || c == '<'))
 				dc_putc('\\');
 			dc_putc(c);
