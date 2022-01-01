@@ -248,8 +248,11 @@ void compile_string(Buffer *b, char terminator, bool compact, bool forbid_ascii)
 			compile_multibyte_string(b, compact);
 		else if (forbid_ascii)
 			error_at(input, "ASCII characters cannot be used here");
-		else
+		else {
+			if (!b && *input < ' ')
+				warn_at(input, "Warning: Control character in string.");
 			echo(b);
+		}
 	}
 	expect(terminator);
 }
@@ -265,10 +268,13 @@ void compile_message(Buffer *b) {
 			input++;
 		if (!*input)
 			error_at(top, "unfinished message");
-		if (isascii(*input))
+		if (isascii(*input)) {
+			if (!b && *input < ' ')
+				warn_at(input, "Warning: Control character in message.");
 			echo(b);
-		else
+		} else {
 			compile_multibyte_string(b, false);
+		}
 	}
 	expect('\'');
 	emit(b, 0);
