@@ -181,12 +181,15 @@ Vector *ald_read(Vector *entries, const char *path) {
 #endif
 	close(fd);
 
-	if ((sbuf.st_size & 0xff) != 16)
-		error("%s: unexpected file size (not an ald file?)", path);
+	if ((sbuf.st_size & 0xff) != 16) {
+		fprintf(stderr, "%s: unexpected file size (not an ALD file?)\n", path);
+		return entries;
+	}
 	uint8_t *footer = p + sbuf.st_size - 16;
-	if (le32(footer) != ALD_SIGNATURE && le32(footer) != ALD_SIGNATURE2)
-		error("%s: invalid ALD signature", path);
-
+	if (le32(footer) != ALD_SIGNATURE && le32(footer) != ALD_SIGNATURE2) {
+		fprintf(stderr, "%s: invalid signature (not an ALD file?)\n", path);
+		return entries;
+	}
 	int volume = footer[8];
 	int num_entries = footer[9] | footer[10] << 8;
 	// Some ALDs created with unofficial tools have incorrect volume id in footer.
