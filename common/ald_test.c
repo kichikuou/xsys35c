@@ -17,6 +17,7 @@
 */
 #include "common.h"
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #undef NDEBUG
@@ -64,6 +65,8 @@ static void test_write(void) {
 	FILE *fp = checked_fopen(outfile, "wb");
 	ald_write(es, 1, fp);
 	fclose(fp);
+	assert(system("cmp testdata/expected.ald testdata/actual.ald") == 0);
+	remove(outfile);
 }
 
 static void test_multivolume_read(void) {
@@ -105,6 +108,10 @@ static void test_multivolume_write(void) {
 		ald_write(es, volume + 1, fp);
 		fclose(fp);
 	}
+	assert(system("cmp testdata/expected_a.ald testdata/actual_a.ald") == 0);
+	assert(system("cmp testdata/expected_b.ald testdata/actual_b.ald") == 0);
+	remove(aldname[0]);
+	remove(aldname[1]);
 }
 
 void ald_test(void) {

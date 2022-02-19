@@ -81,7 +81,7 @@ common/common_tests: $(COMMON_TESTS_OBJS) $(COMMON_OBJS)
 compiler/compiler_tests: $(COMPILER_TESTS_OBJS) $(COMPILER_OBJS) $(COMMON_OBJS)
 
 test: $(TESTS) $(COMMANDS) regression_test.sh
-	common/common_tests && cmp testdata/expected.ald testdata/actual.ald && rm testdata/actual*.ald
+	common/common_tests
 	compiler/compiler_tests
 	./regression_test.sh
 
