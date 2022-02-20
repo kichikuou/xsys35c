@@ -6,34 +6,23 @@ jobs:
     runs-on: windows-2019
     strategy:
       matrix:
-        mingw: ["MINGW32", "MINGW64"]
         include:
-        - mingw: "MINGW32"
-          package-prefix: "mingw-w64-i686"
-          archive-suffix: "-32bit"
-        - mingw: "MINGW64"
-          package-prefix: "mingw-w64-x86_64"
-          archive-suffix: "-64bit"
+        - { sys: MINGW32, archive-suffix: "-32bit" }
+        - { sys: MINGW64, archive-suffix: "-64bit" }
     defaults:
       run:
-        shell: bash.exe --login -eo pipefail "{0}"
-    env:
-      MSYSTEM: ${{ matrix.mingw }}
-      CHERE_INVOKING: 1
-    name: MSYS2 ${{ matrix.mingw }}
+        shell: msys2 {0}
+    name: MSYS2 ${{ matrix.sys }}
     steps:
 
-    - name: Set up shell
-      run: echo "C:\msys64\usr\bin\" >> $env:GITHUB_PATH
-      shell: pwsh
-
-    - name: Print system version
-      run: |
-        uname
-        echo PATH: $PATH
-
-    - name: Install Deps
-      run: pacman -S --noconfirm ${{ matrix.package-prefix }}-libpng ${{ matrix.package-prefix }}-asciidoctor
+    - name: Set up MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: ${{ matrix.sys }}
+        release: false
+        pacboy: >-
+          libpng:p
+          asciidoctor:p
 
     - name: Checkout
       uses: actions/checkout@v2
