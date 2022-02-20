@@ -1,5 +1,5 @@
 name: CI
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -8,7 +8,15 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: make
-      run: make
+    - name: Install Deps
+      run: |
+        sudo apt update
+        sudo apt install meson libpng-dev
+
+    - name: Build
+      run: |
+        meson build
+        ninja -C build
+
     - name: test
-      run: make test
+      run: ninja -C build test

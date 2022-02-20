@@ -1,5 +1,5 @@
 name: Windows CI
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -21,6 +21,8 @@ jobs:
         msystem: ${{ matrix.sys }}
         release: false
         pacboy: >-
+          meson:p
+          pkgconf:p
           libpng:p
           asciidoctor:p
 
@@ -28,23 +30,22 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Build
-      run: make STATIC=-static
+      run: |
+        meson --buildtype=release build
+        ninja -C build
 
     - name: Test
-      run: make test
-
-    - name: Create HTML
-      run: make -C docs html
+      run: ninja -C build test
 
     - name: Create artifacts
       run: |
         mkdir artifacts
-        cp */*.exe artifacts/
+        cp build/*.exe artifacts/
         rm artifacts/*_tests.exe
         strip artifacts/*.exe
         cp COPYING artifacts/
         mkdir artifacts/docs
-        cp docs/*.html artifacts/docs
+        cp build/*.html artifacts/docs
         mkdir artifacts/docs/image
         cp docs/image/* artifacts/docs/image
 

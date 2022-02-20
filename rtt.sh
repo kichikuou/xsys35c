@@ -6,18 +6,34 @@
 # and verifies it matches the original ALD.
 #
 
-if [ $# -eq 0 ]; then
+usage() {
 	echo 'Usage: rtt.sh [options] <aldfile(s)> [<ainfile>]'
 	echo 'Options:'
+	echo '    -C <directory>  Find executables in <directory> (default: ./build)'
+	echo '    -h              Display this message and exit'
 	echo '    -o <directory>  Generate outputs into <directory>'
 	exit 1
+}
+
+if [ $# -eq 0 ]; then
+	usage
 fi
 
-if [ "$1" = "-o" ]; then
-	out="$2"
-	shift 2
-	cleanup=
-else
+bin=./build
+out=
+cleanup=
+
+while getopts C:o:h OPT
+do
+	case $OPT in
+		C) bin="$OPTARG" ;;
+		o) out="$OPTARG" ;;
+		h) usage ;;
+	esac
+done
+shift $((OPTIND - 1))
+
+if [ -z "$out" ]; then
 	out=$(mktemp -d)
 	cleanup="rm -rf $out"
 fi
@@ -27,14 +43,14 @@ Exit() {
 	exit $1
 }
 
-./decompiler/xsys35dc -a -o "$out" "$@" || Exit 1
-./compiler/xsys35c -p "$out"/xsys35c.cfg || Exit 1
+$bin/xsys35dc -a -o "$out" "$@" || Exit 1
+$bin/xsys35c -p "$out"/xsys35c.cfg || Exit 1
 
 for file in "$@"; do
 	[[ "$file" == -* ]] && continue
 	base=$(basename "$file")
 	if [[ "$file" == *.ALD ]]; then
-		./tools/ald compare "$file" "$out"/"$base" || Exit 1
+		$bin/ald compare "$file" "$out"/"$base" || Exit 1
 	else
 		cmp "$file" "$out"/"$base" || Exit 1
 	fi

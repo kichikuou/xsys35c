@@ -1,13 +1,1 @@
-*.o
-*.exe
-*~
-compiler/xsys35c
-decompiler/xsys35dc
-tools/ald
-tools/alk
-tools/vsp
-tools/pms
-tools/qnt
-*_test
-*_tests
-rtt_adv/
+build/

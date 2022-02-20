@@ -49,29 +49,31 @@ The following games cannot be decompiled or compiled yet:
 Prebuilt Windows executables can be found [here](https://github.com/kichikuou/xsys35c/releases).
 
 ## Build & Install
-To build the executables, run `make` command:
-```
-make
-```
-This creates the following executables:
-- `compiler/xsys35c` -- System 3.x compiler
-- `decompiler/xsys35dc` -- System 3.x decompiler
-- `tools/ald` -- ALD archive utility
-- `tools/alk` -- ALK archive utility
-- `tools/vsp` -- VSP image utility
-- `tools/pms` -- PMS image utility
-- `tools/qnt` -- QNT image utility
+First install the dependencies (corresponding Debian package in parentheses):
+- meson (`meson`)
+- libpng (`libpng-dev`)
+- asciidoctor (`asciidoctor`) [optional, for generating manual pages]
 
-`make install` will install them to `/usr/local/bin`:
+Then build the executables with meson.
 ```
-sudo make install
+meson build
+ninja -C build
 ```
-If you want to install them in a custom directory, specify `PREFIX=`. For example, this will install the commands under `$HOME/bin`:
-```
-PREFIX=$HOME make install
-```
+This creates the following executables under the `build` directory:
+- `xsys35c` -- System 3.x compiler
+- `xsys35dc` -- System 3.x decompiler
+- `ald` -- ALD archive utility
+- `alk` -- ALK archive utility
+- `vsp` -- VSP image utility
+- `pms` -- PMS image utility
+- `qnt` -- QNT image utility
 
-If you have [`asciidoctor`](https://asciidoctor.org/) command, you can install Unix manual pages with `make install-man`.
+Optionally you can install these executables to your system, by:
+```
+sudo ninja -C build install
+```
+If you want to install them in a custom directory, specify `--prefix=` when
+running meson.
 
 ## Basic Workflow
 Here are the steps for decompiling a game, editing the source, and compiling back to the scenario file.
