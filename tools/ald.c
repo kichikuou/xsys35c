@@ -151,7 +151,7 @@ static void add_file(Vector *ald, int volume, const char *path) {
 	uint8_t *data = malloc(sbuf.st_size);
 	if (!data)
 		error("out of memory");
-	if (fread(data, sbuf.st_size, 1, fp) != 1)
+	if (sbuf.st_size > 0 && fread(data, sbuf.st_size, 1, fp) != 1)
 		error("%s: %s", path, strerror(errno));
 	fclose(fp);
 
@@ -266,7 +266,7 @@ static void extract_entry(AldEntry *e, const char *directory) {
 	const char *utf_name = sjis2utf(e->name);
 	puts(utf_name);
 	FILE *fp = checked_fopen(path_join(directory, utf_name), "wb");
-	if (fwrite(e->data, e->size, 1, fp) != 1)
+	if (e->size > 0 && fwrite(e->data, e->size, 1, fp) != 1)
 		error("%s: %s", sjis2utf(e->name), strerror(errno));
 
 	fflush(fp);

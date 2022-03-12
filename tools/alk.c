@@ -96,7 +96,7 @@ static void alk_write(Vector *entries, const char *path) {
 
 	for (int i = 0; i < entries->len; i++) {
 		AlkEntry *e = entries->data[i];
-		if (fwrite(e->data, e->size, 1, fp) != 1)
+		if (e->size > 0 && fwrite(e->data, e->size, 1, fp) != 1)
 			error("%s: %s", path, strerror(errno));
 	}
 	fclose(fp);
@@ -176,7 +176,7 @@ static int do_create(int argc, char *argv[]) {
 		uint8_t *data = malloc(sbuf.st_size);
 		if (!data)
 			error("out of memory");
-		if (fread(data, sbuf.st_size, 1, fp) != 1)
+		if (sbuf.st_size > 0 && fread(data, sbuf.st_size, 1, fp) != 1)
 			error("%s: %s", argv[1], strerror(errno));
 		fclose(fp);
 
@@ -213,7 +213,7 @@ static void extract_entry(AlkEntry *e, int index, const char *directory) {
 
 	puts(fname);
 	FILE *fp = checked_fopen(path_join(directory, fname), "wb");
-	if (fwrite(e->data, e->size, 1, fp) != 1)
+	if (e->size > 0 && fwrite(e->data, e->size, 1, fp) != 1)
 		error("%s: %s", fname, strerror(errno));
 	fclose(fp);
 }
