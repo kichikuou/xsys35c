@@ -27,7 +27,7 @@
 #define DEFAULT_ALD_BASENAME "out"
 #define DEFAULT_OUTPUT_AIN "System39.ain"
 
-static const char short_options[] = "a:E:ghi:o:p:s:uV:v";
+static const char short_options[] = "a:E:ghi:Io:p:s:uV:v";
 static const struct option long_options[] = {
 	{ "ain",       required_argument, NULL, 'a' },
 	{ "ald",       required_argument, NULL, 'o' },
@@ -35,6 +35,7 @@ static const struct option long_options[] = {
 	{ "encoding",  required_argument, NULL, 'E' },
 	{ "hed",       required_argument, NULL, 'i' },
 	{ "help",      no_argument,       NULL, 'h' },
+	{ "init",      no_argument,       NULL, 'I' },
 	{ "project",   required_argument, NULL, 'p' },
 	{ "sys-ver",   required_argument, NULL, 's' },
 	{ "unicode",   no_argument,       NULL, 'u' },
@@ -53,6 +54,7 @@ static void usage(void) {
 	puts("    -Eu, --encoding=utf8      Set input coding system to UTF-8 (default)");
 	puts("    -i, --hed <file>          Read compile header (.hed) from <file>");
 	puts("    -h, --help                Display this message and exit");
+	puts("    -I, --init                Create a new xsys35c project");
 	puts("    -p, --project <file>      Read project configuration from <file>");
 	puts("    -s, --sys-ver <ver>       Target System version (3.5|3.6|3.8|3.9(default))");
 	puts("    -u, --unicode             Generate Unicode output (can only be run on xsystem35)");
@@ -267,6 +269,7 @@ int main(int argc, char *argv[]) {
 	const char *output_ain = NULL;
 	const char *hed = NULL;
 	const char *var_list = NULL;
+	bool init_mode = false;
 
 	int opt;
 	while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
@@ -289,6 +292,9 @@ int main(int argc, char *argv[]) {
 			return 0;
 		case 'i':
 			hed = optarg;
+			break;
+		case 'I':
+			init_mode = true;
 			break;
 		case 'o':
 			ald_basename = optarg;
@@ -315,6 +321,9 @@ int main(int argc, char *argv[]) {
 	}
 	argc -= optind;
 	argv += optind;
+
+	if (init_mode)
+		return init_project(project, hed, ald_basename);
 
 	if (project) {
 		FILE *fp = checked_fopen(project, "r");
@@ -359,4 +368,5 @@ int main(int argc, char *argv[]) {
 	Vector *vars = var_list ? read_var_list(var_list) : NULL;
 
 	build(srcs, vars, dlls, ald_basename, output_ain);
+	return 0;
 }

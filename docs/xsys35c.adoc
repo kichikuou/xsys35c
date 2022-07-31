@@ -12,6 +12,7 @@ xsys35c - System 3.x compiler
 *xsys35c* [_options_] --project _cfgfile_
 *xsys35c* [_options_] --hed _hedfile_
 *xsys35c* [_options_] _advfile_...
+*xsys35c* [_options_] --init
 
 == Description
 `xsys35c` is a compiler for AliceSoft's System 3.x game engine.
@@ -28,6 +29,9 @@ xsys35c - System 3.x compiler
 
 *xsys35c* [_options_] _advfile_...::
   This form compiles the source files listed in the command line.
+
+*xsys35c* [_options_] --init::
+  This form creates a new xsys35c project in current directory.
 
 == Options
 *-a, --ain*=_file_::
@@ -48,6 +52,13 @@ xsys35c - System 3.x compiler
 
 *-h, --help*::
   Display help message about `xsys35c` and exit.
+
+*-I, --init*::
+  Creates a new project in current directory. This includes a project
+  configuration file, a compile header file, and a sample source file. Other
+  command line options are reflected in the project settings. For example,
+  *xsys35c --init --sys-ver=3.8* will generate a project that targets System
+  3.8.
 
 *-p, --project*=_file_::
   Read project configuration from _file_.
