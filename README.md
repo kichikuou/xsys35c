@@ -91,7 +91,7 @@ The decompiled source files will be generated in the `decompiled` directory. Edi
 
 Once you've finished editing the source files, you can compile them back to the .ALD (and .ain if any) using the following command:
 ```
-xsys35c -p decompiled/xsys35c.cfg -o out.ALD -a out.ain
+xsys35c -p decompiled/xsys35c.cfg -o foo -a System39.ain
 ```
 
 Alternatively, you can use `xsys35c` and `xsys35dc` from
