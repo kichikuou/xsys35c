@@ -2,7 +2,22 @@ project('xsys35c', 'c')
 fs = import('fs')
 
 is_windows = host_machine.system() == 'windows'
-png = dependency('libpng', static : is_windows)
+
+if host_machine.system() == 'emscripten'
+  png = declare_dependency(compile_args : ['-s', 'USE_LIBPNG=1'], link_args : ['-s', 'USE_LIBPNG=1'])
+  common_link_args = [
+    '-s', 'ENVIRONMENT=node',
+    '-s', 'MODULARIZE',
+    '-s', 'EXIT_RUNTIME',
+    '-s', 'ALLOW_MEMORY_GROWTH',
+    '-s', 'EXPORTED_RUNTIME_METHODS=["FS","NODEFS"]',
+    '-O' + get_option('optimization'),
+    '-lnodefs.js'
+  ]
+else
+  png = dependency('libpng', static : is_windows)
+  common_link_args = []
+endif
 
 #
 # common
@@ -18,7 +33,7 @@ common_srcs = [
 ]
 
 libcommon = static_library('common', common_srcs, include_directories : inc)
-common = declare_dependency(include_directories : inc, link_with : libcommon)
+common = declare_dependency(include_directories : inc, link_with : libcommon, link_args : common_link_args)
 
 common_tests_srcs = [
   'common/ald_test.c',
