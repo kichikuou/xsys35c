@@ -1001,6 +1001,7 @@ static bool command(void) {
 	case CMD3('L', 'X', 'R'): arguments("eve"); break;
 	case CMD3('L', 'X', 'S'): arguments("evv"); break;
 	case CMD3('L', 'X', 'W'): arguments("eve"); break;
+	case CMD3('L', 'X', 'X'): arguments("eev"); break;
 	case CMD2('L', 'L'): arguments("neee"); break;
 	case CMD2('L', 'P'): arguments("eve"); break;
 	case CMD2('L', 'T'): arguments("ev"); break;
