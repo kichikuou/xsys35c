@@ -156,7 +156,7 @@ static void add_file(Vector *ald, int volume, const char *path) {
 	fclose(fp);
 
 	AldEntry *e = calloc(1, sizeof(AldEntry));
-	e->name = strdup(basename(path));
+	e->name = strdup(basename_utf8(path));
 	e->timestamp = sbuf.st_mtime;
 	e->data = data;
 	e->size = sbuf.st_size;

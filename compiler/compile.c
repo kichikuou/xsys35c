@@ -102,7 +102,7 @@ static void expr_prim(void) {
 		const char *top = input;
 		char *fname = get_filename();
 		for (int i = 0; i < compiler->src_paths->len; i++) {
-			if (!strcasecmp(fname, basename(compiler->src_paths->data[i]))) {
+			if (!strcasecmp(fname, basename_utf8(compiler->src_paths->data[i]))) {
 				emit_number(out, i);
 				return;
 			}
@@ -1476,7 +1476,7 @@ Sco *compile(Compiler *comp, const char *source, int pageno) {
 
 	comp->scos[pageno].ald_volume = 1;
 	out = new_buf();
-	sco_init(out, basename(comp->src_paths->data[pageno]), pageno);
+	sco_init(out, basename_utf8(comp->src_paths->data[pageno]), pageno);
 	if (comp->dbg_info)
 		debug_init_page(comp->dbg_info, pageno);
 

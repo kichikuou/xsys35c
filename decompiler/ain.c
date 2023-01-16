@@ -134,7 +134,7 @@ Ain *ain_read(const char *path) {
 		*p = *p << 2 | *p >> 6;
 
 	Ain *ain = calloc(1, sizeof(Ain));
-	ain->filename = basename(path);
+	ain->filename = basename_utf8(path);
 	ain->version = version;
 
 	input += 8;

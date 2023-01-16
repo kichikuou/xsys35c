@@ -130,7 +130,7 @@ static Vector *read_var_list(const char *path) {
 
 static void read_hed(const char *path, Vector *sources, Map *dlls) {
 	char *buf = read_file(path);
-	char *dir = dirname(path);
+	char *dir = dirname_utf8(path);
 	enum { INITIAL, SYSTEM35, DLLHeader } section = INITIAL;
 
 	char *line;
@@ -227,7 +227,7 @@ static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *a
 		Sco *sco = compile(compiler, source, i);
 		AldEntry *e = calloc(1, sizeof(AldEntry));
 		e->volume = sco->ald_volume;
-		e->name = utf2sjis_sub(sconame(basename(srcs->keys->data[i])), '?');
+		e->name = utf2sjis_sub(sconame(basename_utf8(srcs->keys->data[i])), '?');
 		e->timestamp = time(NULL);
 		e->data = sco->buf->buf;
 		e->size = sco->buf->len;
@@ -327,7 +327,7 @@ int main(int argc, char *argv[]) {
 
 	if (project) {
 		FILE *fp = checked_fopen(project, "r");
-		load_config(fp, dirname(project));
+		load_config(fp, dirname_utf8(project));
 		fclose(fp);
 	} else if (!hed && argc == 0) {
 		FILE *fp = fopen("xsys35c.cfg", "r");
@@ -345,12 +345,12 @@ int main(int argc, char *argv[]) {
 		var_list = config.var_list;
 	if (!ald_basename) {
 		ald_basename = config.ald_basename ? config.ald_basename
-			: project ? path_join(dirname(project), DEFAULT_ALD_BASENAME)
+			: project ? path_join(dirname_utf8(project), DEFAULT_ALD_BASENAME)
 			: DEFAULT_ALD_BASENAME;
 	}
 	if (!output_ain) {
 		output_ain = config.output_ain ? config.output_ain
-			: project ? path_join(dirname(project), DEFAULT_OUTPUT_AIN)
+			: project ? path_join(dirname_utf8(project), DEFAULT_OUTPUT_AIN)
 			: DEFAULT_OUTPUT_AIN;
 	}
 

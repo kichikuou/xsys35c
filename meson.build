@@ -39,6 +39,7 @@ common_tests_srcs = [
   'common/ald_test.c',
   'common/common_tests.c',
   'common/sjisutf_test.c',
+  'common/util_test.c',
 ]
 
 common_tests = executable('common_tests', common_tests_srcs, dependencies : common)

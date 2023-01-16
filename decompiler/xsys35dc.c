@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
 		if (len >= 6 && !strcasecmp(argv[i] + len - 6, "sa.ald")) {
 			char *s = strdup(argv[i]);
 			s[len - 6] = '\0';
-			ald_basename = basename(s);
+			ald_basename = basename_utf8(s);
 		}
 	}
 

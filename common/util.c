@@ -99,28 +99,58 @@ int checked_open(const char *path_utf8, int oflag) {
 	return fd;
 }
 
-const char *basename(const char *path) {
-	char *p = strrchr(path, '/');
+static inline bool is_path_separator(char c) {
 #ifdef _WIN32
-	char *pp = strrchr(path, '\\');
-	if (pp && (!p || p < pp))
-		p = pp;
+	return c == '/' || c == '\\';
+#else
+	return c == '/';
 #endif
-	if (!p)
-		return path;
-	return p + 1;
 }
 
-char *dirname(const char *path) {
-	char *p = strrchr(path, '/');
+char *dirname_utf8(const char *path) {
+	char *buf = strdup(path);
+	char *s =
 #ifdef _WIN32
-	char *pp = strrchr(path, '\\');
-	if (pp && (!p || p < pp))
-		p = pp;
+		(isalpha(buf[0]) && buf[1] == ':') ? buf + 2 :
 #endif
-	if (!p)
+		buf;
+	if (!*s)
 		return ".";
-	return strndup_(path, p - path);
+
+	int i = strlen(s) - 1;
+	if (is_path_separator(s[i])) {
+		if (!i)
+			return buf;
+		i--;
+	}
+	while (!is_path_separator(s[i])) {
+		if (!i) {
+			strcpy(s, ".");
+			return buf;
+		}
+		i--;
+	}
+	if (i && is_path_separator(s[i]))
+		i--;
+	s[i+1] = '\0';
+	return buf;
+}
+
+char *basename_utf8(const char *path) {
+#ifdef _WIN32
+	if (isalpha(path[0]) && path[1] == ':')
+		path += 2;
+#endif
+	if (!*path)
+		return ".";
+
+	char *buf = strdup(path);
+	int i = strlen(buf) - 1;
+	if (i && is_path_separator(buf[i]))
+		buf[i--] = '\0';
+	while (i && !is_path_separator(buf[i-1]))
+		i--;
+	return buf + i;
 }
 
 static bool is_absolute_path(const char *path) {

@@ -47,8 +47,8 @@ noreturn void error(char *fmt, ...);
 FILE *checked_fopen(const char *path_utf8, const char *mode);
 int checked_open(const char *path_utf8, int oflag);
 
-const char *basename(const char *path);
-char *dirname(const char *path);
+char *basename_utf8(const char *path);
+char *dirname_utf8(const char *path);
 char *path_join(const char *dir, const char *path);
 int make_dir(const char *path);
 
