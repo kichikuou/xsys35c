@@ -96,9 +96,7 @@ static void write_manifest(Vector *ald, FILE *fp) {
 	for (int i = 0; i < ald->len; i++) {
 		AldEntry *e = ald->data[i];
 		if (e)
-			fprintf(fp, "%d,%s\n", e->volume, sjis2utf(e->name));
-		else
-			fputs("0\n", fp);
+			fprintf(fp, "%d,%d,%s\n", e->volume, i + 1, sjis2utf(e->name));
 	}
 }
 
@@ -143,7 +141,7 @@ static void help_create(void) {
 	puts("    -m, --manifest <file>    Read manifest from <file>");
 }
 
-static void add_file(Vector *ald, int volume, const char *path) {
+static void add_file(Vector *ald, int volume, int no, const char *path) {
 	FILE *fp = checked_fopen(path, "rb");
 	struct stat sbuf;
 	if (fstat(fileno(fp), &sbuf) < 0)
@@ -161,7 +159,7 @@ static void add_file(Vector *ald, int volume, const char *path) {
 	e->data = data;
 	e->size = sbuf.st_size;
 	e->volume = volume;
-	vec_push(ald, e);
+	vec_set(ald, no - 1, e);
 }
 
 static uint32_t add_files_from_manifest(Vector *ald, const char *manifest) {
@@ -169,29 +167,29 @@ static uint32_t add_files_from_manifest(Vector *ald, const char *manifest) {
 	char line[200];
 	int lineno = 0;
 	uint32_t vol_bits = 0;
+	int prev_link_no = 0;
 	while (fgets(line, sizeof(line), fp)) {
 		lineno++;
 		if (line[0] == '\n')
 			continue;
 		int volume;
+		int link_no;
 		char fname[200];
-		switch (sscanf(line, " %d, %s", &volume, fname)) {
-		case 0:
+		if (sscanf(line, " %d, %d, %s", &volume, &link_no, fname) == 3)  // NL5 format
+			prev_link_no = link_no;
+		else if (sscanf(line, " %d, %s", &volume, fname) == 2)  // NL4 format
+			link_no = ++prev_link_no;
+		else
 			error("%s:%d manifest syntax error", manifest, lineno);
-			break;
-		case 1:
-			if (volume == 0)
-				vec_push(ald, NULL);
-			else
-				error("%s:%d manifest syntax error", manifest, lineno);
-			break;
-		case 2:
-			if (volume < 1 || volume > 26)
-				error("%s:%d invalid volume id", manifest, lineno);
-			vol_bits |= 1 << volume;
-			add_file(ald, volume, fname);
-			break;
-		}
+
+		if (volume < 1 || volume > 26)
+			error("%s:%d invalid volume id %d", manifest, lineno, volume);
+		if (link_no < 1 || link_no > 65535)
+			error("%s:%d invalid link number %d", manifest, lineno, link_no);
+		if (link_no - 1 < ald->len && ald->data[link_no - 1])
+			error("%s:%d duplicated link number %d", manifest, lineno, link_no);
+		vol_bits |= 1 << volume;
+		add_file(ald, volume, link_no, fname);
 	}
 	fclose(fp);
 	return vol_bits;
@@ -238,7 +236,7 @@ static int do_create(int argc, char *argv[]) {
 		}
 	} else {
 		for (int i = 1; i < argc; i++)
-			add_file(entries, 1, argv[i]);
+			add_file(entries, 1, i, argv[i]);
 		FILE *fp = checked_fopen(ald_path, "wb");
 		ald_write(entries, 1, fp);
 		fclose(fp);

@@ -42,18 +42,20 @@ This form creates a new ALD archive containing the specified files.
 
 Usage: *ald create* _aldfile_ -m _manifest-file_
 
-This form creates a new ALD archive from the files listed in
-_manifest-file_. This form allows you to create multi-volume ALD archives.
-For example,
+In this form, _aldfile_ must end with "a.ald". This form creates a new ALD
+archive from the files listed in _manifest-file_. Here is an example of a
+manifest file:
 
-  1,file1.pms
-  1,file2.pms
-  2,file3.pms
+  1,001,cg001.qnt
+  1,002,cg002.qnt
+  2,003,cg003.qnt
 
-This manifest specifies that `file1.pms` and `file2.pms` is stored in the first
-volume (...A.ALD) and `file3.pms` is stored in the second volume (...B.ALD). In
-this form, _aldfile_ must end with "a.ald" (i.e. it must be a valid filename as
-first volume).
+The first number in each line is the volume number. Files with volume number 1
+are stored in `...a.ald`, files with volume number 2 are stored in `...b.ald`,
+and so on.
+
+The second number in each line is the link number. Game scripts specify assets
+by this number.
 
 === ald extract
 Usage: *ald extract* [_options_] _aldfile_... [--] [(_index_|_filename_)...]
