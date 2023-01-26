@@ -1114,6 +1114,7 @@ static bool command(void) {
 	case CMD2('S', 'S'): arguments("e"); break;
 	case CMD2('S', 'T'): arguments("e"); break;
 	case CMD2('S', 'U'): arguments("vv"); break;
+	case CMD2('S', 'V'): arguments("ee"); break;
 	case CMD2('S', 'W'): arguments("veee"); break;
 	case CMD2('S', 'X'):
 		subcommand_num();  // device
