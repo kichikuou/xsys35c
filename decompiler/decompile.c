@@ -119,7 +119,9 @@ static void dc_put_string_n(const char *s, int len, unsigned flags) {
 	const char *end = s + len;
 	while (s < end) {
 		uint8_t c = *s++;
-		if (isgraph(c) || c == '\t') {
+		if (c == '?' || c == 0x7f) {
+			// ignore?
+		} else if (isgraph(c) || c == '\t') {
 			if (flags & STRING_ESCAPE && (c == '\\' || c == '\'' || c == '"' || c == '<'))
 				dc_putc('\\');
 			dc_putc(c);
@@ -135,8 +137,6 @@ static void dc_put_string_n(const char *s, int len, unsigned flags) {
 			} else {
 				dc_putc(c);
 			}
-		} else if (c == 0xde || c == 0xdf) {  // Halfwidth (semi-)voiced sound mark
-			dc_putc(c);
 		} else {
 			assert(is_sjis_byte1(c));
 			uint8_t c2 = *s++;
@@ -181,6 +181,7 @@ static void page_name(int cmd) {
 	Cali *node = parse_cali(&dc.p, false);
 	if (!dc.out)
 		return;
+#if 0
 	if (node->type == NODE_NUMBER) {
 		int page = node->val;
 		if ((cmd != '%' || page != 0) && page < dc.scos->len) {
@@ -191,6 +192,7 @@ static void page_name(int cmd) {
 			}
 		}
 	}
+#endif
 	print_cali(node, dc.variables, dc.out);
 }
 
@@ -1109,7 +1111,7 @@ static void decompile_page(int page) {
 			uint8_t *mark_at_string_start = &sco->mark[dc.p - sco->data];
 			dc_putc('\'');
 			const uint8_t *begin = dc.p;
-			while (*dc.p == 0x20 || *dc.p > 0x80) {
+			while (*dc.p == 0x20 || *dc.p >= 0x7f || *dc.p == 0x3f) {
 				dc.p = advance_char(dc.p);
 				if (*mark_at(dc.page, dc_addr()) != 0)
 					break;
