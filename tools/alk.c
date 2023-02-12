@@ -320,7 +320,7 @@ static int do_help(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-	init(argc, argv);
+	init(&argc, &argv);
 
 	if (argc == 1) {
 		usage();

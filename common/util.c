@@ -31,25 +31,25 @@
 // 1970-01-01 - 1601-01-01 in 100ns
 #define EPOCH_DIFF_100NS 116444736000000000LL
 
+void init(int *pargc, char ***pargv) {
 #ifdef _WIN32
-static char *native_to_utf8(const char *native) {
-	int native_len = strlen(native);
-	wchar_t *wstr = malloc((native_len + 1) * sizeof(wchar_t));
-	if (!MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, native, -1, wstr, native_len + 1))
-		error("MultiByteToWideChar(\"%s\") failed with error code 0x%x", native, GetLastError());
-	int utf_len = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
-	char *utf = malloc(utf_len);
-	if (!WideCharToMultiByte(CP_UTF8, 0, wstr, -1, utf, utf_len, NULL, NULL))
-		error("WideCharToMultiByte(\"%s\") failed with error code 0x%x", native, GetLastError());
-	free(wstr);
-	return utf;
-}
-#endif
+	// Parse the command line and set utf8 strings to *pargv.
+	int argc;
+	LPWSTR cmdline = GetCommandLineW();
+	LPWSTR *argvw = CommandLineToArgvW(cmdline, &argc);
+	char **argv = calloc(argc + 1, sizeof(char *));
+	int buf_size = wcslen(cmdline) * 3 + 1;
+	char *buf = malloc(buf_size);
+	for (int i = 0; i < argc; i++) {
+		if (!WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, argvw[i], -1, buf, buf_size, NULL, NULL))
+			error("Invalid character in command line");
+		argv[i] = strdup(buf);
+	}
+	free(buf);
+	LocalFree(argvw);
+	*pargc = argc;
+	*pargv = argv;
 
-void init(int argc, char **argv) {
-#ifdef _WIN32
-	for (int i = 0; i < argc; i++)
-		argv[i] = native_to_utf8(argv[i]);
 	SetConsoleOutputCP(CP_UTF8);
 #endif
 }

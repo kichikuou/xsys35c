@@ -104,7 +104,7 @@ const char *to_utf8(const char *s) {
 }
 
 int main(int argc, char *argv[]) {
-	init(argc, argv);
+	init(&argc, &argv);
 
 	const char *outdir = NULL;
 	bool aindump = false;

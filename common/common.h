@@ -41,7 +41,7 @@ typedef enum {
 
 // util.c
 
-void init(int argc, char **argv);
+void init(int *argc, char ***argv);
 char *strndup_(const char *s, size_t n);
 noreturn void error(char *fmt, ...);
 FILE *checked_fopen(const char *path_utf8, const char *mode);

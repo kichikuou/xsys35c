@@ -437,7 +437,7 @@ static void qnt_info(const char *path) {
 }
 
 int main(int argc, char *argv[]) {
-	init(argc, argv);
+	init(&argc, &argv);
 
 	enum { DECODE, ENCODE, INFO } mode = DECODE;
 	const char *output_path = NULL;
