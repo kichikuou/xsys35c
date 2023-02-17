@@ -568,6 +568,15 @@ static bool funcall_with_args(void) {
 	uint16_t page = (sco->data[addr + 1] | sco->data[addr + 2] << 8) - 1;
 	uint32_t funcaddr = le32(sco->data + addr + 3);
 	Function *func = get_function(page, funcaddr);
+
+	if (argc > 20 && dc.page == 0 && func->argv[0] == 0) {
+		// These are probably not function arguments, but a variable
+		// initialization sequence at the beginning of the scenario.
+		annotate(sco->mark + (dc.p - sco->data), 0);  // Remove FUNCALL_TOP annotation
+		argc = 0;
+		was_not_funcall = true;
+	}
+
 	if (was_not_funcall) {
 		if (argc < func->argc) {
 			func->argv += func->argc - argc;
