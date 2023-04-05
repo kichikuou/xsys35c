@@ -4,6 +4,7 @@ fs = import('fs')
 is_windows = host_machine.system() == 'windows'
 
 if host_machine.system() == 'emscripten'
+  zlib = declare_dependency(compile_args : ['-s', 'USE_ZLIB=1'], link_args : ['-s', 'USE_ZLIB=1'])
   png = declare_dependency(compile_args : ['-s', 'USE_LIBPNG=1'], link_args : ['-s', 'USE_LIBPNG=1'])
   common_link_args = [
     '-s', 'ENVIRONMENT=node',
@@ -15,6 +16,7 @@ if host_machine.system() == 'emscripten'
     '-lnodefs.js'
   ]
 else
+  zlib = dependency('zlib')
   png = dependency('libpng', static : is_windows)
   common_link_args = []
 endif
@@ -101,7 +103,7 @@ ald = executable('ald', ['tools/ald.c'], dependencies : common, install : true)
 alk = executable('alk', ['tools/alk.c'], dependencies : common, install : true)
 vsp = executable('vsp', ['tools/vsp.c'], dependencies : [common, png, png_utils], install : true)
 pms = executable('pms', ['tools/pms.c'], dependencies : [common, png, png_utils], install : true)
-qnt = executable('qnt', ['tools/qnt.c'], dependencies : [common, png, png_utils], install : true)
+qnt = executable('qnt', ['tools/qnt.c'], dependencies : [common, png, png_utils, zlib], install : true)
 
 #
 # regression test
