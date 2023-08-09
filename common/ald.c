@@ -171,6 +171,8 @@ Vector *ald_read(Vector *entries, const char *path) {
 		error("%s: %s", path, strerror(errno));
 #else
 	uint8_t *p = malloc(sbuf.st_size);
+	if (!p)
+		error("cannot read %s: out of memory", path);
 	size_t bytes = 0;
 	while (bytes < sbuf.st_size) {
 		ssize_t ret = read(fd, p + bytes, sbuf.st_size - bytes);
