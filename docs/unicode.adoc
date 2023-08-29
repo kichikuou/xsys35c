@@ -1,50 +1,51 @@
-= Unicode mode
+= Unicode Mode
 
 This document explains how to use xsys35c to translate games into
-languages other than Japanese or English. To run such translated games,
+languages other than Japanese or English. To run these translated games,
 https://github.com/kichikuou/xsystem35-sdl2[xsystem35] is required.
 
 image:image/m17n.png[Example]
 
-== The `unicode` option
+== The `unicode` Option
 
 Normally, strings in AliceSoft's scenario files are stored in CP932, a Japanese
-character encoding used in Windows (it also covers English letters). xsys35c's
-`unicode` option allows you to output a scenario file in UTF-8 character
-encoding. The generated scenario does not work on the original System 3.x, but
-it works on xsystem35 and in which you can use languages other than Japanese or
-English.
+character encoding used in Windows (which also covers English letters). The
+`unicode` option in xsys35c allows you to output a scenario file encoded in
+UTF-8. The generated scenario will not be compatible with the original System
+3.x, but it will work with xsystem35, enabling the use of languages other than
+Japanese or English.
 
-== Translation workflow
+== Translation Workflow
 
-1. Decompile the game with xref:xsys35dc.adoc[`xsys35dc`].
-2. Open `xsys35c.cfg` file in the `decompiled` folder, and add the following
+1. Decompile the game using xref:xsys35dc.adoc[`xsys35dc`].
+2. Open the `xsys35c.cfg` file in the `decompiled` folder and add the following
    line:
 
      unicode = true
 
-3. Build the scenario file with xref:xsys35c.adoc[`xsys35c`]. The generated
-   scenario file has the same contents as the original, but is encoded in
-   UTF-8.
+3. Build the scenario file using xref:xsys35c.adoc[`xsys35c`]. The generated
+   scenario file will contain the same content as the original, but it will be
+   encoded in UTF-8.
 4. Overwrite the original scenario file with the generated one (don't forget to
-   back up the original file), and run it with `xsystem35`. It should just work
-   as before. (If not, report a bug!)
-5. Now you can put strings in the source files, in any languages. Modify the
-   source files and repeat the steps 3-4.
+   back up the original file) and run it using `xsystem35`. The game should
+   function as it did before. (If not, please report the bug!)
+5. You can now insert strings in any language into the source files. Modify the
+   source files and repeat steps 3-4.
 
 == Fonts
 
-The fonts come with xsystem35 only cover Japanese, so you will need to prepare a
-font for your language.
+The fonts included with xsystem35 cover only Japanese characters, so you'll
+need to provide a font that supports your target language.
 
-If you are translating from Japanese, it would be useful to have a font that
-covers both Japanese and your language while translating.
-http://unifoundry.com/unifont/index.html[GNU Unifont] is a good candidate,
-which is used in the example at the top of this document.
+If you're translating from Japanese, it would be beneficial to use a font that
+supports both Japanese and your target language.
+http://unifoundry.com/unifont/index.html[GNU Unifont] is a good candidate and
+is used in the example at the top of this document.
 
-To change the font in xsystem35, put the font files (`.ttf` or `.otf`) in the
-game folder (where `*.ALD` files are), and create a file named `.xsys35rc` in
-the same folder with the following contents (replace the file names):
+To change the font in xsystem35, place the font files (`.ttf` or `.otf`) in the
+game folder (where `*.ALD` files are located), and create a file named
+`.xsys35rc` in the same folder. Include the following contents in the file,
+replacing the font file names as necessary:
 
   ttfont_gothic: your-sans-serif-font.ttf
   ttfont_mincho: your-serif-font.ttf

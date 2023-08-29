@@ -18,16 +18,16 @@ ald - ALD archive utility
 *ald version*
 
 == Description
-`ald` manipulates ALD archive files.
+`ald` is a utility for manipulating ALD archive files.
 
 === ald list
 Usage: *ald list* _aldfile_...
 
-*ald list* lists files in the ALD archive. Since an ALD archive may consist of
-multiple files (`xxxA.ALD`, `xxxB.ALD`, ...), multiple ALD files can be
-specified.
+*ald list* displays the files in the ALD archive. Multiple ALD files can be
+specified, since an ALD archive may consist of multiple files (`xxxA.ALD`,
+`xxxB.ALD`, ...).
 
-The following information are displayed for each file in the archive:
+The following information is displayed for each file in the archive:
 
 * index
 * volume id (1 for `xxxA.ALD`, 2 for `xxxB.ALD`, etc.)
@@ -55,34 +55,37 @@ are stored in `...a.ald`, files with volume number 2 are stored in `...b.ald`,
 and so on.
 
 The second number in each line is the link number. Game scripts specify assets
-by this number.
+using this number.
 
 === ald extract
 Usage: *ald extract* [_options_] _aldfile_... [--] [(_index_|_filename_)...]
 
-*ald extract* extracts files from an ALD archive. Optionally you can pass a list
-of archive members to be processed, specified by _index_ or _filename_.
+*ald extract* extracts files from an ALD archive. Optionally, you can pass a
+list of archive members to be processed, specified by _index_ or _filename_.
 
-If `-m` option is given, this also generates a manifest file for the archive.
+If the `-m` option is given, this command will also generate a manifest file
+for the archive.
 
 === ald dump
 Usage: *ald dump* _aldfile_... [--] (_index_|_filename_)
 
-*ald dump* displays content of a file in the ALD archive, specified by _index_
-or _filename_, in hexadecimal bytes + SJIS-aware characters format.
+*ald dump* displays the content of a file in the ALD archive, specified by
+_index_ or _filename_, in hexadecimal bytes and SJIS-aware character format.
 
 === ald compare
 Usage: *ald compare* _aldfile1_ _aldfile2_
 
-*ald compare* compares contents of two ALD archives, ignoring timestamp
-differences and upper/lower case differences in file names.
+*ald compare* compares the contents of two ALD archives, ignoring timestamp
+differences and case differences in file names.
 
-Exit status is 0 if the two archives are equivalent, 1 if different.
+The exit status is 0 if the two archives are equivalent, and 1 if they are
+different.
 
 === ald help
 Usage: *ald help* [_command_]
 
-*ald help* displays help information about _command_ and exits.
+*ald help* displays help information for the specified _command_ and then
+exits.
 
 === ald version
 Usage: *ald version*
@@ -94,9 +97,9 @@ Usage: *ald version*
   (ald extract) Extract files into _dir_. (default: `.`)
 
 *-m, --manifest*=_file_::
-  * (ald create) Read manifest file from _file_.
-  * (ald extract) Write manifest file to _file_. It can be used to recreate
-    the ALD archive from extracted files.
+  * (ald create) Read the manifest file from _file_.
+  * (ald extract) Write the manifest file to _file_. This can be used to
+    recreate the ALD archive from the extracted files.
 
 == See also
 xref:alk.adoc[*alk(1)*]

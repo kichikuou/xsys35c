@@ -4,7 +4,7 @@
 :mansource: xsys35c
 
 == Name
-vsp, pms, qnt - utilities for VSP, PMS, QNT images
+vsp, pms, qnt - utilities for VSP, PMS, and QNT images
 
 == Synopsis
 [verse]
@@ -13,24 +13,25 @@ vsp, pms, qnt - utilities for VSP, PMS, QNT images
 *qnt* [_options_] _file_...
 
 == Description
-By default, *vsp*, *pms* and *qnt* commands convert VSP, PMS and QNT image
-files to PNG format, respectively.  If `-e` option is specified, these commands
-convert PNG files to VSP, PMS or QNT.
+By default, the *vsp*, *pms*, and *qnt* commands convert VSP, PMS, and QNT
+image files to PNG format, respectively. If the `-e` option is specified,
+these commands convert PNG files back to VSP, PMS, or QNT format.
 
-Output filename is the same as the input filename, with the extension changed
-to `.png`, `.vsp`, `.pms` or `.qnt`, depending on the destination format.
+The output filename will be the same as the input filename, but with the
+extension changed to `.png`, `.vsp`, `.pms`, or `.qnt`, depending on the
+destination format.
 
 == Options
 *-e, --encode*::
-  Encode PNG file(s) to VSP, PMS or QNT format.
+  Encode PNG file(s) to VSP, PMS, or QNT format.
 
 *-h, --help*::
-  Display help message about the command and exit.
+  Display a help message about the command and exit.
 
 *-i, --info*::
-  Print information about input files, such as image dimensions and default
-  display positions.  If this option is given, no image format conversion is
-  performed.
+  Print information about the input files, such as image dimensions and default
+  display positions. If this option is given, no image format conversion will
+  be performed.
 
 *-o, --output*=_filename_::
   Write the output to _filename_ (only valid if a single input file is
@@ -38,38 +39,39 @@ to `.png`, `.vsp`, `.pms` or `.qnt`, depending on the destination format.
 
 *-p, --position*=_x_,_y_::
   When encoding, set the default display position of the image to (_x_, _y_).
-  If omitted, the values in the `oFFs` chunk of the input PNG file is used.
+  If omitted, the values in the `oFFs` chunk of the input PNG file will be
+  used.
 
 *-v, --version*::
   Display the version number and exit.
 
 *--palette-bank*=_bank_::
-  (*vsp*) When encoding, set the palette bank to _bank_. Palette bank is a
+  (*vsp*) When encoding, set the palette bank to _bank_. The palette bank is a
   number between 0 and 15 that specifies which area of the system's 256-color
-  palette this 16-color image should use.  For example, an image with palette
-  bank 15 uses system palette from 240 to 255.
+  palette this 16-color image should use. For example, an image with a palette
+  bank of 15 uses the system palette ranging from 240 to 255.
 
 *--palette-mask*=_mask_::
-  (*pms*) When encoding, set the palette mask to _mask_. Palette mask is a
+  (*pms*) When encoding, set the palette mask to _mask_. The palette mask is a
   16-bit integer that specifies which area of this image's 256-color palette is
-  effective.  For example, an image with palette mask 0x7fff will overwrite the
-  system palette 0 to 239.
+  effective. For example, an image with a palette mask of 0x7fff will overwrite
+  system palette values from 0 to 239.
 
 *--system2*::
-  (*pms*) Read/write in the old PMS format, which was used in old (System2 -
-  System3) AliceSoft games.
+  (*pms*) Read/write in the legacy PMS format, which was used in older
+  (System2 - System3) AliceSoft games.
 
 == Examples
 
-The following converts _image.vsp_ to _image.png_:
+The following command converts _image.vsp_ to _image.png_:
 
   vsp image.vsp
 
-The following converts _image.png_ to _image.vsp_, and sets the default
+The following command converts _image.png_ to _image.vsp_ and sets the default
 position to (80, 50):
 
   vsp -e image.png -p 80,50
 
-To view information for all PMS files in current directory:
+To view information for all PMS files in the current directory:
 
   pms -i *.pms

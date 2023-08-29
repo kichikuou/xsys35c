@@ -10,50 +10,51 @@ xsys35dc - System 3.x decompiler
 *xsys35dc* [_options_] _aldfile_... [_system39.ain_]
 
 == Description
-`xsys35dc` is a decompiler for AliceSoft's System 3.x game engine. It reads a
-scenario file (usually with the suffix `SA.ALD`) and optionally a `System39.ain`
-file (for System 3.9 games), and generates source files that can be compiled
-with xref:xsys35c.adoc[*xsys35c(1)*] or the official System 3.x SDK.
+`xsys35dc` is a decompiler for AliceSoft's System 3.x game engine. It processes
+a scenario file (usually having the suffix `SA.ALD`) and, optionally, a
+`System39.ain` file (for System 3.9 games). It then generates source files that
+can be compiled using xref:xsys35c.adoc[*xsys35c(1)*] or the official System
+3.x SDK.
 
 == Options
 *-a, --address*::
-  Prefix each line with address.
+  Prefix each line with its address.
 
 *-d, --aindump*::
-  Dump the contents of _system39.ain_ file to standard output, in JSON format.
-  Decompilation will not be performed.
+  Output the contents of the _system39.ain_ file to standard output in JSON
+  format. Decompilation will not be executed.
 
 *-E, --encoding*=_enc_::
-  Specify text encoding of output files. Possible values are `sjis` and `utf8`
-  (default).
+  Specify the text encoding for output files. Possible values are `sjis` and
+  `utf8` (default).
 
 *-h, --help*::
-  Display help message about `xsys35dc` and exit.
+  Display a help message for `xsys35dc` and exit.
 
 *-o, --outdir*=_directory_::
-  Generate output files under _directory_. By default, output files are
-  generated in current directory.
+  Generate output files in the specified _directory_. By default, output files
+  are created in the current directory.
 
 *-s, --seq*::
-  Output ADV files with sequential filenames (`0.adv`, `1.adv`, ...) instead of
-  their original names.
+  Generate ADV files with sequential filenames (`0.adv`, `1.adv`, ...) instead
+  of using their original names.
 
 *-V, --verbose*::
-  Turn on verbose output.
+  Enable verbose output.
 
 *-v, --version*::
-  Display the `xsys35dc` version number and exit.
+  Display the version number of `xsys35dc` and exit.
 
 == Output
-In addition to System 3.x source files (`{asterisk}.ADV`), `xsys35dc` also generates
-`xsys35c.cfg` file which is a configuration file for
-xref:xsys35c.adoc[*xsys35c(1)*]. Using this, the original scenario file can be
-reconstructed by this command:
+In addition to generating System 3.x source files (`*.ADV`), `xsys35dc` also
+creates a `xsys35c.cfg` configuration file for use with
+xref:xsys35c.adoc[*xsys35c(1)*]. With this, the original scenario file can be
+recompiled using the following command:
 
   xsys35c -p xsys35c.cfg
 
-If you want to use the official System 3.x SDK, specify the generated
-`xsys35dc.hed` file in the `DIR.HED` file of your project directory.
+If you wish to use the official System 3.x SDK, specify the generated
+`xsys35dc.hed` file in the `DIR.HED` file within your project directory.
 
 == See also
 xref:xsys35c.adoc[*xsys35c(1)*], xref:ald.adoc[*ald(1)*]

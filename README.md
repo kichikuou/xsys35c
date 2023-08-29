@@ -1,7 +1,8 @@
 # System 3.x Compiler and Decompiler
 This is an open-source toolchain for AliceSoft's System 3.x game engine.
 
-The following games can be decompiled and then re-compiled to an ALD file that is equivalent to the original:
+The following games can be decompiled and then recompiled into an ALD file that
+is identical to the original:
 
 - Rance
 - Rance II
@@ -42,69 +43,76 @@ The following games can be decompiled and then re-compiled to an ALD file that i
 - 妻みぐい2
 - シェル・クレイル
 
-The following games cannot be decompiled or compiled yet:
-- None (Let me know if you find a title that does not (de)compile!)
-
 ## Download
-Prebuilt Windows executables can be found [here](https://github.com/kichikuou/xsys35c/releases).
+Prebuilt Windows executables are available
+[here](https://github.com/kichikuou/xsys35c/releases).
 
 ## Build & Install
-First install the dependencies (corresponding Debian package in parentheses):
+First, install the required dependencies (with corresponding Debian packages in
+parentheses):
 - meson (`meson`)
 - libpng (`libpng-dev`)
 - asciidoctor (`asciidoctor`) [optional, for generating manual pages]
 
-Then build the executables with meson.
+Then, build the executables using Meson:
 ```
 meson build
 ninja -C build
 ```
-This creates the following executables under the `build` directory:
-- `xsys35c` -- System 3.x compiler
-- `xsys35dc` -- System 3.x decompiler
-- `ald` -- ALD archive utility
-- `alk` -- ALK archive utility
-- `vsp` -- VSP image utility
-- `pms` -- PMS image utility
-- `qnt` -- QNT image utility
+This will create the following executables in the `build` directory:
+- `xsys35c` — System 3.x compiler
+- `xsys35dc` — System 3.x decompiler
+- `ald` — ALD archive utility
+- `alk` — ALK archive utility
+- `vsp` — VSP image utility
+- `pms` — PMS image utility
+- `qnt` — QNT image utility
 
-Optionally you can install these executables to your system, by:
+Optionally, you can install these executables on your system by running:
 ```
 sudo ninja -C build install
 ```
-If you want to install them in a custom directory, specify `--prefix=` when
-running meson.
+If you want to install them to a custom directory, specify the `--prefix=`
+option when running Meson.
 
 ## Basic Workflow
-Here are the steps for decompiling a game, editing the source, and compiling back to the scenario file.
+Here are the steps for decompiling a game, editing its source code, and
+recompiling it back to a scenario file.
 
-First, decompile the game by giving the scenario file (`*SA.ALD`) to `xsys35dc`.
+First, decompile the game by specifying the scenario file (`*SA.ALD`) as an
+argument for `xsys35dc`:
 ```
 xsys35dc -o decompiled fooSA.ALD
 ```
-If the game has a `System39.ain` file, provide it too to the command line:
+If the game includes a `System39.ain` file, provide that as well:
 ```
 xsys35dc -o decompiled fooSA.ALD System39.ain
 ```
 
-The decompiled source files will be generated in the `decompiled` directory. Edit them as you like.
+The decompiled source files will be generated in the `decompiled` directory.
+Edit them as you like.
 
-Once you've finished editing the source files, you can compile them back to the .ALD (and .ain if any) using the following command:
+Once you've finished editing, recompile the source files back to `.ALD` (and
+`.ain` if applicable) using the following command:
 ```
 xsys35c -p decompiled/xsys35c.cfg -o foo -a System39.ain
 ```
 
-Alternatively, you can use `xsys35c` and `xsys35dc` from
-[Visual Studio Code](https://code.visualstudio.com/). See
+Alternatively, you can use `xsys35c` and `xsys35dc` with
+[Visual Studio Code](https://code.visualstudio.com/). For more information, see
 [`vscode-system3x`](https://github.com/kichikuou/vscode-system3x).
 
-## Unicode mode
-Using the "Unicode mode" of xsys35c and [xsystem35](https://github.com/kichikuou/xsystem35-sdl2) (an open source implementation of System 3.x), you can translate games into many languages that are not supported by original System 3.x. See [docs/unicode.adoc](docs/unicode.adoc) for more information.
+## Unicode Mode
+By using the "Unicode Mode" in xsys35c and
+[xsystem35](https://github.com/kichikuou/xsystem35-sdl2) (an open-source
+implementation of System 3.x), you can translate games into many languages not
+supported by the original System 3.x. For more details, see
+[docs/unicode.adoc](docs/unicode.adoc).
 
-## Command Documentations
+## Command Documentation
 Here are the manuals for the commands:
 - [docs/xsys35c.adoc](docs/xsys35c.adoc)
 - [docs/xsys35dc.adoc](docs/xsys35dc.adoc)
 - [docs/ald.adoc](docs/ald.adoc)
 - [docs/alk.adoc](docs/alk.adoc)
-- [docs/vsp.adoc](docs/vsp.adoc) (see this for `pms` and `qnt` commands too)
+- [docs/vsp.adoc](docs/vsp.adoc) (also for `pms` and `qnt` commands)

@@ -20,9 +20,9 @@ alk - ALK archive utility
 === alk list
 Usage: *alk list* _alkfile_
 
-*alk list* lists files in the ALK archive.
+*alk list* lists the files in an ALK archive.
 
-The following information are displayed for each file in the archive:
+The following information is displayed for each file in the archive:
 
 * index
 * file type (guessed from the content)
@@ -32,13 +32,13 @@ The following information are displayed for each file in the archive:
 Usage: *alk create* _alkfile_ _file_...
 
 *alk create* creates a new ALK archive containing the specified files. The
-files are stored in the specified order.
+files are stored in the order specified.
 
 === alk extract
 Usage: *alk extract* [_options_] _alkfile_ [_index_...]
 
-*alk extract* extracts files from an ALK archive. Optionally you can pass a list
-of archive members to be processed, specified by _index_.
+*alk extract* extracts files from an ALK archive. Optionally, you can pass a
+list of archive members to be processed, specified by their _index_.
 
 === alk help
 Usage: *alk help* [_command_]

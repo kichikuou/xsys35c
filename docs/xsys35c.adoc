@@ -18,68 +18,68 @@ xsys35c - System 3.x compiler
 `xsys35c` is a compiler for AliceSoft's System 3.x game engine.
 
 *xsys35c* [_options_]::
-  If none of `--project`, `--hed` nor ADV files are specified, `xsys35c` reads
-  configuration from `xsys35c.cfg` in current directory.
+  If none of `--project`, `--hed`, or ADV files are specified, `xsys35c` reads
+  the configuration from `xsys35c.cfg` in the current directory.
 
 *xsys35c* [_options_] --project _cfgfile_::
-  This form runs a compile based on the configuration file _cfgfile_.
+  This form compiles based on the configuration file specified by _cfgfile_.
 
 *xsys35c* [_options_] --hed _hedfile_::
-  This form compiless files specified in the compile header file _hedfile_.
+  This form compiles files specified in the compile header file _hedfile_.
 
 *xsys35c* [_options_] _advfile_...::
   This form compiles the source files listed in the command line.
 
 *xsys35c* [_options_] --init::
-  This form creates a new xsys35c project in current directory.
+  This form creates a new xsys35c project in the current directory.
 
 == Options
 *-a, --ain*=_file_::
   Write AIN output to _file_. (default: `System39.ain`)
 
 *-o, --ald*=_name_::
-  Write ALD output to __name__``SA.ALD``, __name__``SB.ALD``, ... (default: `out`)
+  Write ALD output to __name__``SA.ALD``, __name__``SB.ALD``, ... (default:
+  `out`)
 
 *-g, --debug*::
   Generate debug information for xsystem35-sdl2.
 
 *-E, --encoding*=_enc_::
-  Specify text encoding of input files. Possible values are `sjis` and `utf8`
-  (default).
+  Specify the text encoding of input files. Possible values are `sjis` and
+  `utf8` (default).
 
 *-i, --hed*=_file_::
-  Read compile header file _file_.
+  Read the compile header file _file_.
 
 *-h, --help*::
-  Display help message about `xsys35c` and exit.
+  Display a help message about `xsys35c` and exit.
 
 *-I, --init*::
-  Creates a new project in current directory. This includes a project
+  Create a new project in the current directory. This includes a project
   configuration file, a compile header file, and a sample source file. Other
-  command line options are reflected in the project settings. For example,
-  *xsys35c --init --sys-ver=3.8* will generate a project that targets System
-  3.8.
+  command line options will be reflected in the project settings. For example,
+  *xsys35c --init --sys-ver=3.8* will generate a project targeting System 3.8.
 
 *-p, --project*=_file_::
   Read project configuration from _file_.
 
 *-s, --sys-ver*=_ver_::
-  Sets target System version. Available values are `3.5`, `3.6`, `3.8` and `3.9`
-  (default).
+  Set the target System version. Available values are `3.5`, `3.6`, `3.8`, and
+  `3.9` (default).
 
 *-u, --unicode*::
   Generate output in UTF-8 character encoding. See xref:unicode.adoc[Unicode
   Mode document] for details.
 
 *-V, --variables*=_file_::
-  Read list of variables from _file_.
+  Read the list of variables from _file_.
 
 *-v, --version*::
   Display the `xsys35c` version number and exit.
 
-== Project configuration file
+== Project Configuration File
 The project configuration file (`xsys35c.cfg`) specifies a compile header file
-and the other options used to compile the project. Here is an example
+and other options used for compiling the project. Here is an example
 configuration file:
 
   sys_ver = 3.9
@@ -88,13 +88,13 @@ configuration file:
 This instructs `xsys35c` to compile for System 3.9 using the compile header
 `comp.hed`.
 
-Relative paths in configuration file are resolved based on the directory of the
-configuration file.
+Relative paths in the configuration file are resolved based on the directory
+where the configuration file is located.
 
-== Compile header file
+== Compile Header File
 The compile header (`.hed`) file specifies a list of source files to compile. In
 System 3.9 games, it may also list dynamic link libraries used in the game. This
-file format is also used in the official System 3.x SDK.
+file format is also supported by the official System 3.x SDK.
 
 Here is an example compile header:
 
@@ -110,23 +110,23 @@ A compile header file starts with a `#SYSTEM35` line, followed by a list of
 source files. The order in the list is important; execution starts from the
 beginning of the first source file.
 
-Optionally, compile header file may have a `#DLLHeader` section. It lists DLL
-function declaration (`.hel`) files, and DLL files that should be loaded in
-runtime (because they are indirectly used by other DLLs).
+Optionally, a compile header file may include a `#DLLHeader` section. This
+section lists DLL function declaration (`.hel`) files and DLL files that should
+be loaded at runtime (because they are indirectly used by other DLLs).
 
-== Source file
-`xsys35c` accepts System 3.x source (`.adv`) files, in the same language that
-the official System 3.x SDK accepts.
+== Source File
+`xsys35c` accepts System 3.x source (`.adv`) files, in the same language as
+that supported by the official System 3.x SDK.
 
 Explaining the System 3.x language is beyond the scope of this document; please
 refer to the official SDK documentation. Another good way to learn about the
-language is to decompile an existing game with xref:xsys35dc.adoc[*xsys35dc(1)*],
-and look at the generated source files.
+language is to decompile an existing game using
+xref:xsys35dc.adoc[*xsys35dc(1)*], and examine the generated source files.
 
-== DLL function declaration file
-DLL function declaration (`.hel`) file contains a list of functions (and their
-argument types) exported by a DLL, in a format similar to a C function
-declaration. You probably won't need to modify this file, or create your own.
+== DLL Function Declaration File
+The DLL function declaration (`.hel`) file contains a list of functions (and
+their argument types) exported by a DLL, in a format similar to C function
+declarations. You probably won't need to modify or create this file.
 
-== See also
+== See Also
 xref:xsys35dc.adoc[*xsys35dc(1)*], xref:ald.adoc[*ald(1)*]
