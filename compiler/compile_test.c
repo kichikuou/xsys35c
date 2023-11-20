@@ -97,6 +97,9 @@ void compile_test(void) {
 	TEST("block-comment",
 		 "R/*A*A\nA*/R",
 		 "RR");
+	TEST("cmnt@lastline",
+		 "R ; no newline",
+		 "R");
 
 	TEST("data array",
 		 "[1, 0b100000000, 0xffff]",

@@ -67,15 +67,12 @@ void skip_whitespaces(void) {
 		} else if (isspace(*input)) {
 			input++;
 		} else if (*input == ';' || (*input == '/' && *(input+1) == '/')) {
-			char* input_test = strchr(input, '\n');
-			if (!input_test) {
+			char *newline = strchr(input, '\n');
+			if (!newline) {
 				// No newline at end of file.
-				input_test = strchr(input, '\0');
-				if (!input_test)
-					error_at(input, "cannot find null terminator");
-				input = input_test;
+				input = strchr(input, '\0');
 			} else {
-				input = input_test;
+				input = newline;
 			}
 		} else if (*input == '/' && *(input+1) == '*') {
 			const char* top = input;
