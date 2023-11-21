@@ -382,6 +382,10 @@ static void conditional(Vector *branch_end_stack) {
 	stack_push(branch_end_stack, endaddr);
 }
 
+bool is_branch_end(int addr, Vector *branch_end_stack) {
+	return branch_end_stack->len > 0 && stack_top(branch_end_stack) == addr;
+}
+
 static void defun(Function *f, const char *name) {
 	dc_puts("**");
 	dc_puts(name);
@@ -1057,7 +1061,7 @@ static void decompile_page(int page) {
 	while (dc.p < sco->data + sco->filesize) {
 		int topaddr = dc.p - sco->data;
 		uint8_t mark = sco->mark[dc.p - sco->data];
-		while (branch_end_stack->len > 0 && stack_top(branch_end_stack) == topaddr) {
+		while (is_branch_end(topaddr, branch_end_stack)) {
 			stack_pop(branch_end_stack);
 			dc.indent--;
 			assert(dc.indent > 0);
@@ -1124,7 +1128,7 @@ static void decompile_page(int page) {
 					break;
 			}
 			dc_put_string_n((const char *)begin, dc.p - begin, STRING_ESCAPE | STRING_EXPAND);
-			dc_puts("'\n");
+			dc_putc('\'');
 			if (*dc.p == '\0') {
 				// String data in code area. This happens when the author
 				// accidentally use double quotes instead of single quotes.
@@ -1132,7 +1136,14 @@ static void decompile_page(int page) {
 				dc.p++;
 			} else {
 				*mark_at_string_start |= CODE;
+				// Print subsequent R/A command on the same line if possible.
+				if ((*dc.p == 'R' || *dc.p == 'A') &&
+					!is_branch_end(dc_addr(), branch_end_stack) &&
+					!(sco->mark[dc.p - sco->data] & ~CODE)) {
+					dc_putc(*dc.p++);
+				}
 			}
+			dc_putc('\n');
 			continue;
 		}
 		sco->mark[dc.p - sco->data] |= CODE;
