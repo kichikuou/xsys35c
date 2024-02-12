@@ -67,13 +67,8 @@ void skip_whitespaces(void) {
 		} else if (isspace(*input)) {
 			input++;
 		} else if (*input == ';' || (*input == '/' && *(input+1) == '/')) {
-			char *newline = strchr(input, '\n');
-			if (!newline) {
-				// No newline at end of file.
-				input = strchr(input, '\0');
-			} else {
-				input = newline;
-			}
+			// This is safe because the input is guaranteed to end with "\n\0".
+			input = strchr(input, '\n');
 		} else if (*input == '/' && *(input+1) == '*') {
 			const char* top = input;
 			do {
