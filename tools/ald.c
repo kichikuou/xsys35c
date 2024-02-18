@@ -30,13 +30,14 @@ static void usage(void) {
 	puts("Usage: ald <command> [<args>]");
 	puts("");
 	puts("commands:");
-	puts("  list     Print list of archive files");
-	puts("  create   Create a new archive");
-	puts("  extract  Extract file(s) from archive");
-	puts("  dump     Print hex dump of file");
-	puts("  compare  Compare contents of two archives");
-	puts("  help     Display help information about commands");
-	puts("  version  Display version information and exit");
+	puts("  list        Print list of archive files");
+	puts("  create      Create a new archive");
+	puts("  extract     Extract file(s) from archive");
+	puts("  dump        Print hex dump of file");
+	puts("  dump-index  Print contents of link table");
+	puts("  compare     Compare contents of two archives");
+	puts("  help        Display help information about commands");
+	puts("  version     Display version information and exit");
 	puts("");
 	puts("Run 'ald help <command>' for more information about a specific command.");
 }
@@ -404,6 +405,43 @@ static int do_dump(int argc, char *argv[]) {
 	return 0;
 }
 
+// ald dump-index ----------------------------------------
+
+static void help_dump_index(void) {
+	puts("Usage: ald dump-index <aldfile>...");
+}
+
+static int do_dump_index(int argc, char *argv[]) {
+	if (argc == 1) {
+		help_dump_index();
+		return 1;
+	}
+	for (int i = 1; i < argc; i++) {
+		FILE *fp = checked_fopen(argv[i], "rb");
+		uint8_t hdr[6];
+		if (fread(hdr, 6, 1, fp) != 1)
+			error("%s: %s", argv[i], strerror(errno));
+		int linktbl_begin = hdr[0] << 8 | hdr[1] << 16 | hdr[2] << 24;
+		int linktbl_end = hdr[3] << 8 | hdr[4] << 16 | hdr[5] << 24;
+
+		fseek(fp, linktbl_begin, SEEK_SET);
+		int n = (linktbl_end - linktbl_begin) / 3;
+		for (int j = 0; j < n; j++) {
+			uint8_t link[3];
+			if (fread(link, 3, 1, fp) != 1)
+				error("%s: %s", argv[i], strerror(errno));
+			if ((link[0] | link[1] | link[2]) == 0)
+				continue;
+			if (argc > 2)
+				printf("%s\t", argv[i]);
+			printf("%d\t%d\t%d\n", j + 1, link[0], link[1] | link[2] << 8);
+		}
+
+		fclose(fp);
+	}
+	return 0;
+}
+
 // ald compare ----------------------------------------
 
 static void help_compare(void) {
@@ -493,13 +531,14 @@ typedef struct {
 } Command;
 
 static Command commands[] = {
-	{"list",    do_list,    help_list},
-	{"create",  do_create,  help_create},
-	{"extract", do_extract, help_extract},
-	{"dump",    do_dump,    help_dump},
-	{"compare", do_compare, help_compare},
-	{"help",    do_help,    help_help},
-	{"version", do_version, help_version},
+	{"list",       do_list,       help_list},
+	{"create",     do_create,     help_create},
+	{"extract",    do_extract,    help_extract},
+	{"dump",       do_dump,       help_dump},
+	{"dump-index", do_dump_index, help_dump_index},
+	{"compare",    do_compare,    help_compare},
+	{"help",       do_help,       help_help},
+	{"version",    do_version,    help_version},
 	{NULL, NULL, NULL}
 };
 

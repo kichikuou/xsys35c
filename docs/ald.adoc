@@ -13,6 +13,7 @@ ald - ALD archive utility
 *ald create* _aldfile_ -m _manifest-file_
 *ald extract* [_options_] _aldfile_... [--] [(_index_|_filename_)...]
 *ald dump* _aldfile_... [--] (_index_|_filename_)
+*ald dump-index* _aldfile_...
 *ald compare* _aldfile1_ _aldfile2_
 *ald help* [_command_]
 *ald version*
@@ -71,6 +72,12 @@ Usage: *ald dump* _aldfile_... [--] (_index_|_filename_)
 
 *ald dump* displays the content of a file in the ALD archive, specified by
 _index_ or _filename_, in hexadecimal bytes and SJIS-aware character format.
+
+=== ald dump-index
+Usage: *ald dump-index* _aldfile_...
+
+*ald dump-index* displays the content of the link table in the ALD archive.
+It is useful for inspecting malformed ALD archives.
 
 === ald compare
 Usage: *ald compare* _aldfile1_ _aldfile2_
