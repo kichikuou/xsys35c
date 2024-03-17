@@ -685,7 +685,7 @@ static void loop_end(Vector *branch_end_stack) {
 	case '<':
 		break;
 	default:
-		error("Unexpected loop structure");
+		error_at(dc.p - 5, "Broken loop structure (address %x is not a valid loop start)", addr);
 	}
 }
 
