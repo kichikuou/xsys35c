@@ -4,14 +4,14 @@ fs = import('fs')
 is_windows = host_machine.system() == 'windows'
 
 if host_machine.system() == 'emscripten'
-  zlib = declare_dependency(compile_args : ['-s', 'USE_ZLIB=1'], link_args : ['-s', 'USE_ZLIB=1'])
-  png = declare_dependency(compile_args : ['-s', 'USE_LIBPNG=1'], link_args : ['-s', 'USE_LIBPNG=1'])
+  zlib = declare_dependency(compile_args : ['-sUSE_ZLIB=1'], link_args : ['-sUSE_ZLIB=1'])
+  png = declare_dependency(compile_args : ['-sUSE_LIBPNG=1'], link_args : ['-sUSE_LIBPNG=1'])
   common_link_args = [
-    '-s', 'ENVIRONMENT=node',
-    '-s', 'MODULARIZE',
-    '-s', 'EXIT_RUNTIME',
-    '-s', 'ALLOW_MEMORY_GROWTH',
-    '-s', 'EXPORTED_RUNTIME_METHODS=["FS","NODEFS"]',
+    '-sENVIRONMENT=node',
+    '-sMODULARIZE',
+    '-sEXIT_RUNTIME',
+    '-sALLOW_MEMORY_GROWTH',
+    '-sEXPORTED_RUNTIME_METHODS=FS,NODEFS',
     '-O' + get_option('optimization'),
     '-lnodefs.js'
   ]
