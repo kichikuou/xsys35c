@@ -45,7 +45,8 @@ is identical to the original:
 
 ## Download
 Prebuilt Windows executables are available
-[here](https://github.com/kichikuou/xsys35c/releases).
+[here](https://github.com/kichikuou/xsys35c/releases). The 64-bit version
+supports Windows 10 or later. For older Windows, please use the 32-bit version.
 
 ## Build & Install
 First, install the required dependencies (with corresponding Debian packages in
@@ -56,7 +57,7 @@ parentheses):
 
 Then, build the executables using Meson:
 ```
-meson build
+meson setup build
 ninja -C build
 ```
 This will create the following executables in the `build` directory:
