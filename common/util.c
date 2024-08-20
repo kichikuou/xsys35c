@@ -173,11 +173,14 @@ char *path_join(const char *dir, const char *path) {
 	return buf;
 }
 
-int make_dir(const char *path) {
+int make_dir(const char *path_utf8) {
 #if defined(_WIN32)
-	return _mkdir(path);
+	wchar_t wpath[PATH_MAX + 1];
+	if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path_utf8, -1, wpath, PATH_MAX + 1))
+		error("MultiByteToWideChar(\"%s\") failed with error code 0x%x", path_utf8, GetLastError());
+	return _wmkdir(wpath);
 #else
-	return mkdir(path, 0777);
+	return mkdir(path_utf8, 0777);
 #endif
 }
 

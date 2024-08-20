@@ -50,7 +50,7 @@ int checked_open(const char *path_utf8, int oflag);
 char *basename_utf8(const char *path);
 char *dirname_utf8(const char *path);
 char *path_join(const char *dir, const char *path);
-int make_dir(const char *path);
+int make_dir(const char *path_utf8);
 
 extern uint16_t fgetw(FILE *fp);
 extern uint32_t fgetdw(FILE *fp);
