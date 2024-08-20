@@ -300,7 +300,6 @@ static void qnt_to_png(const char *qnt_path, const char *png_path) {
 
 	if (!rows) {
 		fprintf(stderr, "%s: no pixel nor alpha data\n", qnt_path);
-		fclose(fp);
 		return;
 	}
 
