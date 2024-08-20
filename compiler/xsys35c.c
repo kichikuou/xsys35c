@@ -126,6 +126,9 @@ static Vector *read_var_list(const char *path) {
 	char *line;
 	while ((line = next_line(&buf)) != NULL)
 		vec_push(vars, trim_right(line));
+	// Drop empty lines at the end
+	while (vars->len > 0 && !((char *)vars->data[vars->len - 1])[0])
+		vars->len--;
 	return vars;
 }
 
