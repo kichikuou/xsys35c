@@ -1,7 +1,7 @@
 = xsys35c(1)
 :doctype: manpage
 :manmanual: xsys35c manual
-:mansource: xsys35c
+:mansource: xsys35c {xsys35c-version}
 
 == Name
 xsys35c - System 3.x compiler

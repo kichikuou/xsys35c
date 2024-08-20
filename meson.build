@@ -1,6 +1,7 @@
 project('xsys35c', 'c')
 fs = import('fs')
 
+xsys35c_version = '1.10.0'
 is_windows = host_machine.system() == 'windows'
 
 if host_machine.system() == 'emscripten'
@@ -141,7 +142,8 @@ if asciidoctor.found()
       custom_target(manpages[0],
         output : manpages,
         input : adoc,
-        command : [asciidoctor, '-b', 'manpage', '@INPUT@', '-o', '@OUTPUT0@'],
+        command : [asciidoctor, '-b', 'manpage', '@INPUT@', '-o', '@OUTPUT0@',
+                   '-a', 'xsys35c-version=' + xsys35c_version],
         install : true,
         install_dir : get_option('mandir') / 'man1')
     endif

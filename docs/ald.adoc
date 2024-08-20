@@ -1,7 +1,7 @@
 = ald(1)
 :doctype: manpage
 :manmanual: xsys35c manual
-:mansource: xsys35c
+:mansource: xsys35c {xsys35c-version}
 
 == Name
 ald - ALD archive utility
