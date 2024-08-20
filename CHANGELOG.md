@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.11.0 - 2024-08-20
+- `ald`: Added `dump-index` subcommand which is useful for inspecting malformed ALD archives.
+- Fixed character encoding issues when non-ASCII output directory name is specified with `xsys35dc -o` or `ald extract -d`.
+
 ## 1.10.0 - 2023-11-21
 Now the 64-bit version supports Windows 10 or later. For older Windows, please use the 32-bit version.
 - Compiler: Fixed crash when the last line of ADV was a comment without a newline. (#8)
