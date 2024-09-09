@@ -223,6 +223,8 @@ static bool is_string_data(const uint8_t *begin, const uint8_t *end, bool should
 		if (config.utf8_input) {
 			const uint8_t *next;
 			if (*p <= 0x7f) {
+				if (!isprint(*p))
+					return false;
 				next = p + 1;
 			} else if (p[0] <= 0xdf) {
 				next = p + 2;
