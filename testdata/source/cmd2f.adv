@@ -1,38 +1,38 @@
 **cmd2f_20:
-	!VAR0 : 0!
+	!RND : 0!
 	TOC:
 	TOS:
 	TPC 0:
 	TPS 0:
 	TOP:
 	TPP:
-	inc VAR0:
-	dec VAR0:
+	inc RND:
+	dec RND:
 	TAA 0:
-	TAB VAR0:
+	TAB RND:
 	wavLoad 0, 0:
 	wavPlay 0, 0:
 	wavStop 0:
 	wavUnload 0:
-	wavIsPlay 0, VAR0:
+	wavIsPlay 0, RND:
 	wavFade 0, 0, 0, 0:
-	wavIsFade 0, VAR0:
+	wavIsFade 0, RND:
 	wavStopFade 0:
 	trace "a":
 	wav3DSetPos 0, 0, 0, 0:
 	wav3DCommit:
-	wav3DGetPos 0, VAR0, VAR0, VAR0:
+	wav3DGetPos 0, RND, RND, RND:
 	wav3DSetPosL 0, 0, 0:
-	wav3DGetPosL VAR0, VAR0, VAR0:
+	wav3DGetPosL RND, RND, RND:
 	wav3DFadePos 0, 0, 0, 0, 0:
-	wav3DIsFadePos 0, VAR0:
+	wav3DIsFadePos 0, RND:
 	wav3DStopFadePos 0:
 	wav3DFadePosL 0, 0, 0, 0:
-	wav3DIsFadePosL VAR0:
+	wav3DIsFadePosL RND:
 	wav3DStopFadePosL:
 	sndPlay 0, 0:
 	sndStop:
-	sndIsPlay VAR0:
+	sndIsPlay RND:
 	'a'
 	HH 0, 0:
 	LC 0, 0, "a":
@@ -46,9 +46,9 @@
 	UP2 "a", "a":
 	F 1, 0, 0:
 	wavWaitTime 0, 0:
-	wavGetPlayPos 0, VAR0:
+	wavGetPlayPos 0, RND:
 	wavWaitEnd 0:
-	wavGetWaveTime 0, VAR0:
+	wavGetWaveTime 0, RND:
 	menuSetCbkSelect cmd2f_20:
 	menuSetCbkCancel cmd2f_20:
 	menuClearCbkSelect:
@@ -57,15 +57,15 @@
 	grCopyStretch 0, 0, 0, 0, 0, 0, 0, 0, 0:
 	grFilterRect 0, 0, 0, 0, 0:
 	iptClearWheelCount:
-	iptGetWheelCount VAR0, VAR0:
-	menuGetFontSize VAR0:
-	msgGetFontSize VAR0:
-	strGetCharType 0, 0, VAR0:
-	strGetLengthASCII 0, VAR0:
+	iptGetWheelCount RND, RND:
+	menuGetFontSize RND:
+	msgGetFontSize RND:
+	strGetCharType 0, 0, RND:
+	strGetLengthASCII 0, RND:
 	sysWinMsgLock:
 	sysWinMsgUnlock:
-	aryCmpCount VAR0, 0, 0, VAR0:
-	aryCmpTrans VAR0, 0, 0, 0, 0, VAR0:
+	aryCmpCount RND, 0, 0, RND:
+	aryCmpTrans RND, 0, 0, 0, 0, RND:
 	grBlendColorRect 0, 0, 0, 0, 0, 0, 0, 0, 0:
 	grDrawFillCircle 0, 0, 0, 0:
 	MHH 0, 0, 0:
@@ -75,7 +75,7 @@
 	sysOpenShell "a":
 	sysAddWebMenu "a", "a":
 	iptSetMoveCursorTime 0:
-	iptGetMoveCursorTime VAR0:
+	iptGetMoveCursorTime RND:
 	grBlt 0, 0, 0, 0, 0, 0:
 	LXWT 0, "a":
 	LXWS 0, 0:
@@ -85,11 +85,11 @@
 	sysGetOSName 0:
 	patchEC 0:
 	mathSetClipWindow 0, 0, 0, 0:
-	mathClip VAR0, VAR0, VAR0, VAR0, VAR0, VAR0:
+	mathClip RND, RND, RND, RND, RND, RND:
 	LXF 0, "a", "a":
-	strInputDlg "a", 0, 0, VAR0:
-	strCheckASCII 0, VAR0:
-	strCheckSJIS 0, VAR0:
+	strInputDlg "a", 0, 0, RND:
+	strCheckASCII 0, RND:
+	strCheckSJIS 0, RND:
 	strMessageBox "a":
 	strMessageBoxStr 0:
 	grCopyUseAMapUseA 0, 0, 0, 0, 0, 0, 0:
@@ -98,40 +98,40 @@
 	cgSetCacheSize 0:
 	gaijiSet 0, 0:
 	gaijiClearAll:
-	menuGetLatestSelect VAR0:
-	lnkIsLink 0, 0, VAR0:
-	lnkIsData 0, 0, VAR0:
+	menuGetLatestSelect RND:
+	lnkIsLink 0, 0, RND:
+	lnkIsData 0, 0, RND:
 	fncSetTable 0, cmd2f_20:
-	fncSetTableFromStr 0, 0, VAR0:
+	fncSetTableFromStr 0, 0, RND:
 	fncClearTable 0:
 	fncCall 0:
 	fncSetReturnCode 0:
-	fncGetReturnCode VAR0:
+	fncGetReturnCode RND:
 	msgSetOutputFlag 0:
-	saveDeleteFile 0, VAR0:
+	saveDeleteFile 0, RND:
 	wav3DSetUseFlag 0:
 	wavFadeVolume 0, 0, 0, 0:
 	patchEMEN 0:
 	wmenuEnableMsgSkip 0:
-	winGetFlipFlag VAR0:
-	cdGetMaxTrack VAR0:
-	dlgErrorOkCancel "a", VAR0:
+	winGetFlipFlag RND:
+	cdGetMaxTrack RND:
+	dlgErrorOkCancel "a", RND:
 	menuReduce 0:
-	menuGetNumof VAR0:
+	menuGetNumof RND:
 	menuGetText 0, 0:
 	menuGoto 0, 0:
 	menuReturnGoto 0, 0:
 	menuFreeShelterDIB:
 	msgFreeShelterDIB:
-	dataGetWORD VAR0, 0:
+	dataGetWORD RND, 0:
 	dataGetString 0, 0:
 	dataSkipWORD 0:
 	dataSkipString 0:
-	varGetNumof VAR0:
+	varGetNumof RND:
 	patchG0 0:
-	regReadString 0, 0, 0, VAR0:
-	fileCheckExist 0, VAR0:
-	timeCheckCurDate 0, 0, 0, VAR0:
+	regReadString 0, 0, 0, RND:
+	fileCheckExist 0, RND:
+	timeCheckCurDate 0, 0, 0, RND:
 	dlgManualProtect "a", "a":
-	fileCheckDVD "a", 0, 0, "a", VAR0:
+	fileCheckDVD "a", 0, 0, "a", RND:
 	sysReset:

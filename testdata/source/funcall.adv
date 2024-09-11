@@ -1,8 +1,8 @@
-	!VAR0 : 0!
-	!VAR1 : 0!
-	!VAR2 : 0!
-**funcall_2c VAR1:
-	!VAR0 : 0!
+	!RND : 0!
+	!D01 : 0!
+	!D02 : 0!
+**funcall_2c D01:
+	!RND : 0!
 	~funcall_2c 0:
-	!VAR2 : 0!
+	!D02 : 0!
 	~funcall_2c 0:

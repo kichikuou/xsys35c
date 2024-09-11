@@ -1895,7 +1895,17 @@ void decompile(Vector *scos, Ain *ain, const char *outdir, const char *ald_basen
 	memset(&dc, 0, sizeof(dc));
 	dc.scos = scos;
 	dc.ain = ain;
-	dc.variables = (ain && ain->variables) ? ain->variables : new_vec();
+	if (ain && ain->variables) {
+		dc.variables = ain->variables;
+	} else {
+		dc.variables = new_vec();
+		vec_push(dc.variables, "RND");
+		for (int i = 1; i <= 20; i++) {
+			char buf[4];
+			sprintf(buf, "D%02d", i);
+			vec_push(dc.variables, strdup(buf));
+		}
+	}
 	dc.functions = (ain && ain->functions) ? ain->functions : new_function_hash();
 	dc.disable_ain_variable = ain && !ain->variables;
 
