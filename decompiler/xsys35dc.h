@@ -60,8 +60,14 @@ typedef struct {
 	uint16_t *argv;
 } Function;
 
+typedef enum {
+	MAGIC_AINI,
+	MAGIC_AIN2,
+} AinMagic;
+
 typedef struct {
 	const char *filename;
+	AinMagic magic;
 	uint32_t version;
 	Map *dlls;           // dllname -> Vector<DLLFunc>
 	HashMap *functions;  // Function -> Function (itself)

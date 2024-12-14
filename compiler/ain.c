@@ -115,11 +115,9 @@ static void ain_write_buf(Buffer *buf, FILE *fp) {
 }
 
 void ain_write(Compiler *compiler, FILE *fp) {
-	switch (config.ain_version) {
-	case 1: fputs("AINI", fp); break;
-	case 2: fputs("AIN2", fp); break;
-	default:
-		error("unknown ain version: %d", config.ain_version);
+	switch (config.ain_magic) {
+	case MAGIC_AINI: fputs("AINI", fp); break;
+	case MAGIC_AIN2: fputs("AIN2", fp); break;
 	}
 	fputdw(config.ain_version, fp);
 	Buffer *out = new_buf();

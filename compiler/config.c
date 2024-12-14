@@ -21,6 +21,7 @@
 #include <string.h>
 
 Config config = {
+	.ain_magic = MAGIC_AINI,
 	.ain_version = 1,
 	.sys_ver = SYSTEM39,
 	.sco_ver = SCO_S380,
@@ -104,6 +105,13 @@ void load_config(FILE *fp, const char *cfg_dir) {
 			config.ald_basename = path_join(cfg_dir, val);
 		} else if (sscanf(line, "output_ain = %s", val)) {
 			config.output_ain = path_join(cfg_dir, val);
+		} else if (sscanf(line, "ain_magic = %s", val)) {
+			if (!strcmp(val, "AINI"))
+				config.ain_magic = MAGIC_AINI;
+			else if (!strcmp(val, "AIN2"))
+				config.ain_magic = MAGIC_AIN2;
+			else
+				error("Unknown AIN magic '%s'", val);
 		} else if (sscanf(line, "ain_version = %d", &intval)) {
 			config.ain_version = intval;
 		} else if (sscanf(line, "unicode = %s", val)) {

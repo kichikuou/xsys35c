@@ -26,9 +26,15 @@ typedef enum {
 	SYSTEM39,
 } SysVer;
 
+typedef enum {
+	MAGIC_AINI,
+	MAGIC_AIN2,
+} AinMagic;
+
 typedef struct {
 	const char *ald_basename;
 	const char *output_ain;
+	AinMagic ain_magic;
 	uint32_t ain_version;
 
 	SysVer sys_ver;

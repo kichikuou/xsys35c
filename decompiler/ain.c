@@ -124,10 +124,17 @@ Ain *ain_read(const char *path) {
 		error("%s: read error", path);
 	fclose(fp);
 
-	uint32_t version = le32(input + 4);
-	if ((version == 1 && memcmp(input, "AINI", 4)) ||
-		(version == 2 && memcmp(input, "AIN2", 4)))
+	AinMagic magic;
+	if (!memcmp(input, "AINI", 4))
+		magic = MAGIC_AINI;
+	else if (!memcmp(input, "AIN2", 4))
+		magic = MAGIC_AIN2;
+	else
 		error("%s: not an AIN file", path);
+
+	uint32_t version = le32(input + 4);
+	if (version != 1 && version != 2)
+		error("%s: unknown AIN version %d", path, version);
 
 	// Decrypt
 	for (uint8_t *p = input + 4; p < input_end; p++)
@@ -135,6 +142,7 @@ Ain *ain_read(const char *path) {
 
 	Ain *ain = calloc(1, sizeof(Ain));
 	ain->filename = basename_utf8(path);
+	ain->magic = magic;
 	ain->version = version;
 
 	input += 8;

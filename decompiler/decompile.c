@@ -1802,6 +1802,8 @@ static void write_config(const char *path, const char *ald_basename) {
 		fprintf(fp, "ald_basename = %s\n", ald_basename);
 	if (dc.ain) {
 		fprintf(fp, "output_ain = %s\n", dc.ain->filename);
+		if (dc.ain->magic == MAGIC_AIN2)
+			fprintf(fp, "ain_magic = AIN2\n");
 		if (dc.ain->version != 1)
 			fprintf(fp, "ain_version = %d\n", dc.ain->version);
 	}
