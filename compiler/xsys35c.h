@@ -34,6 +34,7 @@ typedef enum {
 typedef struct {
 	const char *ald_basename;
 	const char *output_ain;
+	const char *outdir;
 	AinMagic ain_magic;
 	uint32_t ain_version;
 

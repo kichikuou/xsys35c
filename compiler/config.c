@@ -105,6 +105,8 @@ void load_config(FILE *fp, const char *cfg_dir) {
 			config.ald_basename = path_join(cfg_dir, val);
 		} else if (sscanf(line, "output_ain = %s", val)) {
 			config.output_ain = path_join(cfg_dir, val);
+		} else if (sscanf(line, "output_dir = %s", val)) {
+			config.outdir = path_join(cfg_dir, val);
 		} else if (sscanf(line, "ain_magic = %s", val)) {
 			if (!strcmp(val, "AINI"))
 				config.ain_magic = MAGIC_AINI;

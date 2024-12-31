@@ -27,15 +27,16 @@
 #define DEFAULT_ALD_BASENAME "out"
 #define DEFAULT_OUTPUT_AIN "System39.ain"
 
-static const char short_options[] = "a:E:ghi:Io:p:s:uV:v";
+static const char short_options[] = "a:d:E:ghi:Io:p:s:uV:v";
 static const struct option long_options[] = {
 	{ "ain",       required_argument, NULL, 'a' },
-	{ "ald",       required_argument, NULL, 'o' },
-	{ "debug",     no_argument,       NULL, 'g' },
+	{ "outdir",    required_argument, NULL, 'd' },
 	{ "encoding",  required_argument, NULL, 'E' },
-	{ "hed",       required_argument, NULL, 'i' },
+	{ "debug",     no_argument,       NULL, 'g' },
 	{ "help",      no_argument,       NULL, 'h' },
+	{ "hed",       required_argument, NULL, 'i' },
 	{ "init",      no_argument,       NULL, 'I' },
+	{ "ald",       required_argument, NULL, 'o' },
 	{ "project",   required_argument, NULL, 'p' },
 	{ "sys-ver",   required_argument, NULL, 's' },
 	{ "unicode",   no_argument,       NULL, 'u' },
@@ -47,6 +48,7 @@ static const struct option long_options[] = {
 static void usage(void) {
 	puts("Usage: xsys35c [options] file...");
 	puts("Options:");
+	puts("    -d, --outdir <dir>        Specify output directory");
 	puts("    -a, --ain <file>          Write .ain output to <file> (default: " DEFAULT_OUTPUT_AIN ")");
 	puts("    -o, --ald <name>          Write output to <name>SA.ALD, <name>SB.ALD, ... (default: " DEFAULT_ALD_BASENAME ")");
 	puts("    -g, --debug               Generate debug information");
@@ -271,6 +273,7 @@ int main(int argc, char *argv[]) {
 	const char *project = NULL;
 	const char *ald_basename = NULL;
 	const char *output_ain = NULL;
+	const char *outdir = NULL;
 	const char *hed = NULL;
 	const char *var_list = NULL;
 	bool init_mode = false;
@@ -280,6 +283,9 @@ int main(int argc, char *argv[]) {
 		switch (opt) {
 		case 'a':
 			output_ain = optarg;
+			break;
+		case 'd':
+			outdir = optarg;
 			break;
 		case 'E':
 			switch (optarg[0]) {
@@ -356,6 +362,15 @@ int main(int argc, char *argv[]) {
 		output_ain = config.output_ain ? config.output_ain
 			: project ? path_join(dirname_utf8(project), DEFAULT_OUTPUT_AIN)
 			: DEFAULT_OUTPUT_AIN;
+	}
+	if (!outdir && config.outdir)
+		outdir = config.outdir;
+	if (outdir) {
+		if (make_dir(outdir) != 0 && errno != EEXIST)
+			error("cannot create directory %s: %s", outdir, strerror(errno));
+		// If outdir is specified, the directory part of ald_basename / output_ain is ignored.
+		ald_basename = path_join(outdir, basename_utf8(ald_basename));
+		output_ain = path_join(outdir, basename_utf8(output_ain));
 	}
 
 	Vector *srcs = new_vec();

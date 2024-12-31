@@ -82,7 +82,7 @@ recompiling it back to a scenario file.
 
 First, in the game directory (the directory containing the `*.SA.ALD` file), run:
 ```
-xsys35dc . -o src
+xsys35dc . --outdir=src
 ```
 
 The decompiled source files will be generated in the `src` directory.
@@ -91,7 +91,7 @@ Edit them as you like.
 Once you've finished editing, recompile the source files back to `.ALD` (and
 `.ain` if applicable) using the following command:
 ```
-xsys35c -p decompiled/xsys35c.cfg -o foo -a System39.ain
+xsys35c --project=src/xsys35c.cfg --outdir=.
 ```
 
 Alternatively, you can use `xsys35c` and `xsys35dc` with

@@ -41,6 +41,11 @@ xsys35c - System 3.x compiler
   Write ALD output to __name__``SA.ALD``, __name__``SB.ALD``, ... (default:
   `out`)
 
+*-d, --outdir*=_directory_::
+  Generate output files in the specified _directory_. By default, output files
+  are created in the project directory, or the current directory if no project
+  is specified.
+
 *-g, --debug*::
   Generate debug information for xsystem35-sdl2.
 
