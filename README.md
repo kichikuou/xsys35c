@@ -80,17 +80,12 @@ option when running Meson.
 Here are the steps for decompiling a game, editing its source code, and
 recompiling it back to a scenario file.
 
-First, decompile the game by specifying the scenario file (`*SA.ALD`) as an
-argument for `xsys35dc`:
+First, in the game directory (the directory containing the `*.SA.ALD` file), run:
 ```
-xsys35dc -o decompiled fooSA.ALD
-```
-If the game includes a `System39.ain` file, provide that as well:
-```
-xsys35dc -o decompiled fooSA.ALD System39.ain
+xsys35dc . -o src
 ```
 
-The decompiled source files will be generated in the `decompiled` directory.
+The decompiled source files will be generated in the `src` directory.
 Edit them as you like.
 
 Once you've finished editing, recompile the source files back to `.ALD` (and

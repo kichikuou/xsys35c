@@ -7,14 +7,16 @@
 xsys35dc - System 3.x decompiler
 
 == Synopsis
+[verse]
+*xsys35dc* [_options_] _directory_
 *xsys35dc* [_options_] _aldfile_... [_system39.ain_]
 
 == Description
 `xsys35dc` is a decompiler for AliceSoft's System 3.x game engine. It processes
-a scenario file (usually having the suffix `SA.ALD`) and, optionally, a
-`System39.ain` file (for System 3.9 games). It then generates source files that
-can be compiled using xref:xsys35c.adoc[*xsys35c(1)*] or the official System
-3.x SDK.
+scenario files (`...SA.ALD`, `...SB.ALD`, etc., along with an optional
+`System39.ain`) either from a specified directory or directly from files provided
+on the command line. The decompiler generates source files that are compatible
+with xref:xsys35c.adoc[*xsys35c(1)*] and the official System 3.x SDK.
 
 == Options
 *-a, --address*::
