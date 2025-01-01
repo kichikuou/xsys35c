@@ -46,7 +46,7 @@ jobs:
         rm artifacts/*_tests.exe
         strip artifacts/*.exe
         cp misc/*.bat artifacts/
-        cp COPYING CHANGELOG.md artifacts/
+        cp COPYING CHANGELOG.md README.md artifacts/
         mkdir artifacts/docs
         cp build/*.html artifacts/docs
         mkdir artifacts/docs/image

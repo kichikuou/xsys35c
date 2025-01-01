@@ -43,6 +43,9 @@ is identical to the original:
 - 妻みぐい2
 - シェル・クレイル
 
+For older games (games with `ADISK.DAT` file), check out
+[sys3c](https://github.com/kichikuou/sys3c).
+
 ## Download
 Prebuilt Windows executables are available
 [here](https://github.com/kichikuou/xsys35c/releases). The 64-bit version
