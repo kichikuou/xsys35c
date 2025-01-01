@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.12.0 - 2025-01-01
+- decompiler: `xsys35dc` now generates conventional variable names such as `RND`, `D01`, `D02`, etc.
+- decompiler: Now you can specify a game folder to decompile all the scripts in it.
+- compiler: Added `--outdir` option to specify the output directory.
+- Added Windows batch files to run the decompiler and compiler.
+- Fixed Tsumamigui (#10).
+
 ## 1.11.0 - 2024-08-20
 - `ald`: Added `dump-index` subcommand which is useful for inspecting malformed ALD archives.
 - Fixed character encoding issues when non-ASCII output directory name is specified with `xsys35dc -o` or `ald extract -d`.
