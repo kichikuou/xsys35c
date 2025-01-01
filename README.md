@@ -48,7 +48,7 @@ Prebuilt Windows executables are available
 [here](https://github.com/kichikuou/xsys35c/releases). The 64-bit version
 supports Windows 10 or later. For older Windows, please use the 32-bit version.
 
-## Build & Install
+## Build from Source
 First, install the required dependencies (with corresponding Debian packages in
 parentheses):
 - meson (`meson`)
@@ -80,7 +80,18 @@ option when running Meson.
 Here are the steps for decompiling a game, editing its source code, and
 recompiling it back to a scenario file.
 
-First, in the game directory (the directory containing the `*.SA.ALD` file), run:
+### Windows
+
+1. Copy all files in the xsys35c archive to the game directory (the directory
+   containing `.ALD` files).
+2. Run `decompile.bat`. The decompiled source files will be generated in the
+   `src` directory.
+3. Edit the source files in the `src` directory as you like.
+4. Run `compile.bat`. The scenario files in the game directory will be updated.
+
+### Other Platforms
+
+First, in the game directory (the directory containing `.ALD` files), run:
 ```
 xsys35dc . --outdir=src
 ```

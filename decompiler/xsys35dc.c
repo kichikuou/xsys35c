@@ -189,9 +189,13 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (argc == 1 && is_directory(argv[0])) {
-		find_input_files(argv[0], &argc, &argv);
-		if (argc == 0)
-			error("No game files found in %s", argv[0]);
+		const char *dir = argv[0];
+		find_input_files(dir, &argc, &argv);
+		if (argc == 0) {
+			if (!strcmp(dir, "."))
+				dir = "current directory";
+			error("No game files found in %s", dir);
+		}
 	}
 
 	Vector *scos = NULL;
