@@ -733,7 +733,7 @@ static void arguments(const char *sig) {
 				char *buf = strdup((const char *)++dc.p);
 				for (uint8_t *p = (uint8_t *)buf; *p; p++)
 					*p = *p >> 4 | *p << 4;
-				dc_put_string(buf, '\0', 0);
+				dc_put_string(buf, '\0', STRING_ESCAPE);
 				dc.p += strlen(buf) + 1;
 				dc_putc('"');
 			}

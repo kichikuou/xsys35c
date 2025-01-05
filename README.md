@@ -30,18 +30,20 @@ is identical to the original:
 - ママトト
 - DARCROWS
 - PERSIOM
-- 隠れ月
 - SeeIn青
 - 20世紀アリス (かえるにょ国にょアリス / これDPS?)
 - 夜が来る!
-- 王子さまLv1
-- 王子さまLv1.5
 - 大悪司
 - 超昂天使エスカレイヤー
 - Only You -リ・クルス-
 - 妻みぐい
 - 妻みぐい2
 - シェル・クレイル
+- 隠れ月
+- 王子さまLv1
+- 王子さまLv1.5
+- 俺の下であがけ
+- 楽園行
 
 For older games (games with `ADISK.DAT` file), check out
 [sys3c](https://github.com/kichikuou/sys3c).
