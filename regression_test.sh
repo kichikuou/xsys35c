@@ -30,14 +30,14 @@ ${bindir}/vsp -e testdata/16colors.png -o $tmpfile && cmp testdata/16colors.vsp 
 
 diff -u --strip-trailing-cr - <(TZ=UTC ${bindir}/pms -i --system2 testdata/*.pms) <<EOF
 testdata/256colors.pms: PMS 1, 256x256 8bpp, palette mask: 0xfffe, offset: (50, 30)
-testdata/256colors_sys2.pms: PMS 0, 256x256 8bpp, offset: (50, 30)
+testdata/256colors_sys2.pms: PMS 0, 256x256 8bpp, palette mask: 0xfffe, offset: (50, 30)
 testdata/highcolor.pms: PMS 1, 256x256 16bpp, offset: (50, 30)
 testdata/highcolor_alpha.pms: PMS 2, 256x256 16bpp, 8bit alpha, 2021-03-14 04:00:26
 EOF
 ${bindir}/pms testdata/256colors.pms -o $tmpfile && cmp testdata/256colors.png $tmpfile
 ${bindir}/pms -e testdata/256colors.png -o $tmpfile && cmp testdata/256colors.pms $tmpfile
-${bindir}/pms --system2 testdata/256colors_sys2.pms -o $tmpfile && cmp testdata/256colors_nomask.png $tmpfile
-${bindir}/pms -e --system2 testdata/256colors_nomask.png -o $tmpfile && cmp testdata/256colors_sys2.pms $tmpfile
+${bindir}/pms --system2 testdata/256colors_sys2.pms -o $tmpfile && cmp testdata/256colors.png $tmpfile
+${bindir}/pms -e --system2 testdata/256colors.png -o $tmpfile && cmp testdata/256colors_sys2.pms $tmpfile
 ${bindir}/pms testdata/highcolor.pms -o $tmpfile && cmp testdata/highcolor.png $tmpfile
 ${bindir}/pms -e testdata/highcolor.png -o $tmpfile && cmp testdata/highcolor.pms $tmpfile
 ${bindir}/pms testdata/highcolor_alpha.pms -o $tmpfile && cmp testdata/highcolor_alpha.png $tmpfile

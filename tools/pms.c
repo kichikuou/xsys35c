@@ -99,10 +99,11 @@ static bool system2_pms_read_header(int first_word, struct pms_header *pms, FILE
 	if (sx >= 640 || sy >= 480 || ex >= 640 || ey >= 480 || sx > ex || sy > ey)
 		return false;
 
-	int flag = fgetc(fp);  // 256-color flag, but zero in Super DPS
+	int flag = fgetw(fp);  // 256-color flag, but zero in Super DPS
 	if (flag > 1)
 		return false;
-	for (int i = 9; i < 0x20; i++) {
+	int palette_mask = fgetw(fp);
+	for (int i = 12; i < 0x20; i++) {
 		if (fgetc(fp) != 0)
 			return false;
 	}
@@ -113,7 +114,7 @@ static bool system2_pms_read_header(int first_word, struct pms_header *pms, FILE
 	pms->width        = ex - sx + 1;
 	pms->height       = ey - sy + 1;
 	pms->bpp          = 8;
-	pms->palette_mask = 0xffff;
+	pms->palette_mask = palette_mask;
 	pms->auxdata_off  = 0x20;
 	pms->data_off     = 0x320;
 	return true;
@@ -157,8 +158,9 @@ static void system2_pms_write_header(struct pms_header *pms, FILE *fp) {
 	fputw(pms->y, fp);
 	fputw(pms->x + pms->width - 1, fp);
 	fputw(pms->y + pms->height - 1, fp);
-	fputc(1, fp); // 256-color flag
-	for (int i = 9; i < 0x20; i++)
+	fputw(1, fp); // 256-color flag
+	fputw(pms->palette_mask, fp);
+	for (int i = 12; i < 0x20; i++)
 		fputc(0, fp);
 }
 
