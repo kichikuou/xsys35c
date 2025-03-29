@@ -184,6 +184,22 @@ int make_dir(const char *path_utf8) {
 #endif
 }
 
+void mkdir_p(const char *path_utf8) {
+	char *dir = strdup(path_utf8);
+	for (char *p = dir + 1; *p; p++) {
+		if (is_path_separator(*p)) {
+			*p = '\0';
+			if (make_dir(dir) && errno != EEXIST) {
+				error("cannot create directory %s: %s", dir, strerror(errno));
+			}
+			*p = '/';
+		}
+	}
+	if (make_dir(dir) && errno != EEXIST) {
+		error("cannot create directory %s: %s", dir, strerror(errno));
+	}
+}
+
 uint16_t fgetw(FILE *fp) {
 	int lo = fgetc(fp);
 	int hi = fgetc(fp);

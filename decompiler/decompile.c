@@ -89,6 +89,15 @@ static const uint8_t *advance_char(const uint8_t *s) {
 	return s;
 }
 
+static char *unix_path(const char *path) {
+	char *buf = strdup(path);
+	for (char *p = buf; *p; p = (char*)advance_char((uint8_t*)p)) {
+		if (*p == '\\')
+			*p = '/';
+	}
+	return buf;
+}
+
 static void dc_putc(int c) {
 	if (dc.out)
 		fputc(c, dc.out);
@@ -186,7 +195,7 @@ static void page_name(int cmd) {
 		if ((cmd != '%' || page != 0) && page < dc.scos->len) {
 			Sco *sco = dc.scos->data[page];
 			if (sco) {
-				fprintf(dc.out, "#%s", sco->src_name);
+				fprintf(dc.out, "#%s", unix_path(sco->src_name));
 				return;
 			}
 		}
@@ -1844,7 +1853,7 @@ static void write_hed(const char *path, Map *dlls) {
 	fputs("#SYSTEM35\n", fp);
 	for (int i = 0; i < dc.scos->len; i++) {
 		Sco *sco = dc.scos->data[i];
-		fprintf(fp, "%s\n", sco ? sco->src_name : missing_adv_name(i));
+		fprintf(fp, "%s\n", sco ? unix_path(sco->src_name) : missing_adv_name(i));
 	}
 
 	if (dlls && dlls->keys->len) {
@@ -1941,7 +1950,9 @@ void decompile(Vector *scos, Ain *ain, const char *outdir, const char *ald_basen
 		}
 		if (config.verbose)
 			printf("Decompiling %s (page %d)...\n", sjis2utf(sco->sco_name), i);
-		dc.out = checked_fopen(path_join(outdir, to_utf8(sco->src_name)), "w+");
+		char *path = path_join(outdir, to_utf8(unix_path(sco->src_name)));
+		mkdir_p(dirname_utf8(path));
+		dc.out = checked_fopen(path, "w+");
 		if (sco->ald_volume != 1)
 			fprintf(dc.out, "pragma ald_volume %d:\n", sco->ald_volume);
 		decompile_page(i);

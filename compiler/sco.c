@@ -138,8 +138,17 @@ void emit_command(Buffer *b, int cmd) {
 		emit(b, 0);
 }
 
+static char *dos_path(const char *path_utf8) {
+	char *buf = strdup(path_utf8);
+	for (char *p = buf; *p; p++) {
+		if (*p == '/')
+			*p = '\\';
+	}
+	return buf;
+}
+
 void sco_init(Buffer *b, const char *src_name_utf8, int pageno) {
-	const char *src_name = to_output_encoding(src_name_utf8);
+	const char *src_name = to_output_encoding(dos_path(src_name_utf8));
 	int namelen = strlen(src_name);
 	if (namelen >= 1024)
 		error("file name too long: %s", src_name);

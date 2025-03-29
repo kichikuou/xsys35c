@@ -1477,7 +1477,7 @@ Sco *compile(Compiler *comp, const char *source, int pageno) {
 
 	comp->scos[pageno].ald_volume = 1;
 	out = new_buf();
-	sco_init(out, basename_utf8(comp->src_paths->data[pageno]), pageno);
+	sco_init(out, comp->src_paths->data[pageno], pageno);
 	if (comp->dbg_info)
 		debug_init_page(comp->dbg_info, pageno);
 

@@ -164,7 +164,7 @@ static void read_hed(const char *path, Vector *sources, Map *dlls) {
 			error("%s: syntax error", path);
 			break;
 		case SYSTEM35:
-			vec_push(sources, path_join(dir, line));
+			vec_push(sources, line);
 			break;
 		case DLLHeader:
 			{
@@ -207,11 +207,11 @@ static char *sconame(const char *advname) {
 	return s;
 }
 
-static void build(Vector *src_paths, Vector *variables, Map *dlls, const char *ald_basename, const char *ain_path) {
+static void build(const char *srcdir, Vector *src_paths, Vector *variables, Map *dlls, const char *ald_basename, const char *ain_path) {
 	Map *srcs = new_map();
 	for (int i = 0; i < src_paths->len; i++) {
 		char *path = src_paths->data[i];
-		map_put(srcs, path, read_file(path));
+		map_put(srcs, path, read_file(path_join(srcdir, path)));
 	}
 
 	Compiler *compiler = new_compiler(srcs->keys, variables, dlls);
@@ -375,8 +375,11 @@ int main(int argc, char *argv[]) {
 
 	Vector *srcs = new_vec();
 	Map *dlls = new_map();
-	if (hed)
+	char *srcdir = ".";
+	if (hed) {
 		read_hed(hed, srcs, dlls);
+		srcdir = dirname_utf8(hed);
+	}
 
 	for (int i = 0; i < argc; i++)
 		vec_push(srcs, argv[i]);
@@ -386,6 +389,6 @@ int main(int argc, char *argv[]) {
 
 	Vector *vars = var_list ? read_var_list(var_list) : NULL;
 
-	build(srcs, vars, dlls, ald_basename, output_ain);
+	build(srcdir, srcs, vars, dlls, ald_basename, output_ain);
 	return 0;
 }
