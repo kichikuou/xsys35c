@@ -44,6 +44,8 @@ is identical to the original:
 - 王子さまLv1.5
 - 俺の下であがけ
 - 楽園行
+- Nor
+- 翡翠の眸
 
 For older games (games with `ADISK.DAT` file), check out
 [sys3c](https://github.com/kichikuou/sys3c).
