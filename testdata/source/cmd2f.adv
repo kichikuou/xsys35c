@@ -43,8 +43,8 @@
 	MT "a":
 	NT "a":
 	QE 0, "a", 0, 0:
-	UP2 "a", "a":
-	F 1, 0, 0:
+	UP 2 "a", "a":
+	F1, 0, 0:
 	wavWaitTime 0, 0:
 	wavGetPlayPos 0, RND:
 	wavWaitEnd 0:

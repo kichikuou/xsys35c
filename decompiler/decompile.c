@@ -703,6 +703,7 @@ static void loop_end(Vector *branch_end_stack) {
 // Decompile command arguments. Directives:
 //  e: expression
 //  n: number (single-byte)
+//  N: same as n, but no preceding space
 //  s: string (colon-terminated)
 //  v: variable
 //  z: string (zero-terminated)
@@ -710,7 +711,8 @@ static void loop_end(Vector *branch_end_stack) {
 static void arguments(const char *sig) {
 	const char *sep = " ";
 	for (; *sig; sig++) {
-		dc_puts(sep);
+		if (*sig != 'N')
+			dc_puts(sep);
 		sep = ", ";
 
 		switch (*sig) {
@@ -719,6 +721,7 @@ static void arguments(const char *sig) {
 			cali(false);
 			break;
 		case 'n':
+		case 'N':
 			dc_printf("%d", *dc.p++);
 			break;
 		case 's':
@@ -1316,7 +1319,7 @@ static void decompile_page(int page) {
 		case CMD2('E', 'M'): arguments("evee"); break;
 		case CMD2('E', 'N'): arguments("veeee"); break;
 		case CMD2('E', 'S'): arguments("eeeeee"); break;
-		case 'F': arguments("nee"); break;
+		case 'F': arguments("Nee"); break;
 		case 'G':
 			switch (*dc.p++) {
 			case 0:
@@ -1443,6 +1446,7 @@ static void decompile_page(int page) {
 		case CMD2('P', 'P'): arguments("vee"); break;
 		case CMD2('P', 'S'): arguments("eeee"); break;
 		case CMD2('P', 'T'):
+			dc_putc(' ');
 			switch (subcommand_num()) {
 			case 0:
 				arguments("vee"); break;
@@ -1461,6 +1465,7 @@ static void decompile_page(int page) {
 		case 'R': break;
 		case CMD2('S', 'C'): arguments("v"); break;
 		case CMD2('S', 'G'):
+			dc_putc(' ');
 			switch (subcommand_num()) {
 			case 0:
 			case 1:
@@ -1485,7 +1490,7 @@ static void decompile_page(int page) {
 		case CMD2('S', 'Q'): arguments("eee"); break;
 		case CMD2('S', 'R'):
 			if (*dc.p < 0x40) {
-				arguments("nv");
+				arguments("Nv");
 			} else {
 				dc.old_SR = true;
 				arguments("ev");
@@ -1497,6 +1502,7 @@ static void decompile_page(int page) {
 		case CMD2('S', 'V'): arguments("ee"); break;
 		case CMD2('S', 'W'): arguments("veee"); break;
 		case CMD2('S', 'X'):
+			dc_putc(' ');
 			subcommand_num();  // device
 			dc_puts(", ");
 			switch (subcommand_num()) {
@@ -1516,6 +1522,7 @@ static void decompile_page(int page) {
 		case CMD2('U', 'D'): arguments("e"); break;
 		case CMD2('U', 'G'): arguments("ee"); break;
 		case CMD2('U', 'P'):
+			dc_putc(' ');
 			switch (subcommand_num()) {
 			case 0:
 				arguments("ee"); break;
@@ -1589,7 +1596,7 @@ static void decompile_page(int page) {
 			}
 			break;
 		case CMD2('Z', 'W'): arguments("e"); break;
-		case CMD2('Z', 'Z'): arguments("ne"); break;
+		case CMD2('Z', 'Z'): arguments("Ne"); break;
 		case COMMAND_TOC: arguments(""); break;
 		case COMMAND_TOS: arguments(""); break;
 		case COMMAND_TPC: arguments("e"); break;
@@ -1639,6 +1646,7 @@ static void decompile_page(int page) {
 		case COMMAND_newNT: arguments("z"); break;
 		case COMMAND_newQE: arguments("nzee"); break;
 		case COMMAND_newUP:
+			dc_putc(' ');
 			switch (subcommand_num()) {
 			case 0:
 				arguments("ee"); break;
@@ -1651,7 +1659,7 @@ static void decompile_page(int page) {
 				goto unknown_command;
 			}
 			break;
-		case COMMAND_newF: arguments("nee"); break;
+		case COMMAND_newF: arguments("Nee"); break;
 		case COMMAND_wavWaitTime: arguments("ee"); break;
 		case COMMAND_wavGetPlayPos: arguments("ev"); break;
 		case COMMAND_wavWaitEnd: arguments("e"); break;
