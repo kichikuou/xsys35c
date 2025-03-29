@@ -22,7 +22,7 @@
 #include <stdnoreturn.h>
 #include <time.h>
 
-#define VERSION "1.12.0"
+#define VERSION "1.13.0"
 
 static inline uint32_t le32(const uint8_t *p) {
 	return p[0] | p[1] << 8 | p[2] << 16 | p[3] << 24;

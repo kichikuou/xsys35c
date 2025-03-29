@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.13.0 - 2025-03-30
+- New supported games:
+  - 俺の下であがけ
+  - 楽園行
+  - Nor
+  - 翡翠の眸
+- decompiler: Fixed `xsys35dc <folder>` when the folder contains non-ASCII file names on Windows.
+- pms: Added support for palette mask in System2 PMS.
+
 ## 1.12.0 - 2025-01-01
 - decompiler: `xsys35dc` now generates conventional variable names such as `RND`, `D01`, `D02`, etc.
 - decompiler: Now you can specify a game folder to decompile all the scripts in it.

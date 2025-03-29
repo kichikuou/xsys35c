@@ -1,7 +1,7 @@
 project('xsys35c', 'c')
 fs = import('fs')
 
-xsys35c_version = '1.12.0'
+xsys35c_version = '1.13.0'
 is_windows = host_machine.system() == 'windows'
 
 if host_machine.system() == 'emscripten'
