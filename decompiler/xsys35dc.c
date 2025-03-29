@@ -107,8 +107,8 @@ const char *to_utf8(const char *s) {
 }
 
 static bool is_directory(const char *path) {
-	struct stat st;
-	return stat(path, &st) == 0 && S_ISDIR(st.st_mode);
+	ustat st;
+	return stat_utf8(path, &st) == 0 && S_ISDIR(st.st_mode);
 }
 
 static bool is_scenario_file(const char *name) {
@@ -121,16 +121,16 @@ static bool is_scenario_file(const char *name) {
 
 static void find_input_files(const char *dir, int *argc, char ***argv) {
 	Vector *files = new_vec();
-	DIR *dp = opendir(dir);
+	UDIR *dp = opendir_utf8(dir);
 	if (!dp)
 		error("%s: %s", dir, strerror(errno));
-	struct dirent *d;
-	while ((d = readdir(dp))) {
-		if (is_scenario_file(d->d_name) || !strcasecmp(d->d_name, "system39.ain")) {
-			vec_push(files, path_join(dir, d->d_name));
+	char *d_name;
+	while ((d_name = readdir_utf8(dp))) {
+		if (is_scenario_file(d_name) || !strcasecmp(d_name, "system39.ain")) {
+			vec_push(files, path_join(dir, d_name));
 		}
 	}
-	closedir(dp);
+	closedir_utf8(dp);
 	*argc = files->len;
 	*argv = calloc(files->len, sizeof(char *));
 	for (int i = 0; i < files->len; i++)

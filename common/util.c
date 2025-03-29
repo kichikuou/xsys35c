@@ -21,11 +21,10 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #ifdef _WIN32
 #include <windows.h>
 #include <direct.h>
-#else
-#include <sys/stat.h>
 #endif
 
 // 1970-01-01 - 1601-01-01 in 100ns
@@ -54,6 +53,32 @@ void init(int *pargc, char ***pargv) {
 #endif
 }
 
+#ifdef _WIN32
+wchar_t *utf8_to_wchar(const char *str) {
+	int len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, NULL, 0);
+	if (len == 0)
+		goto err;
+	wchar_t *wstr = malloc(len * sizeof(wchar_t));
+	if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, wstr, len))
+		goto err;
+	return wstr;
+err:
+	error("MultiByteToWideChar(\"%s\") failed with error code 0x%x", str, GetLastError());
+}
+
+char *wchar_to_utf8(const wchar_t *wstr) {
+	int len = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
+	if (len == 0)
+		goto err;
+	char *str = malloc(len);
+	if (!WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str, len, NULL, NULL))
+		goto err;
+	return str;
+err:
+	error("WideCharToMultiByte(\"%ls\") failed with error code 0x%x", wstr, GetLastError());
+}
+#endif
+
 char *strndup_(const char *s, size_t n) {
 	char *buf = malloc(n + 1);
 	strncpy(buf, s, n);
@@ -71,12 +96,9 @@ noreturn void error(char *fmt, ...) {
 
 FILE *checked_fopen(const char *path_utf8, const char *mode) {
 #ifdef _WIN32
-	wchar_t wpath[PATH_MAX + 1];
-	if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path_utf8, -1, wpath, PATH_MAX + 1))
-		error("MultiByteToWideChar(\"%s\") failed with error code 0x%x", path_utf8, GetLastError());
 	wchar_t wmode[64];
 	mbstowcs(wmode, mode, 64);
-	FILE *fp = _wfopen(wpath, wmode);
+	FILE *fp = _wfopen(utf8_to_wchar(path_utf8), wmode);
 #else
 	FILE *fp = fopen(path_utf8, mode);
 #endif
@@ -87,10 +109,7 @@ FILE *checked_fopen(const char *path_utf8, const char *mode) {
 
 int checked_open(const char *path_utf8, int oflag) {
 #ifdef _WIN32
-	wchar_t wpath[PATH_MAX + 1];
-	if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path_utf8, -1, wpath, PATH_MAX + 1))
-		error("MultiByteToWideChar(\"%s\") failed with error code 0x%x", path_utf8, GetLastError());
-	int fd = _wopen(wpath, oflag);
+	int fd = _wopen(utf8_to_wchar(path_utf8), oflag);
 #else
 	int fd = open(path_utf8, oflag);
 #endif
@@ -175,10 +194,7 @@ char *path_join(const char *dir, const char *path) {
 
 int make_dir(const char *path_utf8) {
 #if defined(_WIN32)
-	wchar_t wpath[PATH_MAX + 1];
-	if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path_utf8, -1, wpath, PATH_MAX + 1))
-		error("MultiByteToWideChar(\"%s\") failed with error code 0x%x", path_utf8, GetLastError());
-	return _wmkdir(wpath);
+	return _wmkdir(utf8_to_wchar(path_utf8));
 #else
 	return mkdir(path_utf8, 0777);
 #endif
@@ -198,6 +214,44 @@ void mkdir_p(const char *path_utf8) {
 	if (make_dir(dir) && errno != EEXIST) {
 		error("cannot create directory %s: %s", dir, strerror(errno));
 	}
+}
+
+UDIR *opendir_utf8(const char *path) {
+#ifdef _WIN32
+	return _wopendir(utf8_to_wchar(path));
+#else
+	return opendir(path);
+#endif
+}
+
+int closedir_utf8(UDIR *dir) {
+#ifdef _WIN32
+	return _wclosedir(dir);
+#else
+	return closedir(dir);
+#endif
+}
+
+char *readdir_utf8(UDIR *dir) {
+#ifdef _WIN32
+	struct _wdirent *e = _wreaddir(dir);
+	if (!e)
+		return NULL;
+	return wchar_to_utf8(e->d_name);
+#else
+	struct dirent *e = readdir(dir);
+	if (!e)
+		return NULL;
+	return strdup(e->d_name);
+#endif
+}
+
+int stat_utf8(const char *path, ustat *st) {
+#ifdef _WIN32
+	return _wstat64(utf8_to_wchar(path), st);
+#else
+	return stat(path, st);
+#endif
 }
 
 uint16_t fgetw(FILE *fp) {

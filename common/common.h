@@ -15,6 +15,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
 */
+#include <dirent.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -52,6 +53,19 @@ char *dirname_utf8(const char *path);
 char *path_join(const char *dir, const char *path);
 int make_dir(const char *path_utf8);
 void mkdir_p(const char *path_utf8);
+
+#ifdef _WIN32
+typedef _WDIR UDIR;
+typedef struct _stat64 ustat;
+#else
+typedef DIR UDIR;
+typedef struct stat ustat;
+#endif
+
+UDIR *opendir_utf8(const char *path);
+int closedir_utf8(UDIR *dir);
+char *readdir_utf8(UDIR *dir);
+int stat_utf8(const char *path, ustat *st);
 
 extern uint16_t fgetw(FILE *fp);
 extern uint32_t fgetdw(FILE *fp);
