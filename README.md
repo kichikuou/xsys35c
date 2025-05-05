@@ -85,7 +85,9 @@ option when running Meson.
 
 ## Basic Workflow
 Here are the steps for decompiling a game, editing its source code, and
-recompiling it back to a scenario file.
+recompiling it back to a scenario file. See
+[docs/adv_language.adoc](docs/adv_language.adoc) for details on the language
+used in the source files.
 
 ### Windows
 

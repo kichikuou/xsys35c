@@ -121,12 +121,8 @@ be loaded at runtime (because they are indirectly used by other DLLs).
 
 == Source File
 `xsys35c` accepts System 3.x source (`.adv`) files, in the same language as
-that supported by the official System 3.x SDK.
-
-Explaining the System 3.x language is beyond the scope of this document; please
-refer to the official SDK documentation. Another good way to learn about the
-language is to decompile an existing game using
-xref:xsys35dc.adoc[*xsys35dc(1)*], and examine the generated source files.
+that supported by the official System 3.x SDK. See xref:adv_language.adoc[ADV
+Language Basics] for a brief overview of the language.
 
 == DLL Function Declaration File
 The DLL function declaration (`.hel`) file contains a list of functions (and

@@ -125,6 +125,7 @@ test('regression_test',
 docs = [
   ['docs/ald.adoc', ['ald.1']],
   ['docs/alk.adoc', ['alk.1']],
+  ['docs/adv_language.adoc', []],
   ['docs/unicode.adoc', []],
   ['docs/vsp.adoc', ['vsp.1', 'pms.1', 'qnt.1']],
   ['docs/xsys35c.adoc', ['xsys35c.1']],

@@ -1,0 +1,333 @@
+= ADV Language Basics
+
+This document outlines the syntax of the System 3.x game script language (.ADV).
+
+== Basic Syntax
+
+=== Structure
+
+An ADV file consists of a sequence of statements, including function definitions, variable assignments, control structures, and game commands. Statements are executed sequentially unless control flow is altered by jumps, conditionals, loops, or function calls.
+
+=== Comments and Whitespace
+
+Whitespace (spaces, tabs, newlines) is generally ignored, except within string literals.
+
+ADV files support multiple comment styles:
+
+- *Single-line comments*: Begin with `;` or `//`
+- *Multi-line comments*: Enclosed in `/* ... */`
+
+....
+    ; This is a comment
+    // This is also a comment
+    /* This is a
+       multi-line comment */
+....
+
+=== Identifiers and Labels
+
+* *Identifiers*: Used for variables and function names.
+** May contain alphanumeric characters, underscores, dots, and non-ASCII characters.
+** Must not start with a digit.
+* *Labels*: Used to mark specific locations within the code for jumps or calls.
+** May contain any characters except `$`, `,`, `;`, `:`, and whitespaces.
+
+== Variables and Expressions
+
+=== Variable Declaration and Assignment
+
+Variables are assigned values using the syntax `!variable : expression!`. Variables can store integer values from 0 to 65535.
+
+....
+    !RND : 0!      ; Set variable RND to 0
+    !X : Y + 1!    ; Set X to Y + 1
+    !V[1] : V[2]!  ; Array assignment (assuming V is an array)
+....
+
+Assignment operators include:
+
+* *Simple assignment*: `!var : value!`
+* *Compound assignments*: These operators perform an operation using the current value of the variable and the value of the expression, then assign the result back to the variable.
+** `!var +: value!` is equivalent to `!var : var + value!` (Addition)
+** `!var -: value!` is equivalent to `!var : var - value!` (Subtraction)
+** `!var *: value!` is equivalent to `!var : var * value!` (Multiplication)
+** `!var /: value!` is equivalent to `!var : var / value!` (Division)
+** `!var %: value!` is equivalent to `!var : var % value!` (Modulo)
+** `!var &: value!` is equivalent to `!var : var & value!` (Bitwise AND)
+** `!var |: value!` is equivalent to `!var : var | value!` (Bitwise OR)
+** `!var ^: value!` is equivalent to `!var : var ^ value!` (Bitwise XOR)
+
+Note on arithmetic operations:
+
+* The `+` and `*` operators saturate at 65535 if the result exceeds this value.
+* The `-` operator clamps the result to 0 if it would be less than 0.
+
+=== Constants
+
+Constants can be defined using the `const` keyword. `word` specifies an integer constant.
+
+....
+    const word C1 = 1, C2 = 2:
+....
+
+=== Expressions
+
+ADV supports various operators with the following precedence (highest to lowest):
+
+1. Parentheses `()`
+2. Multiplication, division, modulo: `*`, `/`, `%`
+3. Addition, subtraction: `+`, `-`
+4. Bitwise operators: `&`, `|`, `^`
+5. Comparison operators: `<`, `>`, `<=`, `>=`
+6. Equality operators: `=`, `\` (where `=` means equal and `\` means not equal)
+
+Examples:
+
+....
+    !V : 0 + 1 - 2!           ; Addition and subtraction
+    !V : 0 * 1 / 2 % 3!       ; Multiplication, division, modulo
+    !V : 0 & 1 | 2 ^ 3!       ; Bitwise AND, OR, XOR
+    !V : 0 < 1 > 2 <= 3 >= 4! ; Comparison operators
+    !V : 0 = 1 \ 2!           ; Equality (=) and inequality (\)
+    !V : 0 + (1 - 2)!         ; Using parentheses for precedence
+....
+
+=== Arrays
+
+Arrays are supported, allowing you to store collections of values. System 3.x provides `D?` commands for managing array memory and data:
+
+....
+    DC 1, 100, 1:      ; Create array page 1 with 100 variables
+    DS I, ARRAY, 0, 1: ; Bind the array on page 1 to the variable ARRAY,
+                       ; using I as the index variable.
+....
+
+
+You can access individual elements using square brackets `[]`. Array indices can be expressions, including nested array access.
+
+....
+    !RND : ARRAY[10]!  ; Assign the 10th value of the array to RND
+....
+
+If no index is specified with `[]`, the index variable set by `DS` (`I` in this case) is used. This is considered an old style.
+
+....
+    !I : 3!        ; Set the index variable I to 3
+    !ARRAY : 42!   ; This sets the 3rd element of the array to 42.
+....
+
+== Control Structures
+
+=== Conditionals
+
+Conditionals use the syntax `{condition: code}`. The condition is typically an expression that evaluates to a number, where 0 is considered false and any non-zero value is considered true.
+
+Basic if statement:
+
+....
+    {condition:
+        ; Code executed if condition is true
+    }
+....
+
+If-else statement (System 3.8 and later):
+
+....
+    {condition:
+        ; Code executed if condition is true
+    } else {
+        ; Code executed if condition is false
+    }
+....
+
+If-else-if chain (System 3.8 and later):
+
+....
+    {condition1:
+        ; Code executed if condition1 is true
+    } else if {condition2:
+        ; Code executed if condition1 is false and condition2 is true
+    } else {
+        ; Code executed if all conditions are false
+    }
+....
+
+The optional keyword `if` can be used to start a conditional block (System 3.8 and later):
+
+....
+    if {condition:
+        ; Code executed if condition is true
+    }
+....
+
+=== Loops
+
+These structures are used to repeat a block of code.
+
+*For* loops use the syntax `<var, start, end, sign, step: code>`. `sign` determines the direction of the loop (0 for decrementing, 1 for incrementing). The loop variable `var` includes the `end` value.
+
+....
+    <RND, 0, 10, 1, 2:
+        ; Code executed in loop
+    >
+....
+
+This loop iterates with `RND` starting at 0, going up to and including 10, incrementing by 2 in each step. After the loop finishes, `RND` will be 12.
+
+*While* loops use the syntax `<@condition: code>`. The code block is executed repeatedly as long as the condition evaluates to non-zero (true). Note the use of `@` here is part of the while loop syntax, distinct from label references.
+
+....
+    <@condition:
+        ; Code executed while condition is true
+    >
+....
+
+Loops can be nested.
+
+=== Labels and Jumps
+
+Labels are defined using a leading `*` followed by the label name and a colon(`:`). Execution can be unconditionally transferred to a label using a leading `@` followed by the label name and a colon.
+
+....
+    *my_label:      ; Define a label
+        ; ... some code ...
+
+        @my_label:  ; Jump to my_label
+....
+
+Label calls allow execution to jump to a label and then return to the point after the call. Calls are made using a leading `\` followed by the label name and a colon. A return from a label call is performed using `\0:`.
+
+....
+    \my_subroutine: ; Call the label my_subroutine
+    ; ... code after subroutine returns ...
+
+*my_subroutine:
+    ; ... subroutine code ...
+    \0:             ; Return from the label call
+....
+
+=== Page Jumps and Calls
+
+Page jumps and calls allow navigation between different ADV files.
+
+`&#pagename.adv:`:: Jump to the beginning of `pagename.adv`. Execution does not return.
+
+`%#pagename.adv:`:: Call `pagename.adv`. Execution jumps to the beginning of the file, and a `%0:` command within that file will return execution to the line after the call in the original file.
+
+`%0:`:: Return from a page call.
+
+....
+    &#scene2.adv:   ; Jump to scene2.adv
+    %#common_event.adv: ; Call common_event.adv
+    ; ... execution returns here after %0: in common_event.adv ...
+....
+
+=== Functions
+
+Functions are defined using a leading `**` followed by the function name, comma-separated parameters (if any), and a colon(`:`). Functions can return a single value using `~0, return_value:`. The return value can be captured using `~~variable:`.
+
+....
+**my_function param1, param2:
+    ; Function body
+    !result : param1 + param2!
+    ~0, result: ; Return the value of result
+....
+
+Function calls are made using a leading `~` followed by the function name, parameters (if any), and a colon. To capture the return value of a function into a variable, use `~~variable:` immediately after the function call.
+
+....
+    ~my_function 10, 20: ; Call my_function with parameters 10 and 20
+    ~~my_return_value:   ; Store the return value in my_return_value
+....
+
+== String and Message Handling
+
+=== String Literals
+
+String literals are used as arguments for commands that expect string input. They are enclosed in double quotes. Double quotes within a string must be escaped with a backslash `\`.
+
+....
+    MT "Kichikuou Rance":
+    MS 1, "\"Gahahahaha!\"": ; Escaped double quotes
+....
+
+=== Messages
+
+Messages are commands that, when executed, display text on the screen. They are enclosed in single quotes. Messages can contain Japanese characters.
+
+....
+    'はにほー' ; Japanese message
+....
+
+In System 3.8 and later, messages can also contain ASCII characters. Single quotes within a message must be escaped with a backslash `\`.
+
+....
+    'Hello'      ; ASCII message (System 3.8+)
+    'That\'s it' ; Escaped single quote (System 3.8+)
+....
+
+=== SJIS Codepoints
+
+Specific Shift-JIS (SJIS) characters can be inserted directly into strings and messages using their hexadecimal codepoints enclosed in angle brackets `<>` prefixed with `0x`.
+
+....
+    '<0x82a0>' ; Inserts the SJIS character 'あ'
+....
+
+== Game Commands
+
+Commands are the fundamental building blocks of game logic, used to control various aspects like display, audio, input, and more. The specific set of available commands is extensive and depends on the System 3.x engine version.
+
+This document does not cover all commands. For a complete list of commands, refer to the official System 3.x SDK documentation or the xsystem35-sdl2 implementation.
+
+=== Command Syntax
+
+Most commands are uppercase single letters or combinations of letters (System 3.8 added lowercase commands, often with more descriptive names). Commands typically consist of the command name, followed by its arguments (if any), and ending with a colon `:`.
+
+....
+    B1 1, 450, 20, 172, 240, 1:
+    sysAddWebMenu "Home page", "https://kichikuou.github.io/":
+....
+
+There are a few exceptions to this rule. The `A` (wait for input) and `R` (message newline) commands do not require a trailing colon. These commands are often placed immediately after a message.
+
+....
+    'This is the first line' R
+    'This is the second line' A
+....
+
+=== Menu Commands
+
+Menus are defined using the `$` syntax, followed by a label to jump to when the option is selected, another `$`, the message text for the option, and terminated by `$`. The entire menu block is ended with a `]` character.
+
+....
+*main_menu:
+    'Please select an option.'
+
+    ; Define menu options linked to labels
+    $label1$'Option 1'$
+    $label2$'Option 2'$
+    $label3$'Option 3'$
+    ] ; End of menu definition
+
+*label1:
+    'You selected Option 1.'
+    @continue_flow: ; Jump to the common flow label
+
+*label2:
+    'You selected Option 2.'
+    @continue_flow: ; Jump to the common flow label
+
+*label3:
+    'You selected Option 3.'
+    @continue_flow: ; Jump to the common flow label
+
+*continue_flow:
+    ; ... game continues ...
+....
+
+If a option text begins with a non-ASCII character, single quotes can be omitted.
+....
+    $english$'English'$  ; single quotes required
+    $japanese$日本語$    ; single quotes not required
+....
