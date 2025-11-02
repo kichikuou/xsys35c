@@ -107,7 +107,7 @@ static char *read_file(const char *path) {
 		return buf;
 	} else {
 		char *utf = sjis2utf_sub(buf, 0xfffd);  // U+FFFD REPLACEMENT CHARACTER
-		char *err = strstr(utf, u8"\ufffd");
+		char *err = strstr(utf, (const char*)u8"\ufffd");
 		if (err) {
 			lexer_init(utf, path, -1);
 			error_at(err, "Invalid Shift_JIS character");
