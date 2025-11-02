@@ -87,6 +87,7 @@ test('compiler_tests', compiler_tests, workdir : meson.current_source_dir())
 xsys35dc_srcs = [
   'decompiler/ain.c',
   'decompiler/cali.c',
+  'decompiler/debuginfo.c',
   'decompiler/decompile.c',
   'decompiler/preprocess.c',
   'decompiler/xsys35dc.c',

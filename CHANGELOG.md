@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+- decompiler: `xsys35dc` can now accept a debug information file (`*SA.ALD.symbols`) as input and write out the original source files contained in it.
+- Added "ADV Language Basics" documentation.
+
 ## 1.13.0 - 2025-03-30
 - New supported games:
   - 俺の下であがけ

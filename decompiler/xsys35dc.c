@@ -119,6 +119,11 @@ static bool is_scenario_file(const char *name) {
 		!strcasecmp(name + len - 4, ".ald");
 }
 
+static bool is_symbols_file(const char *name) {
+	int len = strlen(name);
+	return len >= 14 && !strcasecmp(name + len - 14, "SA.ALD.symbols");
+}
+
 static void find_input_files(const char *dir, int *argc, char ***argv) {
 	Vector *files = new_vec();
 	UDIR *dp = opendir_utf8(dir);
@@ -126,7 +131,7 @@ static void find_input_files(const char *dir, int *argc, char ***argv) {
 		error("%s: %s", dir, strerror(errno));
 	char *d_name;
 	while ((d_name = readdir_utf8(dp))) {
-		if (is_scenario_file(d_name) || !strcasecmp(d_name, "system39.ain")) {
+		if (is_scenario_file(d_name) || is_symbols_file(d_name) || !strcasecmp(d_name, "system39.ain")) {
 			vec_push(files, path_join(dir, d_name));
 		}
 	}
@@ -200,18 +205,21 @@ int main(int argc, char *argv[]) {
 
 	Vector *scos = NULL;
 	Ain *ain = NULL;
+	DebugInfo *debug_info = NULL;
 	const char *ald_basename = NULL;
 	for (int i = 0; i < argc; i++) {
 		int len = strlen(argv[i]);
 		if (len >= 4 && !strcasecmp(argv[i] + len - 4, ".ain")) {
 			ain = ain_read(argv[i]);
-			continue;
-		}
-		scos = ald_read(scos, argv[i]);
-		if (len >= 6 && !strcasecmp(argv[i] + len - 6, "sa.ald")) {
-			char *s = strdup(argv[i]);
-			s[len - 6] = '\0';
-			ald_basename = basename_utf8(s);
+		} else if (is_symbols_file(argv[i])) {
+			debug_info = debug_info_read(argv[i]);
+		} else {
+			scos = ald_read(scos, argv[i]);
+			if (len >= 6 && !strcasecmp(argv[i] + len - 6, "sa.ald")) {
+				char *s = strdup(argv[i]);
+				s[len - 6] = '\0';
+				ald_basename = basename_utf8(s);
+			}
 		}
 	}
 
@@ -244,7 +252,7 @@ int main(int argc, char *argv[]) {
 	if (outdir && make_dir(outdir) != 0 && errno != EEXIST)
 		error("cannot create directory %s: %s", outdir, strerror(errno));
 
-	decompile(scos, ain, outdir, ald_basename);
+	decompile(scos, ain, debug_info, outdir, ald_basename);
 
 	return 0;
 }

@@ -80,6 +80,15 @@ void ain_dump(Ain *ain);
 void write_hels(Map *dlls, const char *dir);
 HashMap *new_function_hash(void);
 
+// debuginfo.c
+
+typedef struct {
+	Map *srcs;
+	Vector *variables;
+} DebugInfo;
+
+DebugInfo *debug_info_read(const char *path);
+
 // cali.c
 
 typedef struct Cali {
@@ -112,7 +121,7 @@ typedef struct {
 
 extern Config config;
 
-void decompile(Vector *scos, Ain *ain, const char *outdir, const char *ald_basename);
+void decompile(Vector *scos, Ain *ain, DebugInfo *debug_info, const char *outdir, const char *ald_basename);
 noreturn void error_at(const uint8_t *pos, char *fmt, ...);
 void warning_at(const uint8_t *pos, char *fmt, ...);
 

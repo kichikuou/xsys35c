@@ -1910,12 +1910,14 @@ void warning_at(const uint8_t *pos, char *fmt, ...) {
 	fputc('\n', stderr);
 }
 
-void decompile(Vector *scos, Ain *ain, const char *outdir, const char *ald_basename) {
+void decompile(Vector *scos, Ain *ain, DebugInfo *debug_info, const char *outdir, const char *ald_basename) {
 	memset(&dc, 0, sizeof(dc));
 	dc.scos = scos;
 	dc.ain = ain;
 	if (ain && ain->variables) {
 		dc.variables = ain->variables;
+	} else if (debug_info) {
+		dc.variables = debug_info->variables;
 	} else {
 		dc.variables = new_vec();
 		vec_push(dc.variables, "RND");
@@ -1933,7 +1935,8 @@ void decompile(Vector *scos, Ain *ain, const char *outdir, const char *ald_basen
 		puts("Preprocessing...");
 	preprocess(scos, ain);
 
-	// Analyze
+	// Analyze. This is needed even when debug info is present, because some
+	// xsys35c.cfg settings depend on the analysis.
 	bool done = false;
 	while (!done) {
 		done = true;
@@ -1950,23 +1953,35 @@ void decompile(Vector *scos, Ain *ain, const char *outdir, const char *ald_basen
 	}
 
 	// Decompile
-	for (int i = 0; i < scos->len; i++) {
-		Sco *sco = scos->data[i];
-		if (!sco) {
-			create_adv_for_missing_sco(outdir, i);
-			continue;
-		}
+	if (debug_info && !config.address) {
 		if (config.verbose)
-			printf("Decompiling %s (page %d)...\n", sjis2utf(sco->sco_name), i);
-		char *path = path_join(outdir, to_utf8(unix_path(sco->src_name)));
-		mkdir_p(dirname_utf8(path));
-		dc.out = checked_fopen(path, "w+");
-		if (sco->ald_volume != 1)
-			fprintf(dc.out, "pragma ald_volume %d:\n", sco->ald_volume);
-		decompile_page(i);
-		if (!config.utf8_input && config.utf8_output)
-			convert_to_utf8(dc.out);
-		fclose(dc.out);
+			puts("Writing original source files from debug info...");
+		for (int i = 0; i < debug_info->srcs->keys->len; i++) {
+			char *path = path_join(outdir, debug_info->srcs->keys->data[i]);
+			mkdir_p(dirname_utf8(path));
+			FILE *fp = checked_fopen(path, "wb");
+			fputs(debug_info->srcs->vals->data[i], fp);
+			fclose(fp);
+		}
+	} else {
+		for (int i = 0; i < scos->len; i++) {
+			Sco *sco = scos->data[i];
+			if (!sco) {
+				create_adv_for_missing_sco(outdir, i);
+				continue;
+			}
+			if (config.verbose)
+				printf("Decompiling %s (page %d)...\n", sjis2utf(sco->sco_name), i);
+			char *path = path_join(outdir, to_utf8(unix_path(sco->src_name)));
+			mkdir_p(dirname_utf8(path));
+			dc.out = checked_fopen(path, "w+");
+			if (sco->ald_volume != 1)
+				fprintf(dc.out, "pragma ald_volume %d:\n", sco->ald_volume);
+			decompile_page(i);
+			if (!config.utf8_input && config.utf8_output)
+				convert_to_utf8(dc.out);
+			fclose(dc.out);
+		}
 	}
 
 	if (config.verbose)
