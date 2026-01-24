@@ -50,6 +50,8 @@ is identical to the original:
 For older games (games with `ADISK.DAT` file), check out
 [sys3c](https://github.com/kichikuou/sys3c).
 
+For newer games, check out [sys4lang](https://github.com/kichikuou/sys4lang).
+
 ## Download
 Prebuilt Windows executables are available
 [here](https://github.com/kichikuou/xsys35c/releases). The 64-bit version
