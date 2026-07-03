@@ -27,26 +27,29 @@ typedef struct {
 	const char *src_name;
 	const char *sco_name;  // in SJIS
 	int ald_volume;
-	bool analyzed;
+	bool analyzed;  // if false, decompile() will (re-)analyze this page
 } Sco;
 
-// Sco.mark[i] stores annotation for Sco.data[i].
+// Sco.mark[i] stores annotation for Sco.data[i], collected during the
+// analysis phase (see the comment at the top of decompile.c).
 // An annotation consists of a 3-bit type field and flags.
 enum {
-	  // Type field
-	  WHILE_START = 1,  // on '{'
-	  FOR_START,        // on '!'
-	  ELSE,             // on '@'
-	  ELSE_IF,          // on '@'
-	  FUNCALL_TOP,      // on '!'
-	  DATA_TABLE,
+	  // Type field: identifies the start of a reconstructed control
+	  // structure, on the first byte of the instruction noted below.
+	  WHILE_START = 1,  // on '{': conditional jump that is a while-loop head
+	  FOR_START,        // on '!': variable assignment that starts a for-loop
+	  ELSE,             // on '@': jump over an else-block
+	  ELSE_IF,          // on '@': jump over an else-if block
+	  FUNCALL_TOP,      // on '!': first argument-passing assignment of a
+	                    //     function call (see analyze_args())
+	  DATA_TABLE,       // on an array of addresses referenced by '#'
 	  TYPE_MASK   = 0x7,
 
 	  // Flags
-	  CODE        = 1 << 4,
-	  DATA        = 1 << 5,
-	  LABEL       = 1 << 6,
-	  FUNC_TOP    = 1 << 7,
+	  CODE        = 1 << 4,  // executed as an instruction
+	  DATA        = 1 << 5,  // referenced as data; decompiled in [...] form
+	  LABEL       = 1 << 6,  // jump target; gets an "*L_xxxxx:" label
+	  FUNC_TOP    = 1 << 7,  // function entry point; gets a "**name:" label
 };
 
 // ain.c

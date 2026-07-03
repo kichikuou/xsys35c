@@ -15,6 +15,40 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
 */
+
+// How the decompiler works
+// ========================
+//
+// SCO bytecode does not distinguish code from data, and control structures
+// (if/else, loops, function calls with arguments) are compiled down to plain
+// conditional jumps and variable assignments. To reconstruct them, the
+// decompiler works in two phases, both executed by decompile_page():
+//
+// 1. Analysis phase (dc.out == NULL): decompile_page() walks through the
+//    bytecode without producing output (dc_putc() etc. are no-ops), and
+//    records what it learns about each byte in Sco.mark -- a shadow array
+//    that holds one annotation byte per bytecode byte (see the enum in
+//    xsys35dc.h). For example, jump targets are marked with LABEL, and
+//    bytes reachable as instructions are marked with CODE.
+//
+//    A single pass is not enough: for example, a '#' command may reveal
+//    that an address earlier in the page -- already scanned as code -- is
+//    actually a data table. Whenever new information about an earlier
+//    address (or another page) is discovered, the corresponding Sco's
+//    `analyzed` flag is cleared, and decompile() re-analyzes such pages
+//    until no new information is discovered (fixed-point iteration).
+//    Marks only accumulate monotonically (bits are set, types are assigned)
+//    so this iteration is guaranteed to terminate.
+//
+// 2. Output phase (dc.out != NULL): the same walk over the bytecode, but
+//    now guided by the final marks, emitting source code to dc.out.
+//
+// Some of the information gathered during analysis is not stored in marks
+// but in other structures that also persist into the output phase:
+// function signatures inferred from call sites live in dc.functions
+// (see analyze_args()), and flags like dc.disable_else record properties
+// of the whole scenario that affect both code generation and xsys35c.cfg.
+
 #include "xsys35dc.h"
 #include <assert.h>
 #include <ctype.h>
@@ -1059,6 +1093,9 @@ static void dll_call(void) {
 	dc_putc(':');
 }
 
+// Scans the bytecode of a page from start to end, driven by the marks
+// collected so far. Used for both the analysis phase (dc.out == NULL) and
+// the output phase (dc.out != NULL); see the comment at the top of this file.
 static void decompile_page(int page) {
 	Sco *sco = dc.scos->data[page];
 	dc.page = page;
@@ -1935,8 +1972,10 @@ void decompile(Vector *scos, Ain *ain, DebugInfo *debug_info, const char *outdir
 		puts("Preprocessing...");
 	preprocess(scos, ain);
 
-	// Analyze. This is needed even when debug info is present, because some
-	// xsys35c.cfg settings depend on the analysis.
+	// Analysis phase: repeat until no page discovers new marks (fixed-point
+	// iteration; see the comment at the top of this file). This is needed
+	// even when debug info is present, because some xsys35c.cfg settings
+	// depend on the analysis.
 	bool done = false;
 	while (!done) {
 		done = true;
