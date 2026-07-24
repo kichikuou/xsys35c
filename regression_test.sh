@@ -44,10 +44,12 @@ ${bindir}/pms testdata/highcolor_alpha.pms -o $tmpfile && cmp testdata/highcolor
 ${bindir}/pms -e testdata/highcolor_alpha.png -o $tmpfile && cmp testdata/highcolor_alpha.pms $tmpfile
 
 diff -u --strip-trailing-cr - <(${bindir}/qnt -i testdata/*.qnt) <<EOF
+testdata/aldexplorer_odd_height.qnt: QNT 1, 3x3 alpha only
 testdata/alphaonly.qnt: QNT 1, 256x256 alpha only
 testdata/truecolor.qnt: QNT 1, 256x256 24bpp, offset: (60, 40)
 testdata/truecolor_alpha.qnt: QNT 1, 256x256 24bpp + alpha
 EOF
+${bindir}/qnt testdata/aldexplorer_odd_height.qnt -o $tmpfile && cmp testdata/aldexplorer_odd_height.png $tmpfile
 ${bindir}/qnt testdata/truecolor.qnt -o $tmpfile && cmp testdata/truecolor.png $tmpfile
 ${bindir}/qnt -e testdata/truecolor.png -o $tmpfile && cmp testdata/truecolor.qnt $tmpfile
 ${bindir}/qnt testdata/truecolor_alpha.qnt -o $tmpfile && cmp testdata/truecolor_alpha.png $tmpfile

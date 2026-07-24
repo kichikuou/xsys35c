@@ -70,7 +70,8 @@ static void version(void) {
 }
 
 static bool read_and_uncompress(FILE *fp, uint32_t compressed_size,
-								uint8_t *raw, unsigned long raw_size) {
+								uint8_t *raw, unsigned long raw_size,
+								unsigned long minimum_size) {
 	uint8_t *compressed = malloc(compressed_size);
 	if (!compressed)
 		return NULL;
@@ -79,7 +80,7 @@ static bool read_and_uncompress(FILE *fp, uint32_t compressed_size,
 	unsigned long uncompressed_size = raw_size;
 	if (uncompress(raw, &uncompressed_size, compressed, compressed_size) != Z_OK)
 		goto err;
-	if (uncompressed_size != raw_size)
+	if (uncompressed_size < minimum_size)
 		goto err;
 	free(compressed);
 	return true;
@@ -131,7 +132,7 @@ static png_bytepp extract_pixels(struct qnt_header *qnt, FILE *fp) {
 
 	const int bufsize = width * height * 3;
 	uint8_t *raw = malloc(bufsize);
-	if (!raw || !read_and_uncompress(fp, qnt->pixel_size, raw, bufsize))
+	if (!raw || !read_and_uncompress(fp, qnt->pixel_size, raw, bufsize, bufsize))
 		return NULL;
 
 	png_bytepp rows = allocate_bitmap_buffer(width, height, 4);
@@ -189,7 +190,10 @@ static png_bytepp extract_alpha(struct qnt_header *qnt, FILE *fp) {
 
 	png_bytepp rows = allocate_bitmap_buffer(width, height, 1);
 
-	if (!read_and_uncompress(fp, qnt->alpha_size, rows[0], width * height))
+	// ALDExplorer pads alpha data to even width, but not even height.
+	const unsigned long padded_size = width * height;
+	const unsigned long required_size = width * qnt->height;
+	if (!read_and_uncompress(fp, qnt->alpha_size, rows[0], padded_size, required_size))
 		return NULL;
 
 	return rows;
