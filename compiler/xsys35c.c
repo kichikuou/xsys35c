@@ -22,7 +22,6 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include "ald.h"
 #include "util.h"
 
@@ -236,7 +235,7 @@ static void build(const char *srcdir, Vector *src_paths, Vector *variables, Map 
 		AldEntry *e = calloc(1, sizeof(AldEntry));
 		e->volume = sco->ald_volume;
 		e->name = utf2sjis_sub(sconame(basename_utf8(srcs->keys->data[i])), '?');
-		e->timestamp = time(NULL);
+		e->timestamp = current_win_filetime();
 		e->data = sco->buf->buf;
 		e->size = sco->buf->len;
 		vec_push(ald, e);

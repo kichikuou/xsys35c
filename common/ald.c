@@ -56,11 +56,10 @@ static int entry_header_size(AldEntry *e) {
 }
 
 static void write_entry(AldEntry *entry, FILE *fp) {
-	uint64_t wtime = time_t_to_win_filetime(entry->timestamp);
 	int hdrlen = entry_header_size(entry);
 	fputdw(hdrlen, fp);
 	fputdw(entry->size, fp);
-	fput64(wtime, fp);
+	fput64(entry->timestamp, fp);
 	fputs(entry->name, fp);
 	for (int i = 16 + strlen(entry->name); i < hdrlen; i++)
 		fputc(0, fp);
@@ -148,7 +147,7 @@ static void ald_read_entries(Vector *entries, int volume, uint8_t *data, int siz
 		AldEntry *e = calloc(1, sizeof(AldEntry));
 		e->volume = volume;
 		e->name = (char *)entry_ptr + 16;
-		e->timestamp = win_filetime_to_time_t(le64(entry_ptr + 8));
+		e->timestamp = le64(entry_ptr + 8);
 		e->data = entry_ptr + le32(entry_ptr);
 		e->size = le32(entry_ptr + 4);
 		if (e->data + e->size > data + size)

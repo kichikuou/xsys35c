@@ -67,5 +67,6 @@ void fput64(uint64_t n, FILE *fp);
 
 time_t win_filetime_to_time_t(uint64_t filetime);
 uint64_t time_t_to_win_filetime(time_t t);
+uint64_t current_win_filetime(void);
 
 #endif

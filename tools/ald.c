@@ -23,7 +23,8 @@
 #include <string.h>
 #include <sys/stat.h>
 #ifdef _WIN32
-#include <sys/utime.h>
+#include <io.h>
+#include <windows.h>
 #endif
 #include "ald.h"
 #include "sjisutf.h"
@@ -123,7 +124,8 @@ static int do_list(int argc, char *argv[]) {
 		AldEntry *e = ald->data[i];
 		if (!e)
 			continue;
-		struct tm *t = localtime(&e->timestamp);
+		time_t timestamp = win_filetime_to_time_t(e->timestamp);
+		struct tm *t = localtime(&timestamp);
 		strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", t);
 		printf("%4d %2d  %s  %8d  %s\n", i + 1, e->volume, buf, e->size, sjis2utf(e->name));
 	}
@@ -145,11 +147,31 @@ static void help_create(void) {
 	puts("    -m, --manifest <file>    Read manifest from <file>");
 }
 
+static uint64_t get_mtime(FILE *fp, const struct stat *sbuf, const char *path) {
+#ifdef _WIN32
+	(void)sbuf;
+	FILETIME mtime;
+	HANDLE handle = (HANDLE)_get_osfhandle(_fileno(fp));
+	if (handle == INVALID_HANDLE_VALUE || !GetFileTime(handle, NULL, NULL, &mtime))
+		error("%s: cannot get modification time", path);
+	return (uint64_t)mtime.dwHighDateTime << 32 | mtime.dwLowDateTime;
+#else
+	(void)fp;
+#ifdef __APPLE__
+	struct timespec mtime = sbuf->st_mtimespec;
+#else
+	struct timespec mtime = sbuf->st_mtim;
+#endif
+	return time_t_to_win_filetime(mtime.tv_sec) + mtime.tv_nsec / 100;
+#endif
+}
+
 static void add_file(Vector *ald, int volume, int no, const char *path) {
 	FILE *fp = checked_fopen(path, "rb");
 	struct stat sbuf;
 	if (fstat(fileno(fp), &sbuf) < 0)
 		error("%s: %s", path, strerror(errno));
+	uint64_t timestamp = get_mtime(fp, &sbuf, path);
 	uint8_t *data = malloc(sbuf.st_size);
 	if (!data)
 		error("out of memory");
@@ -159,7 +181,7 @@ static void add_file(Vector *ald, int volume, int no, const char *path) {
 
 	AldEntry *e = calloc(1, sizeof(AldEntry));
 	e->name = utf2sjis_sub(basename_utf8(path), '?');
-	e->timestamp = sbuf.st_mtime;
+	e->timestamp = timestamp;
 	e->data = data;
 	e->size = sbuf.st_size;
 	e->volume = volume;
@@ -267,23 +289,31 @@ static void help_extract(void) {
 static void extract_entry(AldEntry *e, const char *directory) {
 	const char *utf_name = sjis2utf(e->name);
 	puts(utf_name);
-	FILE *fp = checked_fopen(path_join(directory, utf_name), "wb");
+	const char *path = path_join(directory, utf_name);
+	FILE *fp = checked_fopen(path, "wb");
 	if (e->size > 0 && fwrite(e->data, e->size, 1, fp) != 1)
 		error("%s: %s", sjis2utf(e->name), strerror(errno));
 
 	fflush(fp);
 #ifdef _WIN32
-	struct _utimbuf times = {
-		.actime = e->timestamp,
-		.modtime = e->timestamp
+	FILETIME mtime = {
+		.dwLowDateTime = e->timestamp,
+		.dwHighDateTime = e->timestamp >> 32,
 	};
-	_futime(_fileno(fp), &times);
+	HANDLE handle = (HANDLE)_get_osfhandle(_fileno(fp));
+	if (handle == INVALID_HANDLE_VALUE || !SetFileTime(handle, NULL, NULL, &mtime))
+		error("%s: cannot set modification time", path);
 #else
+	time_t timestamp = win_filetime_to_time_t(e->timestamp);
 	struct timespec times[2] = {
 		[0].tv_nsec = UTIME_OMIT,
-		[1].tv_sec = e->timestamp
+		[1] = {
+			.tv_sec = timestamp,
+			.tv_nsec = (e->timestamp - time_t_to_win_filetime(timestamp)) * 100,
+		},
 	};
-	futimens(fileno(fp), times);
+	if (futimens(fileno(fp), times) < 0)
+		error("%s: %s", path, strerror(errno));
 #endif
 
 	fclose(fp);

@@ -2,6 +2,7 @@
 
 ## Unreleased
 - decompiler: `xsys35dc` can now accept a debug information file (`*SA.ALD.symbols`) as input and write out the original source files contained in it.
+- `ald`: Preserve subsecond timestamps when extracting and recreating archives.
 - Added "ADV Language Basics" documentation.
 
 ## 1.13.0 - 2025-03-30

@@ -7,7 +7,21 @@ if [ $# -eq 0 ]; then
 	exit 1
 fi
 
-bindir="$1"
+bindir=$(cd "$1" && pwd)
+
+timestamp_test_dir=$(mktemp -d)
+printf content > "$timestamp_test_dir/a.txt"
+touch -d '1996-12-19 00:00:00.1234567 UTC' "$timestamp_test_dir/a.txt"
+(
+	cd "$timestamp_test_dir"
+	"$bindir/ald" create originala.ald a.txt
+	mkdir extracted
+	"$bindir/ald" extract -d extracted -m manifest originala.ald
+	cd extracted
+	"$bindir/ald" create ../repackeda.ald -m ../manifest
+)
+cmp "$timestamp_test_dir/originala.ald" "$timestamp_test_dir/repackeda.ald"
+rm -rf "$timestamp_test_dir"
 
 ${bindir}/xsys35c -p testdata/source/xsys35c.cfg -o testdata/actual
 if [ -f testdata/regression_test.ald ]; then

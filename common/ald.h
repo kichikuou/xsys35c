@@ -20,12 +20,11 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <time.h>
 #include "container.h"
 
 typedef struct {
 	const char *name;  // in SJIS
-	time_t timestamp;
+	uint64_t timestamp;  // Windows FILETIME (100ns intervals since 1601-01-01)
 	const uint8_t *data;
 	int size;
 	int volume;  // volume id (1 for *A.ALD, 2 for *B.ALD, ...)

@@ -297,3 +297,16 @@ time_t win_filetime_to_time_t(uint64_t t) {
 uint64_t time_t_to_win_filetime(time_t t) {
 	return t * 10000000LL + EPOCH_DIFF_100NS;
 }
+
+uint64_t current_win_filetime(void) {
+#ifdef _WIN32
+	FILETIME t;
+	GetSystemTimeAsFileTime(&t);
+	return (uint64_t)t.dwHighDateTime << 32 | t.dwLowDateTime;
+#else
+	struct timespec t;
+	if (clock_gettime(CLOCK_REALTIME, &t) < 0)
+		error("cannot get current time: %s", strerror(errno));
+	return time_t_to_win_filetime(t.tv_sec) + t.tv_nsec / 100;
+#endif
+}

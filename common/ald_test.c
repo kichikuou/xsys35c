@@ -23,7 +23,7 @@
 #include "util.h"
 #undef NDEBUG
 
-#define TIMESTAMP 850953600  // 1996-12-19 00:00:00 UTC
+#define TIMESTAMP 124954272001234567ULL  // 1996-12-19 00:00:00.1234567 UTC
 
 static void test_read(void) {
 	Vector *es = ald_read(NULL, "testdata/expected.ald");
