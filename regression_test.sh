@@ -1,5 +1,5 @@
 #!/bin/bash
-# To update testdata/regression_test.ald, remove it and run this script
+# To update testdata/regression_test.{ald,ain}, remove them and run this script
 set -e
 
 if [ $# -eq 0 ]; then
@@ -9,14 +9,16 @@ fi
 
 bindir="$1"
 
-${bindir}/xsys35c -p testdata/source/xsys35c.cfg -o testdata/actual
+${bindir}/xsys35c -p testdata/source/xsys35c.cfg -o testdata/actual -a testdata/actual.ain
 if [ -f testdata/regression_test.ald ]; then
     ${bindir}/ald compare testdata/regression_test.ald testdata/actualSA.ALD
+    cmp testdata/regression_test.ain testdata/actual.ain
 else
     cp testdata/actualSA.ALD testdata/regression_test.ald
+    cp testdata/actual.ain testdata/regression_test.ain
 fi
 rm -rf testdata/decompiled
-${bindir}/xsys35dc -o testdata/decompiled testdata/actualSA.ALD
+${bindir}/xsys35dc -o testdata/decompiled testdata/actualSA.ALD testdata/actual.ain
 diff -uN --strip-trailing-cr testdata/source testdata/decompiled
 
 

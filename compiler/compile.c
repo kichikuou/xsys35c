@@ -591,6 +591,8 @@ static void assign(void) {
 	int op = current_address(out);
 	emit(out, '!');
 	variable(get_identifier(), true);
+	skip_whitespaces();
+	const char *op_top = input;
 	if (consume('+')) {
 		set_byte(out, op, 0x10);
 	} else if (consume('-')) {
@@ -608,6 +610,8 @@ static void assign(void) {
 	} else if (consume('^')) {
 		set_byte(out, op, 0x17);
 	}
+	if (config.sys_ver == SYSTEM35 && input != op_top)
+		error_at(op_top, "Compound assignment is not supported in System 3.5");
 	expect(':');
 	expr();
 	expect('!');
@@ -729,6 +733,39 @@ static void pragma(void) {
 	}
 }
 
+static const char *sys_ver_name(SysVer ver) {
+	switch (ver) {
+	case SYSTEM35: return "3.5";
+	case SYSTEM36: return "3.6";
+	case SYSTEM38: return "3.8";
+	case SYSTEM39: return "3.9";
+	}
+	return "?";
+}
+
+static bool is_supported_command(int cmd) {
+	switch (cmd) {
+	case CMD2('C', 'Y'):
+	case CMD2('C', 'Z'):
+	case CMD2('E', 'G'):
+	case CMD2('E', 'M'):
+	case CMD2('E', 'N'):
+	case CMD2('I', 'E'):
+	case CMD2('K', 'K'):
+	case CMD3('L', 'X', 'X'):
+	case CMD2('Z', 'R'):
+		return config.sys_ver >= SYSTEM36;
+	}
+	if ((cmd & 0xff) != '/')
+		return true;
+	int n = cmd >> 8;
+	if (n <= 0x09)
+		return config.sys_ver >= SYSTEM36;
+	if (n <= 0x5f)
+		return config.sys_ver >= SYSTEM38;
+	return config.sys_ver >= SYSTEM39;
+}
+
 static int subcommand_num(void) {
 	int n = get_number();
 	emit(out, n);
@@ -743,6 +780,10 @@ static bool command(void) {
 
 	const char *command_top = input;
 	int cmd = get_command(out);
+	if (!is_supported_command(cmd)) {
+		error_at(command_top, "%.*s is not supported in System %s",
+				 input - command_top, command_top, sys_ver_name(config.sys_ver));
+	}
 
 	switch (cmd) {
 	case '\0':
