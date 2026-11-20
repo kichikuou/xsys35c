@@ -166,6 +166,11 @@ Vector *ald_read(Vector *entries, const char *path) {
 	struct stat sbuf;
 	if (fstat(fd, &sbuf) < 0)
 		error("%s: %s", path, strerror(errno));
+	if ((sbuf.st_size & 0xff) != 16) {
+		fprintf(stderr, "%s: unexpected file size (not an ALD file?)\n", path);
+		close(fd);
+		return entries;
+	}
 
 #ifdef _POSIX_MAPPED_FILES
 	uint8_t *p = mmap(NULL, sbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
@@ -185,10 +190,6 @@ Vector *ald_read(Vector *entries, const char *path) {
 #endif
 	close(fd);
 
-	if ((sbuf.st_size & 0xff) != 16) {
-		fprintf(stderr, "%s: unexpected file size (not an ALD file?)\n", path);
-		return entries;
-	}
 	uint8_t *footer = p + sbuf.st_size - 16;
 	if (le32(footer) != ALD_SIGNATURE && le32(footer) != ALD_SIGNATURE2) {
 		fprintf(stderr, "%s: invalid signature (not an ALD file?)\n", path);
