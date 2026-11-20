@@ -4,21 +4,16 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        include:
-        - { sys: MINGW32, archive-suffix: "-32bit" }
-        - { sys: UCRT64, archive-suffix: "-64bit" }
     defaults:
       run:
         shell: msys2 {0}
-    name: MSYS2 ${{ matrix.sys }}
+    name: MSYS2 UCRT64
     steps:
 
     - name: Set up MSYS2
       uses: msys2/setup-msys2@v2
       with:
-        msystem: ${{ matrix.sys }}
+        msystem: UCRT64
         release: false
         pacboy: >-
           diffutils:
@@ -55,5 +50,5 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v7
       with:
-        name: xsys35c${{ matrix.archive-suffix }}
+        name: xsys35c-64bit
         path: artifacts

@@ -54,8 +54,7 @@ For newer games, check out [sys4lang](https://github.com/kichikuou/sys4lang).
 
 ## Download
 Prebuilt Windows executables are available
-[here](https://github.com/kichikuou/xsys35c/releases). The 64-bit version
-supports Windows 10 or later. For older Windows, please use the 32-bit version.
+[here](https://github.com/kichikuou/xsys35c/releases).
 
 ## Build from Source
 First, install the required dependencies (with corresponding Debian packages in
