@@ -22,7 +22,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#ifdef _POSIX_MAPPED_FILES
+#if defined(_POSIX_MAPPED_FILES) && !defined(__EMSCRIPTEN__)
 #include <sys/mman.h>
 #endif
 #include "container.h"
@@ -45,7 +45,7 @@ static Vector *alk_read(const char *path) {
 	if (sbuf.st_size < 8)
 		error("%s: not an ALK file");
 
-#ifdef _POSIX_MAPPED_FILES
+#if defined(_POSIX_MAPPED_FILES) && !defined(__EMSCRIPTEN__)
 	uint8_t *p = mmap(NULL, sbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
 	if (p == MAP_FAILED)
 		error("%s: %s", path, strerror(errno));

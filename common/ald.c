@@ -24,7 +24,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#ifdef _POSIX_MAPPED_FILES
+#if defined(_POSIX_MAPPED_FILES) && !defined(__EMSCRIPTEN__)
 #include <sys/mman.h>
 #endif
 #include "util.h"
@@ -172,7 +172,7 @@ Vector *ald_read(Vector *entries, const char *path) {
 		return entries;
 	}
 
-#ifdef _POSIX_MAPPED_FILES
+#if defined(_POSIX_MAPPED_FILES) && !defined(__EMSCRIPTEN__)
 	uint8_t *p = mmap(NULL, sbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
 	if (p == MAP_FAILED)
 		error("%s: %s", path, strerror(errno));
