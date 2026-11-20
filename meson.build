@@ -1,4 +1,4 @@
-project('xsys35c', 'c', version : '1.13.0')
+project('xsys35c', 'c', version : '1.14.0')
 fs = import('fs')
 
 xsys35c_version = meson.project_version()
